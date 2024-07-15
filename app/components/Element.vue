@@ -1,12 +1,12 @@
 <template>
-  <q-input v-if="elem.type === 'text' && !elem.inputType" :label="elem.label" />
-  <q-input v-if="elem.type === 'text' && elem.inputType === 'number'" type="number" :label="elem.label" />
-  <q-input v-if="elem.type === 'text' && elem.inputType === 'email'" type="email" :label="elem.label" />
-  <q-input v-if="elem.type === 'phone'" type="tel" :label="elem.label" />
-  <q-input v-if="elem.type === 'text' && elem.inputType === 'password'" type="password" :label="elem.label" />
-  <q-input v-if="elem.type === 'text' && elem.inputType === 'url'" type="url" :label="elem.label" />
-  <q-input v-if="elem.type === 'location'" :label="elem.label" />
-  <q-input v-if="elem.type === 'textarea'" type="textarea" :label="elem.label" />
+  <q-input v-if="elem.type === 'text' && !elem.inputType" outlined :label="elem.label" />
+  <q-input v-if="elem.type === 'text' && elem.inputType === 'number'" type="number" outlined :label="elem.label" />
+  <q-input v-if="elem.type === 'text' && elem.inputType === 'email'" type="email" outlined :label="elem.label" />
+  <q-input v-if="elem.type === 'phone'" type="tel" outlined :label="elem.label" />
+  <q-input v-if="elem.type === 'text' && elem.inputType === 'password'" type="password" outlined :label="elem.label" />
+  <q-input v-if="elem.type === 'text' && elem.inputType === 'url'" type="url" outlined :label="elem.label" />
+  <q-input v-if="elem.type === 'location'" outlined :label="elem.label" />
+  <q-input v-if="elem.type === 'textarea'" type="textarea" outlined :label="elem.label" />
   <q-editor v-if="elem.type === 'editor'" :label="elem.label" />
   <q-checkbox v-if="elem.type === 'checkbox'" :label="elem.text" />
   <q-checkbox v-if="elem.type === 'checkboxgroup'" v-for="item in elem.items" :key="item.value" :label="item.label" />

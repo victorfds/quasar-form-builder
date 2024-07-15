@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ElementType } from '~/types';
+import type { FormKitSchemaNode } from '@formkit/core';
 
 const model = defineModel()
 
@@ -16,7 +16,7 @@ const formStore = useFormStore()
 
 const tools = formStore.tools
 
-const onDragStart = (ev: DragEvent, tool: ElementType) => {
+const onDragStart = (ev: DragEvent, tool: FormKitSchemaNode) => {
   // Add this element's id to the drag payload so the drop handler will
   // know which element to add to its tree
   ev.dataTransfer?.setData("text", JSON.stringify(tool));
@@ -41,6 +41,6 @@ const onDragStart = (ev: DragEvent, tool: ElementType) => {
 
 .tool-item:active {
   cursor: grabbing;
-  background-color: #111fff;
+  opacity: 0.4;
 }
 </style>

@@ -6,7 +6,8 @@ export default defineNuxtConfig({
   },
   modules: [
     "nuxt-quasar-ui",
-    "@pinia/nuxt"
+    "@pinia/nuxt",
+    "@formkit/nuxt"
   ],
   quasar: {
     plugins: [
@@ -21,6 +22,11 @@ export default defineNuxtConfig({
     ],
     lang: "pt-BR",
     iconSet: 'material-icons',
-    extras: { animations: 'all', fontIcons: ['material-icons-outlined'] }
+    extras: { animations: 'all', fontIcons: ['material-icons-outlined'] },
+    config: { brand: { primary: '#6F511D' } }
   },
+  formkit: {
+    // Experimental support for auto loading (see note):
+    autoImport: true
+  }
 })

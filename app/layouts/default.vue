@@ -46,7 +46,7 @@
   </q-layout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 
 const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)

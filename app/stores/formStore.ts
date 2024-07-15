@@ -1,63 +1,54 @@
-import type { ElementType } from "~/types"
+import type { FormKitSchemaDefinition, FormKitSchemaNode } from "@formkit/core"
 
 export const useFormStore = defineStore('formStore', () => {
-  const tools = ref([
+  const tools = ref<FormKitSchemaDefinition[]>([
     {
-      name: 'text',
-      type: 'text',
-      label: 'Text',
+      $formkit: 'q-input',
+      name: 'input',
+      label: 'Entrada de texto',
+      help: 'Enter your first name',
+      validation: 'required',
     },
     {
-      name: 'number',
-      type: 'text',
-      inputType: 'number',
-      rules: ['nullable', 'numeric'],
-      autocomplete: 'off',
-      label: 'Number',
-    },
-    {
-      name: 'email',
-      type: 'text',
-      inputType: 'email',
-      rules: ['nullable', 'email'],
-      label: 'Email',
-    },
-    {
-      name: 'phone',
-      type: 'phone',
-      label: 'Phone',
-      allowIncomplete: true,
-      unmask: true,
-    },
-    {
-      name: 'password',
-      type: 'text',
-      inputType: 'password',
-      label: 'Password',
-    },
-    {
-      name: 'url',
-      type: 'text',
-      inputType: 'url',
-      rules: ['nullable', 'url'],
-      placeholder: 'eg. http(s)://domain.com',
-      floating: false,
-      label: 'URL',
-    },
+      $formkit: 'q-select',
+      name: 'select',
+      label: 'Selecione as opções',
+      help: 'opções',
+      options: [{ label: 'Opção 1', value: 'option1' }],
+      validation: 'required',
+    }
 
   ])
 
-  const formFields = ref<ElementType[]>([])
-  const draggedTool = ref<null | ElementType>(null)
+  const formFields = ref<FormKitSchemaDefinition[]>([])
+  const draggedTool = ref<null | FormKitSchemaDefinition>(null)
   const draggedFieldIndex = ref<null | number>(null)
 
-  const setDraggedTool = (tool: ElementType | null) => {
+  const setDraggedTool = (tool: FormKitSchemaDefinition | null) => {
     draggedTool.value = tool;
   }
 
-  const addField = (field: ElementType) => {
-    formFields.value.push(field)
+  const addField = (field: FormKitSchemaNode, pos: number) => {
+    const formLength = formFields.value.length
+    const nameExists = (name: string) => formFields.value.some(el => el.name === name)
+
+    const generateUniqueName = (name: string): string => {
+      return [...Array(formLength + 1).keys()]
+        .map(counter => (counter === 0 ? name : `${name}_${counter}`))
+        .find(uniqueName => !nameExists(uniqueName)) || name
+    }
+
+    field.name = generateUniqueName(field?.name)
+
+    if (pos >= formLength || pos >= formLength - 1) {
+      formFields.value.push(field)
+    } else if (pos <= 0) {
+      formFields.value.unshift(field)
+    } else {
+      formFields.value.splice(pos, 0, field)
+    }
   }
+
 
   const setDraggedFieldIndex = (index: number | null) => {
     draggedFieldIndex.value = index
