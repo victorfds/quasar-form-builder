@@ -1,6 +1,6 @@
 <template>
   <q-editor @update:model-value="(val) => context?.node.input(val)"
-    :model-value="context.value || 'Digite seu texto aqui'" :label="context.label" outlined :type="context.inputType"
+    :model-value="context.value || 'Digite seu texto aqui'" :label="context.label" flat :type="context.inputType"
     :hint="context.help" v-bind="context.attrs" :error-message="getMessages" :error="hasError"
     @blur="checkForErrorMessages" />
 </template>

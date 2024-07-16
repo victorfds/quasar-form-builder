@@ -22,7 +22,7 @@
       </q-tabs>
     </q-header>
 
-    <TheLeftDrawer v-model="leftDrawerOpen"  />
+    <TheLeftDrawer v-model="leftDrawerOpen" />
 
     <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered>
       <!-- drawer content -->

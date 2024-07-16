@@ -1,7 +1,7 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from "@formkit/core"
 
 export const useFormStore = defineStore('formStore', () => {
-  const tools = ref<FormKitSchemaDefinition[]>([
+  const tools = ref<FormKitSchemaDefinition>([
     {
       $formkit: 'q-input',
       name: 'input',
@@ -17,20 +17,18 @@ export const useFormStore = defineStore('formStore', () => {
       options: [{ label: 'Opção 1', value: 'option1' }],
       validation: 'required',
     }
-
   ])
 
   const formFields = ref<FormKitSchemaDefinition[]>([])
   const draggedTool = ref<null | FormKitSchemaDefinition>(null)
-  const draggedFieldIndex = ref<null | number>(null)
 
   const setDraggedTool = (tool: FormKitSchemaDefinition | null) => {
     draggedTool.value = tool;
   }
 
   const addField = (field: FormKitSchemaNode, pos: number) => {
-    const formLength = formFields.value.length
     const nameExists = (name: string) => formFields.value.some(el => el.name === name)
+    const formLength = formFields.value.length
 
     const generateUniqueName = (name: string): string => {
       return [...Array(formLength + 1).keys()]
@@ -49,18 +47,18 @@ export const useFormStore = defineStore('formStore', () => {
     }
   }
 
-
-  const setDraggedFieldIndex = (index: number | null) => {
-    draggedFieldIndex.value = index
+  const updateFieldIndex = ({ draggedField, originalPosition, destinationIndex }: { draggedField: FormKitSchemaDefinition, originalPosition: number, destinationIndex: number }) => {
+    formFields.value.splice(originalPosition, 1)
+    formFields.value.splice(destinationIndex, 0, draggedField!)
   }
+
 
   return {
     tools,
     formFields,
     draggedTool,
-    draggedFieldIndex,
     setDraggedTool,
     addField,
-    setDraggedFieldIndex,
+    updateFieldIndex
   }
 })
