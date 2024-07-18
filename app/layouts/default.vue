@@ -1,7 +1,7 @@
 <template>
   <q-layout view="hHh lpR fFf">
 
-    <q-header class="bg-primary text-white">
+    <q-header bordered class="bg-primary text-white" height-hint="98">
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
 
@@ -29,19 +29,10 @@
     </q-drawer>
 
     <q-page-container>
-      <slot />
+      <q-page :style-fn="fnTweak">
+        <slot />
+      </q-page>
     </q-page-container>
-
-    <q-footer class="bg-grey-8 text-white">
-      <q-toolbar>
-        <q-toolbar-title>
-          <q-avatar>
-            <img src="https://cdn.quasar.dev/logo-v2/svg/logo-mono-white.svg">
-          </q-avatar>
-          <div>Title</div>
-        </q-toolbar-title>
-      </q-toolbar>
-    </q-footer>
 
   </q-layout>
 </template>
@@ -51,6 +42,9 @@
 const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)
 
+// Global state
+const offsetPage = useState<number>('offset', () => 168)
+
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
@@ -59,6 +53,10 @@ function toggleRightDrawer() {
   rightDrawerOpen.value = !rightDrawerOpen.value
 }
 
+function fnTweak(offset: number, height: number) {
+  offsetPage.value = offset
+  return { minHeight: offset ? `calc(100vh - ${offset}px)` : '100vh' }
+}
 
 
 </script>

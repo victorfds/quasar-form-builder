@@ -1,6 +1,7 @@
 <template>
 
-  <section class="bg-dark" ref="previewFormSectionRef">
+  <section class="page-section bg-dark column items-center justify-start full-width" ref="previewFormSectionRef"
+    :style="`height: calc(100vh - ${offset}px);`">
 
     <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
     <!--     help="O que é isso?" /> -->
@@ -18,25 +19,34 @@
     <!--   <FormKit type="q-datetime" name="date" /> -->
 
 
-    <article class="preview-form-container bg-grey-10 q-pa-lg q-mx-auto">
-      <FormKit type="form" @submit="onSubmit" v-model="values">
 
-        <div class="form-canvas" ref="formDropableRef" @drop.prevent="onDrop" @dragover.prevent="handleDragover">
-          <div v-for="(field, index) in formFields" :key="field.name" class="overlay-preview-element q-my-md"
-            :class="{ 'active': activeNameFields.active === field?.name || activeNameFields.hover === field?.name }"
-            @dragstart="onDragStartField(index)" @dragenter="evt => onDragEnter(evt, index)" @dragend="onDragEnd"
-            @click="onClickAtFormElement(field)" @mouseover="onMouseOverAtFormElement(field)"
-            @mouseleave="onMouseLeaveAtFormElement" draggable="true">
-            <FormKitSchema :schema="field" disable />
-            <div v-if="activeNameFields.active === field?.name || activeNameFields.hover === field?.name"
-              class="preview-form-name" :name="field?.name">
+    <q-scroll-area class="full-width full-height " :content-style="scrollAreaContentStyle"
+      :content-active-style="scrollAreaContentStyle">
+      <q-card flat class="preview-form-container bg-grey-10 q-pa-lg q-my-md full-width">
+        <q-card-section>
+          <FormKit type="form" @submit="onSubmit" v-model="values">
+            <div class="form-canvas" ref="formDropableRef" @drop.prevent="onDrop" @dragover.prevent="handleDragover">
+              <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
+                :class="{ 'active': activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name }"
+                @dragstart="onDragStartField(index)" @dragenter="evt => onDragEnter(evt, index)" @dragend="onDragEnd"
+                @mouseover="onMouseOverAtFormElement(field)" @mouseleave="onMouseLeaveAtFormElement" draggable="true">
+                <FormKitSchema :schema="field" disable />
+                <div class="overlay-preview-element" @click="onClickAtFormElement(field)" />
+                <div v-if="activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                  class="preview-form-name" :name="field?.name" @click="onClickAtFormElement(field)" />
+                <q-icon name="content_copy"
+                  v-if="activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                  class="preview-form-copy-action" @click="copyField(field, index)" />
+
+              </div>
             </div>
-          </div>
-        </div>
+          </FormKit>
+          <pre wrap>{{ values }}</pre>
 
-      </FormKit>
-      <pre wrap>{{ values }}</pre>
-    </article>
+        </q-card-section>
+      </q-card>
+    </q-scroll-area>
+
 
   </section>
 </template>
@@ -50,16 +60,23 @@ const formDropableRef = ref<HTMLElement | null>(null)
 const values = ref({})
 const indexPointer = ref(0)
 const draggedFieldIndex = ref<number | null>(null)
-const activeNameFields = ref<{ active?: string, hover?: string }>({})
+const activeNameFields = ref<{ active: string[], hover?: string }>({ active: [] })
+
 const formStore = useFormStore()
 const formFields: FormKitSchemaDefinition[] = formStore.formFields
+
+const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
+
+
+// Global state
+const offset = useState('offset')
 
 // unsubscribe from listener
 let stopListening: () => void;
 
 onMounted(() => {
   stopListening = useClickOutside(previewFormSectionRef, formDropableRef, () => {
-    activeNameFields.value.active = ""
+    activeNameFields.value.active = []
   })
 })
 
@@ -107,7 +124,8 @@ const onDragEnd = (e: DragEvent) => {
 }
 
 const onClickAtFormElement = (field: FormKitSchemaDefinition) => {
-  activeNameFields.value.active = (field?.name)
+  activeNameFields.value.active[0] = (field?.name)
+  activeNameFields.value.active[1] = (field?.name)
 }
 
 const onMouseOverAtFormElement = (field: FormKitSchemaDefinition) => {
@@ -117,17 +135,29 @@ const onMouseOverAtFormElement = (field: FormKitSchemaDefinition) => {
 const onMouseLeaveAtFormElement = () => {
   activeNameFields.value.hover = ""
 }
+
+const copyField = (field: FormKitSchemaNode, index: number) => {
+  const newElemPosition = index + 1
+  activeNameFields.value.active[0] = (field?.name)
+  formStore.addField({ ...field, name: field?.name.split("_").at(0) }, newElemPosition)
+  activeNameFields.value.active[1] = formFields.at(newElemPosition)?.name
+}
 </script>
 <style lang="scss">
+:root {
+  --topY: -1.8rem;
+}
+
 .preview-form-container {
   max-width: 580px;
+  min-height: 100px;
 }
 
 .form-canvas {
-  height: 327px;
+  min-height: 100px;
 }
 
-.overlay-preview-element {
+.form-field {
   cursor: pointer;
   border-color: transparent;
   border-style: solid;
@@ -137,24 +167,44 @@ const onMouseLeaveAtFormElement = () => {
   &.active {
     border-color: #2980b9;
   }
+}
 
-  .preview-form-name {
-    position: absolute;
-    top: -1.8rem;
+.overlay-preview-element {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+}
+
+.preview-form-name {
+  position: absolute;
+  top: var(--topY);
+  left: 0;
+
+  &:before {
+    background-color: #2980b9;
+    content: attr(name);
+    top: 0;
     left: 0;
-
-    &:before {
-      background-color: #2980b9;
-      content: attr(name);
-      top: 0;
-      left: 0;
-      width: fit-content;
-      height: fit-content;
-      padding: 4px;
-      position: absolute;
-      z-index: 2;
-    }
+    width: fit-content;
+    height: fit-content;
+    padding: 4px;
+    position: absolute;
+    z-index: 2;
   }
+}
+
+.preview-form-copy-action {
+  position: absolute;
+  background-color: #2980b9;
+  top: -1.4rem;
+  right: 1.5rem;
+  width: fit-content;
+  height: fit-content;
+  padding: 4px;
+  z-index: 2;
 
 }
 </style>

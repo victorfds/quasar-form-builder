@@ -22,6 +22,8 @@ export const useFormStore = defineStore('formStore', () => {
   const formFields = ref<FormKitSchemaDefinition[]>([])
   const draggedTool = ref<null | FormKitSchemaDefinition>(null)
 
+  const { notify } = useQuasar()
+
   const setDraggedTool = (tool: FormKitSchemaDefinition | null) => {
     draggedTool.value = tool;
   }
@@ -45,6 +47,8 @@ export const useFormStore = defineStore('formStore', () => {
     } else {
       formFields.value.splice(pos, 0, field)
     }
+
+    notify({ message: `${field?.name} added` })
   }
 
   const updateFieldIndex = ({ draggedField, originalPosition, destinationIndex }: { draggedField: FormKitSchemaDefinition, originalPosition: number, destinationIndex: number }) => {
