@@ -20,9 +20,9 @@
 
 
 
-    <q-scroll-area class="full-width full-height " :content-style="scrollAreaContentStyle"
+    <q-scroll-area class="full-width fit" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle">
-      <q-card flat class="preview-form-container bg-grey-10 q-pa-lg q-my-md full-width">
+      <q-card flat class="preview-form-container bg-grey-10 q-pa-lg q-my-md full-width full-height">
         <q-card-section>
           <FormKit type="form" @submit="onSubmit" v-model="values">
             <div class="form-canvas" ref="formDropableRef" @drop.prevent="onDrop" @dragover.prevent="handleDragover">
@@ -36,7 +36,20 @@
                   class="preview-form-name" :name="field?.name" @click="onClickAtFormElement(field)" />
                 <q-icon name="content_copy"
                   v-if="activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
-                  class="preview-form-copy-action" @click="copyField(field, index)" />
+                  class="preview-form-copy-action" @click="copyField(field, index)">
+                  <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+                    self="bottom middle" :offset="[4, 4]">
+                    Clone
+                  </q-tooltip>
+                </q-icon>
+                <q-icon name="o_delete"
+                  v-if="activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                  class="preview-form-remove-action" @click="removeField(index)">
+                  <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+                    self="bottom middle" :offset="[4, 4]">
+                    Remove
+                  </q-tooltip>
+                </q-icon>
 
               </div>
             </div>
@@ -142,10 +155,14 @@ const copyField = (field: FormKitSchemaNode, index: number) => {
   formStore.addField({ ...field, name: field?.name.split("_").at(0) }, newElemPosition)
   activeNameFields.value.active[1] = formFields.at(newElemPosition)?.name
 }
+
+const removeField = (index: number) => {
+  formStore.removeField({ index })
+}
 </script>
 <style lang="scss">
 :root {
-  --topY: -1.8rem;
+  --overlay-accent-color: #2980b9;
 }
 
 .preview-form-container {
@@ -180,7 +197,7 @@ const copyField = (field: FormKitSchemaNode, index: number) => {
 
 .preview-form-name {
   position: absolute;
-  top: var(--topY);
+  top: -1.8rem;
   left: 0;
 
   &:before {
@@ -205,6 +222,16 @@ const copyField = (field: FormKitSchemaNode, index: number) => {
   height: fit-content;
   padding: 4px;
   z-index: 2;
+}
 
+.preview-form-remove-action {
+  position: absolute;
+  background-color: #2980b9;
+  top: -1.4rem;
+  right: 0;
+  width: fit-contet;
+  height: fit-content;
+  padding: 4px;
+  z-index: 2;
 }
 </style>
