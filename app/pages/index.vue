@@ -23,20 +23,38 @@
     <q-scroll-area class="full-width fit" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle">
       <q-card flat class="preview-form-container bg-grey-10 q-pa-lg q-my-md full-width full-height">
-        <q-card-section>
+        <q-card-section :class="{ 'bg-green-4': !formFields.length }">
           <FormKit type="form" @submit="onSubmit" v-model="values">
-            <div class="form-canvas" ref="formDropableRef" @drop.prevent="onDrop" @dragover.prevent="handleDragover">
+            <div class="form-canvas " ref="formDropableRef" @drop.prevent="onDrop" @dragover.prevent="handleDragover">
               <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
-                :class="{ 'active': activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name }"
-                @dragstart="onDragStartField(index)" @dragenter="evt => onDragEnter(evt, index)" @dragend="onDragEnd"
-                @mouseover="onMouseOverAtFormElement(field)" @mouseleave="onMouseLeaveAtFormElement" draggable="true">
-                <FormKitSchema :schema="field" disable />
-                <div class="overlay-preview-element" @click="onClickAtFormElement(field)" />
+                @mouseover="onMouseOverAtFormElement(field)" @mouseleave="onMouseLeaveAtFormElement">
+                <FormKitSchema :schema="field" />
+                <!-- Overlay preview -->
+                <div class="overlay-preview-element cursor-pointer" @click="onClickAtFormElement(field)"
+                  @dragstart="onDragStartField(field, index)" @dragend="evt => onDragEnd(evt, index)"
+                  :class="{ '__active': activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name, '__dragging': elementBeingDragged.field?.name === field?.name }"
+                  draggable="true" />
+                <!-- Top are drop  -->
+                <div class="preview-element-area-top bg-blue-10"
+                  :class="{ 'hidden': originalFieldIndex === 0 || Number(originalFieldIndex) < index && Math.abs(Number(originalFieldIndex) - index) !== 0 }"
+                  @dragenter="(ev) => onDragEnterInDropArea(ev, index)">
+                  <div class="preview-element-label-wrapper preview-element-label-wrapper__top">
+                    <div class="preview-element-label">Drag it here</div>
+                  </div>
+                </div>
+                <!-- Bottom area drop -->
+                <div class="preview-element-area-bottom bg-amber-8"
+                  :class="{ 'hidden': formFields.length && originalFieldIndex === formFields.length - 1 || Number(originalFieldIndex) > index && Math.abs(Number(originalFieldIndex) - index) !== 0 }"
+                  @dragenter="(ev) => onDragEnterInDropArea(ev, originalFieldIndex === null ? index + 1 : index)">
+                  <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom">
+                    <div class="preview-element-label">Drag it here</div>
+                  </div>
+                </div>
                 <div v-if="activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
-                  class="preview-form-name" :name="field?.name" @click="onClickAtFormElement(field)" />
+                  class="preview-form-name " :name="field?.name" @click="onClickAtFormElement(field)" />
                 <q-icon name="content_copy"
                   v-if="activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
-                  class="preview-form-copy-action" @click="copyField(field, index)">
+                  class="preview-form-copy-action cursor-pointer" @click="copyField(field, index)">
                   <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
                     self="bottom middle" :offset="[4, 4]">
                     Clone
@@ -44,7 +62,7 @@
                 </q-icon>
                 <q-icon name="o_delete"
                   v-if="activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
-                  class="preview-form-remove-action" @click="removeField(index)">
+                  class="preview-form-remove-action cursor-pointer" @click="removeField(index)">
                   <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
                     self="bottom middle" :offset="[4, 4]">
                     Remove
@@ -71,8 +89,9 @@ import { FormKitSchema, reset } from '@formkit/vue';
 const previewFormSectionRef = ref<HTMLElement | null>(null)
 const formDropableRef = ref<HTMLElement | null>(null)
 const values = ref({})
-const indexPointer = ref(0)
-const draggedFieldIndex = ref<number | null>(null)
+const indexPointer = ref<number | null>(null)
+const elementBeingDragged = ref<{ field?: FormKitSchemaDefinition, index?: number }>({})
+const originalFieldIndex = ref<number | null>(null)
 const activeNameFields = ref<{ active: string[], hover?: string }>({ active: [] })
 
 const formStore = useFormStore()
@@ -98,7 +117,6 @@ onUnmounted(() => {
 })
 
 const onSubmit = (data, form) => {
-  console.log(data)
   reset(form, data);
 }
 
@@ -108,32 +126,35 @@ const onDrop = (ev: DragEvent) => {
     try {
       const tool: FormKitSchemaNode = JSON.parse(toolData)
       formStore.addField(tool, indexPointer.value)
+      originalFieldIndex.value = null
     } catch {
       // silent error
     }
   }
 }
 
-const onDragStartField = (index: number) => {
-  draggedFieldIndex.value = index
+const onDragStartField = (field: FormKitSchemaDefinition, index: number) => {
+  originalFieldIndex.value = index
+  elementBeingDragged.value = { field, index }
 }
 
 const handleDragover = (ev: DragEvent) => {
-  // console.log(ev.detail)
 }
 
-const onDragEnter = (ev: DragEvent, index: number) => {
+const onDragEnterInDropArea = (e: DragEvent, index: number) => {
   indexPointer.value = index
-
-  if (draggedFieldIndex.value !== null && draggedFieldIndex.value !== index) {
-    const draggedField = formFields[draggedFieldIndex.value]!
-    formStore.updateFieldIndex({ draggedField: draggedField, originalPosition: draggedFieldIndex.value, destinationIndex: index })
-    draggedFieldIndex.value = index
-  }
 }
 
-const onDragEnd = (e: DragEvent) => {
-  draggedFieldIndex.value = null
+const onDragEnd = (e: DragEvent, index: number) => {
+
+  if (originalFieldIndex.value !== null && indexPointer.value !== null && originalFieldIndex.value !== indexPointer.value) {
+    const draggedField = formFields[index]!
+    formStore.updateFieldIndex({ draggedField: draggedField, originalPosition: index, destinationIndex: indexPointer.value })
+  }
+
+
+  originalFieldIndex.value = null
+  elementBeingDragged.value = {}
 }
 
 const onClickAtFormElement = (field: FormKitSchemaDefinition) => {
@@ -175,25 +196,81 @@ const removeField = (index: number) => {
 }
 
 .form-field {
-  cursor: pointer;
-  border-color: transparent;
-  border-style: solid;
-  border-width: 1px;
   position: relative;
-
-  &.active {
-    border-color: #2980b9;
-  }
 }
 
 .overlay-preview-element {
+  border-color: transparent;
+  border-style: solid;
+  border-width: 1px;
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 1;
+
+  &.__active {
+    border-color: #2980b9;
+  }
+
+  &.__dragging {
+    border-style: dashed;
+  }
 }
+
+.preview-element-area-top {
+  position: absolute;
+  bottom: 50%;
+  top: -.5rem;
+  left: 0;
+  right: 0;
+}
+
+
+.preview-element-area-bottom {
+  position: absolute;
+  top: 50%;
+  bottom: -.5rem;
+  left: 0;
+  right: 0;
+}
+
+.preview-element-label-wrapper {
+  pointer-events: none;
+  position: absolute;
+  height: .25rem;
+  border-radius: 9999px;
+  background-color: #a82454;
+
+  &__bottom {
+    left: -.5rem;
+    right: -.5rem;
+    bottom: -.125rem;
+  }
+
+  &__top {
+    left: -.5rem;
+    right: -.5rem;
+    top: -.125rem;
+  }
+
+  .preview-element-label {
+    color: inherit;
+    position: absolute;
+    left: 50%;
+    right: 50%;
+    border-radius: 9999px;
+    background-color: #a82454;
+    padding: .125rem .5rem;
+    font-size: .875rem;
+    line-height: 1rem;
+    transform: translate(-2.5rem, -.5rem);
+    text-wrap: nowrap;
+    width: fit-content;
+  }
+}
+
 
 .preview-form-name {
   position: absolute;

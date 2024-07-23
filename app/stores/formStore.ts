@@ -6,14 +6,12 @@ export const useFormStore = defineStore('formStore', () => {
       $formkit: 'q-input',
       name: 'input',
       label: 'Entrada de texto',
-      help: 'Enter your first name',
       validation: 'required',
     },
     {
       $formkit: 'q-select',
       name: 'select',
       label: 'Selecione as opções',
-      help: 'opções',
       options: [{ label: 'Opção 1', value: 'option1' }],
       validation: 'required',
     }
@@ -28,7 +26,8 @@ export const useFormStore = defineStore('formStore', () => {
     draggedTool.value = tool;
   }
 
-  const addField = (field: FormKitSchemaNode, pos: number) => {
+  const addField = (field: FormKitSchemaNode, pos?: number | null) => {
+    pos = Number(pos)
     const nameExists = (name: string) => formFields.value.some(el => el?.name === name)
     const formLength = formFields.value.length
 
@@ -40,10 +39,11 @@ export const useFormStore = defineStore('formStore', () => {
 
     field.name = generateUniqueName(field?.name)
 
-    if (pos >= formLength || pos >= formLength - 1) {
-      formFields.value.push(field)
-    } else if (pos <= 0) {
+    if (pos <= 0) {
       formFields.value.unshift(field)
+    }
+    else if (pos >= formLength) {
+      formFields.value.push(field)
     } else {
       formFields.value.splice(pos, 0, field)
     }
