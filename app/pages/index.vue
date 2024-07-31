@@ -22,30 +22,31 @@
 
     <q-scroll-area class="full-width fit" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle">
-      <q-card flat class="preview-form-container bg-grey-10 q-pa-lg q-my-md full-width full-height">
+      <q-card flat class="preview-form-container bg-grey-10 q-px-lg q-my-md full-width full-height">
         <q-card-section :class="{ 'bg-green-4': !formFields.length }">
           <FormKit type="form" @submit="onSubmit" v-model="values">
-            <div class="form-canvas " ref="formDropableRef" @drop.prevent="onDrop" @dragover.prevent="handleDragover">
+            <div class="form-canvas full-height q-py-xl" ref="formDroppableRef" @drop.prevent="onDrop"
+              @dragover.prevent="handleDragover">
               <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
                 @mouseover="onMouseOverAtFormElement(field)" @mouseleave="onMouseLeaveAtFormElement">
                 <FormKitSchema :schema="field" />
                 <!-- Overlay preview -->
                 <div class="overlay-preview-element cursor-pointer" @click="onClickAtFormElement(field)"
-                  @dragstart="onDragStartField(field, index)" @dragend="evt => onDragEnd(evt, index)"
+                  @dragstart="onDragStartField(field, index)" @dragend="onDragEnd(index)"
                   :class="{ '__active': activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name, '__dragging': elementBeingDragged.field?.name === field?.name }"
                   draggable="true" />
                 <!-- Top are drop  -->
-                <div class="preview-element-area-top bg-blue-10"
-                  :class="{ 'hidden': originalFieldIndex === 0 || Number(originalFieldIndex) < index && Math.abs(Number(originalFieldIndex) - index) !== 0 }"
-                  @dragenter="(ev) => onDragEnterInDropArea(ev, index)">
+                <div class="preview-element-area-top bg-purple-8" @dragenter="(ev) => onDragEnterInDropArea(ev, index)"
+                  @dragover="console.log('drag over top area')"
+                  :class="{ 'hidden': !elementBeingDragged.field?.name || elementBeingDragged.field?.name === field?.name || Number(originalFieldIndex) < index && Math.abs(Number(originalFieldIndex) - index) !== 0 }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__top">
                     <div class="preview-element-label">Drag it here</div>
                   </div>
                 </div>
                 <!-- Bottom area drop -->
-                <div class="preview-element-area-bottom bg-amber-8"
-                  :class="{ 'hidden': formFields.length && originalFieldIndex === formFields.length - 1 || Number(originalFieldIndex) > index && Math.abs(Number(originalFieldIndex) - index) !== 0 }"
-                  @dragenter="(ev) => onDragEnterInDropArea(ev, originalFieldIndex === null ? index + 1 : index)">
+                <div class="preview-element-area-bottom bg-yellow-8"
+                  @dragenter="(ev) => onDragEnterInDropArea(ev, Number(elementBeingDragged?.index) - 1 === index ? index + 1 : index)"
+                  :class="{ 'hidden': !elementBeingDragged.field?.name || elementBeingDragged.field?.name === field?.name || originalFieldIndex === formFields.length - 1 || Number(originalFieldIndex) > index + 1 && Math.abs(Number(originalFieldIndex) - index) !== 0 }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom">
                     <div class="preview-element-label">Drag it here</div>
                   </div>
@@ -87,7 +88,7 @@ import { FormKitSchema, reset } from '@formkit/vue';
 
 // local variables
 const previewFormSectionRef = ref<HTMLElement | null>(null)
-const formDropableRef = ref<HTMLElement | null>(null)
+const formDroppableRef = ref<HTMLElement | null>(null)
 const values = ref({})
 const indexPointer = ref<number | null>(null)
 const elementBeingDragged = ref<{ field?: FormKitSchemaDefinition, index?: number }>({})
@@ -107,9 +108,14 @@ const offset = useState('offset')
 let stopListening: () => void;
 
 onMounted(() => {
-  stopListening = useClickOutside(previewFormSectionRef, formDropableRef, () => {
+  stopListening = useClickOutside(previewFormSectionRef, formDroppableRef, () => {
     activeNameFields.value.active = []
   })
+
+  useEventOutside(previewFormSectionRef, formDroppableRef, 'dragover', e => {
+    console.log('Drag over OUTSIDE droppable ref')
+  })
+
 })
 
 onUnmounted(() => {
@@ -120,6 +126,11 @@ const onSubmit = (data, form) => {
   reset(form, data);
 }
 
+const onDropInUndroppableArea = (ev: DragEvent) => {
+  originalFieldIndex.value = null
+  indexPointer.value = null
+}
+
 const onDrop = (ev: DragEvent) => {
   const toolData = ev.dataTransfer?.getData("text")
   if (toolData) {
@@ -127,6 +138,8 @@ const onDrop = (ev: DragEvent) => {
       const tool: FormKitSchemaNode = JSON.parse(toolData)
       formStore.addField(tool, indexPointer.value)
       originalFieldIndex.value = null
+      indexPointer.value = null
+      elementBeingDragged.value = {}
     } catch {
       // silent error
     }
@@ -134,19 +147,22 @@ const onDrop = (ev: DragEvent) => {
 }
 
 const onDragStartField = (field: FormKitSchemaDefinition, index: number) => {
+  console.log('Drag started for ' + index)
   originalFieldIndex.value = index
   elementBeingDragged.value = { field, index }
 }
 
 const handleDragover = (ev: DragEvent) => {
+  // this fn is needed in order to drop work in from area
 }
 
 const onDragEnterInDropArea = (e: DragEvent, index: number) => {
   indexPointer.value = index
 }
 
-const onDragEnd = (e: DragEvent, index: number) => {
+const onDragEnd = (index: number) => {
 
+  console.log('Drag ended for ' + index)
   if (originalFieldIndex.value !== null && indexPointer.value !== null && originalFieldIndex.value !== indexPointer.value) {
     const draggedField = formFields[index]!
     formStore.updateFieldIndex({ draggedField: draggedField, originalPosition: index, destinationIndex: indexPointer.value })
@@ -154,6 +170,7 @@ const onDragEnd = (e: DragEvent, index: number) => {
 
 
   originalFieldIndex.value = null
+  indexPointer.value = null
   elementBeingDragged.value = {}
 }
 
@@ -197,6 +214,7 @@ const removeField = (index: number) => {
 
 .form-field {
   position: relative;
+  pointer-events: auto;
 }
 
 .overlay-preview-element {
@@ -208,14 +226,15 @@ const removeField = (index: number) => {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1;
 
   &.__active {
     border-color: #2980b9;
+    z-index: 1;
   }
 
   &.__dragging {
     border-style: dashed;
+    z-index: 1;
   }
 }
 
@@ -225,6 +244,10 @@ const removeField = (index: number) => {
   top: -.5rem;
   left: 0;
   right: 0;
+
+  &:hover {
+    background: #7ff6aa;
+  }
 }
 
 
@@ -268,6 +291,7 @@ const removeField = (index: number) => {
     transform: translate(-2.5rem, -.5rem);
     text-wrap: nowrap;
     width: fit-content;
+
   }
 }
 
@@ -286,7 +310,6 @@ const removeField = (index: number) => {
     height: fit-content;
     padding: 4px;
     position: absolute;
-    z-index: 2;
   }
 }
 
@@ -298,7 +321,6 @@ const removeField = (index: number) => {
   width: fit-content;
   height: fit-content;
   padding: 4px;
-  z-index: 2;
 }
 
 .preview-form-remove-action {
@@ -309,6 +331,5 @@ const removeField = (index: number) => {
   width: fit-contet;
   height: fit-content;
   padding: 4px;
-  z-index: 2;
 }
 </style>
