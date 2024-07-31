@@ -36,9 +36,10 @@
                   :class="{ '__active': activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name, '__dragging': elementBeingDragged.field?.name === field?.name }"
                   draggable="true" />
                 <!-- Top are drop  -->
-                <div class="preview-element-area-top bg-purple-8" @dragenter="(ev) => onDragEnterInDropArea(ev, index)"
+                <div class="preview-element-area-top bg-purple-8"
+                  @dragenter="(ev) => onDragEnterInDropArea(ev, Number(elementBeingDragged?.index) + 1 === index ? index - 1 : index)"
                   @dragover="console.log('drag over top area')"
-                  :class="{ 'hidden': !elementBeingDragged.field?.name || elementBeingDragged.field?.name === field?.name || Number(originalFieldIndex) < index && Math.abs(Number(originalFieldIndex) - index) !== 0 }">
+                  :class="{ 'hidden': !elementBeingDragged.field?.name || elementBeingDragged.field?.name === field?.name || Number(originalFieldIndex) < index - 1 && Math.abs(Number(originalFieldIndex) - index) !== 0 }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__top">
                     <div class="preview-element-label">Drag it here</div>
                   </div>
@@ -46,7 +47,7 @@
                 <!-- Bottom area drop -->
                 <div class="preview-element-area-bottom bg-yellow-8"
                   @dragenter="(ev) => onDragEnterInDropArea(ev, Number(elementBeingDragged?.index) - 1 === index ? index + 1 : index)"
-                  :class="{ 'hidden': !elementBeingDragged.field?.name || elementBeingDragged.field?.name === field?.name || originalFieldIndex === formFields.length - 1 || Number(originalFieldIndex) > index + 1 && Math.abs(Number(originalFieldIndex) - index) !== 0 }">
+                  :class="{ 'hidden': !elementBeingDragged.field?.name || elementBeingDragged.field?.name === field?.name || Number(originalFieldIndex) === formFields.length - 1 || Number(originalFieldIndex) > index + 1 && Math.abs(Number(originalFieldIndex) - index) !== 0 }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom">
                     <div class="preview-element-label">Drag it here</div>
                   </div>
