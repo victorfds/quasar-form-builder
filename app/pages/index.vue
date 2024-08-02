@@ -49,7 +49,6 @@
                 <div class="preview-element-area-bottom bg-yellow-8"
                   @dragenter="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
                   @dragleave="onDragLeaveDropArea"
-                  @dragover="console.log((Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index + 1) || (Number(elementBeingDragged?.index) < index && dragInIndicator?.index !== index))"
                   :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
                     :class="{ 'hidden': dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index + 1) || (Number(elementBeingDragged?.index) < index && dragInIndicator?.index !== index) }">
@@ -171,7 +170,7 @@ const onDragEnterInDropArea = (e: DragEvent, fieldName: string, index: number) =
 }
 
 const onDragLeaveDropArea = (e: DragEvent) => {
-  indexPointer.value = null
+  // indexPointer.value = null
   // dragInIndicator.value = {}
 }
 
