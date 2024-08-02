@@ -33,33 +33,31 @@
                 <!-- Overlay preview -->
                 <div class="overlay-preview-element cursor-pointer" @click="onClickAtFormElement(field)"
                   @dragstart="onDragStartField(field, index)" @dragend="onDragEnd(index)"
-                  :class="{ '__active': !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name), '__dragging': elementBeingDragged.field?.name === field?.name }"
+                  :class="{ '__active': !elementBeingDragged.field && !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name), '__dragging': elementBeingDragged.field?.name === field?.name }"
                   draggable="true" />
                 <!-- Top are drop  -->
-                <div class="preview-element-area-top bg-purple-8"
+                <div class="preview-element-area-top"
                   @dragenter="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) < index ? index - 1 : index)"
-                  @dragleave="onDragLeaveDropArea"
-                  :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
+                  @dragover="onDragOverDropArea" :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__top"
                     :class="{ 'hidden': dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index) || (Number(elementBeingDragged?.index) < index && dragInIndicator.index !== index - 1) }">
                     <div class="preview-element-label">Drag it here</div>
                   </div>
                 </div>
                 <!-- Bottom area drop -->
-                <div class="preview-element-area-bottom bg-yellow-8"
+                <div class="preview-element-area-bottom"
                   @dragenter="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
-                  @dragleave="onDragLeaveDropArea"
-                  :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
+                  @dragover="onDragOverDropArea" :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
                     :class="{ 'hidden': dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index + 1) || (Number(elementBeingDragged?.index) < index && dragInIndicator?.index !== index) }">
                     <div class="preview-element-label">Drag it here</div>
                   </div>
                 </div>
                 <div
-                  v-if="!elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
+                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
                   class="preview-form-name " :name="field?.name" @click="onClickAtFormElement(field)" />
                 <q-icon name="content_copy"
-                  v-if="!elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
+                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
                   class="preview-form-copy-action cursor-pointer" @click="copyField(field, index)">
                   <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
                     self="bottom middle" :offset="[4, 4]">
@@ -67,7 +65,7 @@
                   </q-tooltip>
                 </q-icon>
                 <q-icon name="o_delete"
-                  v-if="!elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
+                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
                   class="preview-form-remove-action cursor-pointer" @click="removeField(index)">
                   <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
                     self="bottom middle" :offset="[4, 4]">
@@ -119,7 +117,8 @@ onMounted(() => {
   })
 
   useEventOutside(previewFormSectionRef, formDroppableRef, 'dragover', e => {
-    console.log('Drag over OUTSIDE droppable ref')
+    indexPointer.value = null
+    dragInIndicator.value = {}
   })
 
 })
@@ -132,11 +131,6 @@ const onSubmit = (data, form) => {
   reset(form, data);
 }
 
-const onDropInUndroppableArea = (ev: DragEvent) => {
-  originalFieldIndex.value = null
-  indexPointer.value = null
-}
-
 const onDrop = (ev: DragEvent) => {
   const toolData = ev.dataTransfer?.getData("text")
   if (toolData) {
@@ -146,6 +140,7 @@ const onDrop = (ev: DragEvent) => {
       originalFieldIndex.value = null
       indexPointer.value = null
       elementBeingDragged.value = {}
+      dragInIndicator.value = {}
     } catch {
       // silent error
     }
@@ -153,7 +148,6 @@ const onDrop = (ev: DragEvent) => {
 }
 
 const onDragStartField = (field: FormKitSchemaDefinition, index: number) => {
-  console.log('Drag started for ' + index)
   originalFieldIndex.value = index
   elementBeingDragged.value = { field, index }
 }
@@ -163,20 +157,20 @@ const handleDragover = (ev: DragEvent) => {
 }
 
 const onDragEnterInDropArea = (e: DragEvent, fieldName: string, index: number) => {
-  console.log(`Index: ${index} Name: ${fieldName}`)
   dragInIndicator.value.index = index
   dragInIndicator.value.name = fieldName
   indexPointer.value = index
 }
 
-const onDragLeaveDropArea = (e: DragEvent) => {
-  // indexPointer.value = null
-  // dragInIndicator.value = {}
+const onDragOverDropArea = (e: DragEvent) => {
+  if (!elementBeingDragged.value.index) {
+    elementBeingDragged.value.index = formFields.length
+    elementBeingDragged.value.field = formFields.at(-1)?.name
+  }
 }
 
 const onDragEnd = (index: number) => {
 
-  console.log('Drag ended for ' + index)
   if (originalFieldIndex.value !== null && indexPointer.value !== null && originalFieldIndex.value !== indexPointer.value) {
     const draggedField = formFields[index]!
     formStore.updateFieldIndex({ draggedField: draggedField, originalPosition: index, destinationIndex: indexPointer.value })
@@ -186,6 +180,7 @@ const onDragEnd = (index: number) => {
   originalFieldIndex.value = null
   indexPointer.value = null
   elementBeingDragged.value = {}
+  dragInIndicator.value = {}
 }
 
 const onClickAtFormElement = (field: FormKitSchemaDefinition) => {
@@ -259,10 +254,6 @@ const removeField = (index: number) => {
   top: -.5rem;
   left: 0;
   right: 0;
-
-  &:hover {
-    background: #7ff6aa;
-  }
 }
 
 
