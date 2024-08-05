@@ -316,6 +316,7 @@ const removeField = (index: number) => {
     height: fit-content;
     padding: 4px;
     position: absolute;
+    z-index: 2;
   }
 }
 
