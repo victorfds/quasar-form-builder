@@ -1,21 +1,6 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from "@formkit/core"
 
 export const useFormStore = defineStore('formStore', () => {
-  const tools = ref<FormKitSchemaDefinition>([
-    {
-      $formkit: 'q-input',
-      name: 'input',
-      label: 'Entrada de texto',
-      validation: 'required',
-    },
-    {
-      $formkit: 'q-select',
-      name: 'select',
-      label: 'Selecione as opções',
-      options: [{ label: 'Opção 1', value: 'option1' }],
-      validation: 'required',
-    }
-  ])
 
   const formFields = ref<FormKitSchemaDefinition[]>([])
   const draggedTool = ref<null | FormKitSchemaDefinition>(null)
@@ -62,7 +47,6 @@ export const useFormStore = defineStore('formStore', () => {
 
 
   return {
-    tools,
     formFields,
     draggedTool,
     setDraggedTool,

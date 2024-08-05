@@ -10,11 +10,25 @@
 </template>
 
 <script setup lang="ts">
-import type { FormKitSchemaNode } from '@formkit/core';
+import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core';
 
 const model = defineModel()
 const formStore = useFormStore()
-const tools = formStore.tools
+const tools = ref<Record<{name: string, icon: string, description: string}, FormKitSchemaDefinition>>([
+    {
+      $formkit: 'q-input',
+      name: 'input',
+      label: 'Entrada de texto',
+      validation: 'required',
+    },
+    {
+      $formkit: 'q-select',
+      name: 'select',
+      label: 'Selecione as opções',
+      options: [{ label: 'Opção 1', value: 'option1' }],
+      validation: 'required',
+    }
+  ])
 
 const onDragStart = (ev: DragEvent, tool: FormKitSchemaNode) => {
   // Add this element's id to the drag payload so the drop handler will
