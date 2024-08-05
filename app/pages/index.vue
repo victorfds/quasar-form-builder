@@ -163,7 +163,7 @@ const onDragEnterInDropArea = (e: DragEvent, fieldName: string, index: number) =
 }
 
 const onDragOverDropArea = (e: DragEvent) => {
-  if (!elementBeingDragged.value.index) {
+  if (!elementBeingDragged.value.field && !elementBeingDragged.value.index) {
     elementBeingDragged.value.index = formFields.length
     elementBeingDragged.value.field = formFields.at(-1)?.name
   }
