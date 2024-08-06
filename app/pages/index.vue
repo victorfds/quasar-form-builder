@@ -1,44 +1,60 @@
 <template>
+  <section class="bg-dark row items-start justify-center full-width" ref="previewFormSectionRef">
+    <!-- :style="`height: calc(100vh - ${offset}px);`" -->
+    <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
+      :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`">
 
-  <section class="page-section bg-dark column items-center justify-start full-width" ref="previewFormSectionRef"
-    :style="`height: calc(100vh - ${offset}px);`">
-
-    <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
-    <!--     help="O que é isso?" /> -->
-    <!--   <FormKit type="q-input" label="Number label" name="number1" input-type="number" -->
-    <!--     validation="required:trim|number|min:1" /> -->
-    <!--   <FormKit type="q-input" label="Email" name="email" input-type="email" validation="required:trim|email" /> -->
-    <!--   <FormKit type="q-select" label="Select options" name="select1" -->
-    <!--     :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" -->
-    <!--     help="Select one of the two options" /> -->
-    <!--   <FormKit type="q-btn-toggle" label="Select options" name="toggle" -->
-    <!--     :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" /> -->
-    <!--   <FormKit type="q-checkbox" label="Concordo com os termos" name="check1" /> -->
-    <!--   <FormKit type="q-editor" name="editor" label="Edite seu texto aqui" /> -->
-    <!--   <FormKit type="q-date" name="date1" /> -->
-    <!--   <FormKit type="q-datetime" name="date" /> -->
+      <q-tabs vertical dense shrink class="rounded-borders fixed-left bg-grey-10 text-grey-11 q-ml-sm q-mt-md"
+        indicator-color="transparent" active-bg-color="secondary" style="max-height: 6.75rem;">
+        <q-tab name="edit" icon="edit">
+          <q-tooltip anchor="center right" self="center left" :offset="[2, 2]">
+            Editor
+          </q-tooltip>
+        </q-tab>
+        <q-tab name="alarms" icon="alarm" />
+        <q-tab name="movies" icon="movie" />
+      </q-tabs>
 
 
+      <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
+      <!--     help="O que é isso?" /> -->
+      <!--   <FormKit type="q-input" label="Number label" name="number1" input-type="number" -->
+      <!--     validation="required:trim|number|min:1" /> -->
+      <!--   <FormKit type="q-input" label="Email" name="email" input-type="email" validation="required:trim|email" /> -->
+      <!--   <FormKit type="q-select" label="Select options" name="select1" -->
+      <!--     :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" -->
+      <!--     help="Select one of the two options" /> -->
+      <!--   <FormKit type="q-btn-toggle" label="Select options" name="toggle" -->
+      <!--     :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" /> -->
+      <!--   <FormKit type="q-checkbox" label="Concordo com os termos" name="check1" /> -->
+      <!--   <FormKit type="q-editor" name="editor" label="Edite seu texto aqui" /> -->
+      <!--   <FormKit type="q-date" name="date1" /> -->
+      <!--   <FormKit type="q-datetime" name="date" /> -->
 
-    <q-scroll-area class="full-width fit" :content-style="scrollAreaContentStyle"
-      :content-active-style="scrollAreaContentStyle">
+
+
+      <!-- <q-scroll-area class="bg-yellow-9 full-width fit" :content-style="scrollAreaContentStyle" -->
+      <!--   :content-active-style="scrollAreaContentStyle"> -->
       <q-card flat class="preview-form-container bg-grey-10 q-px-lg q-my-md full-width full-height">
         <q-card-section :class="{ 'bg-green-4': !formFields.length }">
           <FormKit type="form" @submit="onSubmit" v-model="values" :actions="false">
             <div class="form-canvas full-height q-py-xl" ref="formDroppableRef" @drop.prevent="onDrop"
               @dragover.prevent="handleDragover">
               <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
-                @mouseover="onMouseOverAtFormElement(field)" @mouseleave="onMouseLeaveAtFormElement">
+                @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
                 <FormKitSchema :schema="field" />
                 <!-- Overlay preview -->
                 <div class="overlay-preview-element cursor-pointer" @click="onClickAtFormElement(field)"
-                  @dragstart="onDragStartField(field, index)" @dragend="onDragEnd(index)"
-                  :class="{ '__active': !elementBeingDragged.field && !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name), '__dragging': elementBeingDragged.field?.name === field?.name }"
-                  draggable="true" />
+                  @dragstart="onDragStartField(field, index)" @dragend="onDragEnd(index)" :class="{
+                    '__active': !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name),
+                    '__dragging': elementBeingDragged.field?.name === field?.name,
+                    '__hover': activeNameFields.hover === field?.name
+                  }" draggable="true" />
                 <!-- Top are drop  -->
                 <div class="preview-element-area-top"
-                  @dragenter="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) < index ? index - 1 : index)"
-                  @dragover="onDragOverDropArea" :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
+                  @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) < index ? index - 1 : index)"
+                  @dragover.prevent="onDragOverDropArea"
+                  :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__top"
                     :class="{ 'hidden': dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index) || (Number(elementBeingDragged?.index) < index && dragInIndicator.index !== index - 1) }">
                     <div class="preview-element-label">Drag it here</div>
@@ -46,18 +62,19 @@
                 </div>
                 <!-- Bottom area drop -->
                 <div class="preview-element-area-bottom"
-                  @dragenter="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
-                  @dragover="onDragOverDropArea" :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
+                  @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
+                  @dragover.prevent="onDragOverDropArea"
+                  :class="{ 'hidden': elementBeingDragged.field?.name === field?.name }">
                   <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
                     :class="{ 'hidden': dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index + 1) || (Number(elementBeingDragged?.index) < index && dragInIndicator?.index !== index) }">
                     <div class="preview-element-label">Drag it here</div>
                   </div>
                 </div>
                 <div
-                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
+                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
                   class="preview-form-name " :name="field?.name" @click="onClickAtFormElement(field)" />
                 <q-icon name="content_copy"
-                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
+                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
                   class="preview-form-copy-action cursor-pointer" @click="copyField(field, index)">
                   <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
                     self="bottom middle" :offset="[4, 4]">
@@ -65,7 +82,7 @@
                   </q-tooltip>
                 </q-icon>
                 <q-icon name="o_delete"
-                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && (activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name)"
+                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
                   class="preview-form-remove-action cursor-pointer" @click="removeField(index)">
                   <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
                     self="bottom middle" :offset="[4, 4]">
@@ -80,8 +97,23 @@
 
         </q-card-section>
       </q-card>
-    </q-scroll-area>
+      <!-- </q-scroll-area> -->
 
+
+      <q-tabs vertical dense shrink class="rounded-borders fixed-right bg-grey-10 text-grey-11 q-mr-sm q-mt-md"
+        indicator-color="transparent" active-bg-color="secondary" style="max-height: 4.5rem;">
+        <q-tab name="undo" icon="undo">
+          <q-tooltip anchor="center left" self="center right" :offset="[2, 2]">
+            Retroceder
+          </q-tooltip>
+        </q-tab>
+        <q-tab name="redo" icon="redo">
+          <q-tooltip anchor="center left" self="center right" :offset="[2, 2]">
+            Avançar
+          </q-tooltip>
+        </q-tab>
+      </q-tabs>
+    </q-scroll-area>
 
   </section>
 </template>
@@ -137,12 +169,13 @@ const onDrop = (ev: DragEvent) => {
     try {
       const tool: FormKitSchemaNode = JSON.parse(toolData)
       formStore.addField(tool, indexPointer.value)
+    } catch {
+      // silent error
+    } finally {
       originalFieldIndex.value = null
       indexPointer.value = null
       elementBeingDragged.value = {}
       dragInIndicator.value = {}
-    } catch {
-      // silent error
     }
   }
 }
@@ -163,7 +196,7 @@ const onDragEnterInDropArea = (e: DragEvent, fieldName: string, index: number) =
 }
 
 const onDragOverDropArea = (e: DragEvent) => {
-  if (!elementBeingDragged.value.field && !elementBeingDragged.value.index) {
+  if (!originalFieldIndex.value && !elementBeingDragged.value.field && !elementBeingDragged.value.index) {
     elementBeingDragged.value.index = formFields.length
     elementBeingDragged.value.field = formFields.at(-1)?.name
   }
@@ -184,12 +217,12 @@ const onDragEnd = (index: number) => {
 }
 
 const onClickAtFormElement = (field: FormKitSchemaDefinition) => {
-  activeNameFields.value.active[0] = (field?.name)
-  activeNameFields.value.active[1] = (field?.name)
+  activeNameFields.value.active[0] = field?.name
+  activeNameFields.value.active[1] = field?.name
 }
 
 const onMouseOverAtFormElement = (field: FormKitSchemaDefinition) => {
-  activeNameFields.value.hover = (field?.name)
+  activeNameFields.value.hover = field?.name
 }
 
 const onMouseLeaveAtFormElement = () => {
@@ -235,6 +268,13 @@ const removeField = (index: number) => {
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 1;
+
+  &.__hover {
+    border-color: #2980b9;
+    z-index: 1;
+  }
+
 
   &.__active {
     border-color: #2980b9;

@@ -1,12 +1,17 @@
 <template>
-  <q-drawer class="q-px-md q-py-md" show-if-above v-model="model" side="left" bordered>
-    <q-scroll-area class="fit" visible>
+  <q-drawer class="no-scroll" show-if-above persistent v-model="model" side="left" bordered>
+    <q-tabs narrow-indicator class="bg-transparent" align="justify" indicator-color="transparent"
+      active-bg-color="grey-9">
+      <q-tab name="elements" label="Elementos" no-caps />
+      <q-tab name="tree" label="Árvore" no-caps />
+    </q-tabs>
+    <q-scroll-area class="fit q-pa-md" visible>
       <div v-for="tool in tools" :key="tool.name" class="tool-item" draggable="true"
         @dragstart="event => onDragStart(event, tool.schema)">
         <div class="row items-center no-wrap q-mb-lg">
           <q-avatar rounded size="lg" font-size="1.4rem" color="grey-9" text-color="grey-5" :icon="tool.icon" />
           <div class="q-ml-sm">
-            <div class="text-grey-11 text-weight-medium ">
+            <div class="text-grey-11 text-weight-medium text-subtitle2">
               {{ tool.title }}
             </div>
             <div class="text-grey-7 text-caption">
@@ -33,7 +38,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
     {
       $formkit: 'q-input',
       name: 'text',
-      label: 'Entrada de texto',
+      label: 'Texto',
     },
   },
   {
@@ -110,7 +115,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
 const onDragStart = (ev: DragEvent, tool: FormKitSchemaNode) => {
   // Add this element's id to the drag payload so the drop handler will
   // know which element to add to its tree
-  ev.dataTransfer?.setData("text", JSON.stringify(tool));
+  ev.dataTransfer?.setData("text", JSON.stringify(tool))
 }
 </script>
 <style lang="scss">

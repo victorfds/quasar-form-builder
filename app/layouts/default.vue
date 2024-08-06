@@ -14,19 +14,11 @@
 
         <q-btn dense flat round icon="menu" @click="toggleRightDrawer" />
       </q-toolbar>
-
-      <q-tabs align="left">
-        <q-tab to="/page1" label="Page One" />
-        <q-tab to="/page2" label="Page Two" />
-        <q-tab to="/page3" label="Page Three" />
-      </q-tabs>
     </q-header>
 
     <TheLeftDrawer v-model="leftDrawerOpen" />
 
-    <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered>
-      <!-- drawer content -->
-    </q-drawer>
+    <TheRightDrawer v-model="rightDrawerOpen" />
 
     <q-page-container>
       <q-page :style-fn="fnTweak">
