@@ -3,13 +3,8 @@ import type { FormKitSchemaDefinition, FormKitSchemaNode } from "@formkit/core"
 export const useFormStore = defineStore('formStore', () => {
 
   const formFields = ref<FormKitSchemaDefinition[]>([])
-  const draggedTool = ref<null | FormKitSchemaDefinition>(null)
 
   const { notify } = useQuasar()
-
-  const setDraggedTool = (tool: FormKitSchemaDefinition | null) => {
-    draggedTool.value = tool;
-  }
 
   const addField = (field: FormKitSchemaNode, pos?: number | null) => {
     pos = Number(pos)
@@ -48,8 +43,6 @@ export const useFormStore = defineStore('formStore', () => {
 
   return {
     formFields,
-    draggedTool,
-    setDraggedTool,
     addField,
     updateFieldIndex,
     removeField

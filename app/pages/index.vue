@@ -24,7 +24,7 @@
       :content-active-style="scrollAreaContentStyle">
       <q-card flat class="preview-form-container bg-grey-10 q-px-lg q-my-md full-width full-height">
         <q-card-section :class="{ 'bg-green-4': !formFields.length }">
-          <FormKit type="form" @submit="onSubmit" v-model="values">
+          <FormKit type="form" @submit="onSubmit" v-model="values" :actions="false">
             <div class="form-canvas full-height q-py-xl" ref="formDroppableRef" @drop.prevent="onDrop"
               @dragover.prevent="handleDragover">
               <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
@@ -76,7 +76,7 @@
               </div>
             </div>
           </FormKit>
-          <pre wrap>{{ values }}</pre>
+          <!-- <pre wrap>{{ values }}</pre> -->
 
         </q-card-section>
       </q-card>
