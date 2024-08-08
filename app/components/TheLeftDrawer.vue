@@ -1,20 +1,22 @@
 <template>
   <q-drawer class="no-scroll" show-if-above persistent v-model="model" side="left" bordered>
-    <q-tabs narrow-indicator class="bg-transparent" align="justify" indicator-color="transparent"
-      active-bg-color="grey-9">
+    <q-tabs narrow-indicator :class="dark.isActive ? 'bg-transparent' : 'bg-blue-grey-1'" align="justify"
+      indicator-color="transparent" :active-bg-color="dark.isActive ? 'grey-9' : 'white'">
       <q-tab name="elements" label="Elementos" no-caps />
       <q-tab name="tree" label="Árvore" no-caps />
     </q-tabs>
     <q-scroll-area class="fit q-pa-md" visible>
       <div v-for="tool in tools" :key="tool.name" class="tool-item" draggable="true"
         @dragstart="event => onDragStart(event, tool.schema)">
-        <div class="row items-center no-wrap q-mb-lg">
-          <q-avatar rounded size="lg" font-size="1.4rem" color="grey-9" text-color="grey-5" :icon="tool.icon" />
+        <div class="row items-start no-wrap q-mb-lg">
+          <q-avatar rounded size="md" font-size="1.3rem" :color="dark.isActive ? 'grey-9' : 'blue-grey-2'"
+            :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'" :icon="tool.icon" />
           <div class="q-ml-sm">
-            <div class="text-grey-11 text-weight-medium text-subtitle2">
+            <div class="tool-title text-weight-semibold text-subtitle2"
+              :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
               {{ tool.title }}
             </div>
-            <div class="text-grey-7 text-caption">
+            <div class="tool-description text-caption" :class="dark.isActive ? 'text-grey-7 ' : 'text-blue-grey-7'">
               {{ tool.description }}
             </div>
           </div>
@@ -28,6 +30,7 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core';
 
 const model = defineModel()
+const { dark } = useQuasar()
 const tools = ref<{ name: string, icon: string, title: string, description: string, schema: FormKitSchemaDefinition }>([
   {
     name: 'text',
@@ -121,6 +124,14 @@ const onDragStart = (ev: DragEvent, tool: FormKitSchemaNode) => {
 <style lang="scss">
 .tool-item {
   cursor: grab;
+}
+
+.tool-title {
+  line-height: 1rem;
+}
+
+.tool-description {
+  line-height: 1rem;
 }
 
 .tool-item:active {

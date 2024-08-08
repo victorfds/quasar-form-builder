@@ -1,17 +1,23 @@
 <template>
-  <section class="bg-dark row items-start justify-center full-width" ref="previewFormSectionRef">
+  <section class=" row items-start justify-center full-width" :class="dark.isActive ? 'bg-dark' : 'bg-blue-grey-1'"
+    ref="previewFormSectionRef">
     <!-- :style="`height: calc(100vh - ${offset}px);`" -->
     <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`">
 
-      <q-tabs vertical dense shrink class="rounded-borders fixed-left bg-grey-10 text-grey-11 q-ml-sm q-mt-md"
-        indicator-color="transparent" active-bg-color="secondary" style="max-height: 6.75rem;">
+      <q-tabs vertical dense shrink class="rounded-borders fixed-left  q-ml-sm q-mt-md"
+        :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+        active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 6.75rem;">
         <q-tab name="edit" icon="edit">
           <q-tooltip anchor="center right" self="center left" :offset="[2, 2]">
-            Editor
+            Editar
           </q-tooltip>
         </q-tab>
-        <q-tab name="alarms" icon="alarm" />
+        <q-tab name="alarms" icon="visibility">
+          <q-tooltip anchor="center right" self="center left" :offset="[2, 2]">
+            Pre-visualizar
+          </q-tooltip>
+        </q-tab>
         <q-tab name="movies" icon="movie" />
       </q-tabs>
 
@@ -35,7 +41,8 @@
 
       <!-- <q-scroll-area class="bg-yellow-9 full-width fit" :content-style="scrollAreaContentStyle" -->
       <!--   :content-active-style="scrollAreaContentStyle"> -->
-      <q-card flat class="preview-form-container bg-grey-10 q-px-lg q-my-md full-width full-height">
+      <q-card flat class="preview-form-container q-px-lg q-my-md full-width full-height"
+        :class="dark.isActive ? 'bg-grey-10' : 'white'">
         <q-card-section :class="{ 'bg-green-4': !formFields.length }">
           <FormKit type="form" @submit="onSubmit" v-model="values" :actions="false">
             <div class="form-canvas full-height q-py-xl" ref="formDroppableRef" @drop.prevent="onDrop"
@@ -72,7 +79,7 @@
                 </div>
                 <div
                   v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
-                  class="preview-form-name " :name="field?.name" @click="onClickAtFormElement(field)" />
+                  class="preview-form-name" :name="field?.name" @click="onClickAtFormElement(field)" />
                 <q-icon name="content_copy"
                   v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
                   class="preview-form-copy-action cursor-pointer" @click="copyField(field, index)">
@@ -100,8 +107,9 @@
       <!-- </q-scroll-area> -->
 
 
-      <q-tabs vertical dense shrink class="rounded-borders fixed-right bg-grey-10 text-grey-11 q-mr-sm q-mt-md"
-        indicator-color="transparent" active-bg-color="secondary" style="max-height: 4.5rem;">
+      <q-tabs vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
+        :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+        style="max-height: 4.5rem;">
         <q-tab name="undo" icon="undo">
           <q-tooltip anchor="center left" self="center right" :offset="[2, 2]">
             Retroceder
@@ -131,6 +139,7 @@ const originalFieldIndex = ref<number | null>(null)
 const activeNameFields = ref<{ active: string[], hover?: string }>({ active: [] })
 const dragInIndicator = ref<{ index?: number, name?: string }>({})
 
+const { dark } = useQuasar()
 const formStore = useFormStore()
 const formFields: FormKitSchemaDefinition[] = formStore.formFields
 
@@ -268,21 +277,20 @@ const removeField = (index: number) => {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1;
 
   &.__hover {
-    border-color: #2980b9;
+    border-color: var(--overlay-accent-color, #2980b9);
     z-index: 1;
   }
 
 
   &.__active {
-    border-color: #2980b9;
+    border-color: var(--overlay-accent-color, #2980b9);
     z-index: 1;
   }
 
   &.__dragging {
-    border-color: #2980b9;
+    border-color: var(--overlay-accent-color, #2980b9);
     border-style: dashed;
     z-index: 1;
   }
@@ -325,7 +333,7 @@ const removeField = (index: number) => {
   }
 
   .preview-element-label {
-    color: inherit;
+    color: white;
     position: absolute;
     left: 50%;
     right: 50%;
@@ -337,7 +345,6 @@ const removeField = (index: number) => {
     transform: translate(-2.5rem, -.5rem);
     text-wrap: nowrap;
     width: fit-content;
-
   }
 }
 
@@ -348,8 +355,9 @@ const removeField = (index: number) => {
   left: 0;
 
   &:before {
-    background-color: #2980b9;
+    background-color: var(--overlay-accent-color, #2980b9);
     content: attr(name);
+    color: white;
     top: 0;
     left: 0;
     width: fit-content;
@@ -362,7 +370,8 @@ const removeField = (index: number) => {
 
 .preview-form-copy-action {
   position: absolute;
-  background-color: #2980b9;
+  background-color: var(--overlay-accent-color, #2980b9);
+  color: white;
   top: -1.4rem;
   right: 1.5rem;
   width: fit-content;
@@ -372,7 +381,8 @@ const removeField = (index: number) => {
 
 .preview-form-remove-action {
   position: absolute;
-  background-color: #2980b9;
+  background-color: var(--overlay-accent-color, #2980b9);
+  color: white;
   top: -1.4rem;
   right: 0;
   width: fit-contet;

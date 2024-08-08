@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4
   },
+  css: ['@/assets/scss/_custom.scss'],
   modules: [
     "nuxt-quasar-ui",
     "@pinia/nuxt",
