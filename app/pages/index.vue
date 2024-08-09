@@ -1,25 +1,45 @@
 <template>
-  <section class=" row items-start justify-center full-width" :class="dark.isActive ? 'bg-dark' : 'bg-blue-grey-1'"
+  <section class=" row items-start justify-center full-width" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'"
     ref="previewFormSectionRef">
     <!-- :style="`height: calc(100vh - ${offset}px);`" -->
     <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`">
 
-      <q-tabs vertical dense shrink class="rounded-borders fixed-left  q-ml-sm q-mt-md"
+      <q-tabs vertical dense shrink class="rounded-borders fixed-left q-ml-sm q-mt-md"
         :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-        active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 6.75rem;">
-        <q-tab name="edit" icon="edit">
-          <q-tooltip anchor="center right" self="center left" :offset="[2, 2]">
-            Editar
-          </q-tooltip>
+        active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;">
+        <q-tab name="edit">
+          <template #default>
+            <q-icon name="edit" size="xs">
+              <q-tooltip anchor="center right" self="center left" :offset="[12, 12]">
+                Editar
+              </q-tooltip>
+            </q-icon>
+          </template>
         </q-tab>
-        <q-tab name="alarms" icon="visibility">
-          <q-tooltip anchor="center right" self="center left" :offset="[2, 2]">
-            Pre-visualizar
-          </q-tooltip>
+        <q-tab name="alarms">
+          <template #default>
+            <q-icon name="visibility" size="xs">
+              <q-tooltip anchor="center right" self="center left" :offset="[12, 12]">
+                Pre-visualizar
+              </q-tooltip>
+            </q-icon>
+          </template>
         </q-tab>
-        <q-tab name="movies" icon="movie" />
       </q-tabs>
+      <!-- <q-btn-group unelevated class="fixed-left column q-ml-sm q-mt-md" -->
+      <!--   :class="dark.isActive ? 'bg-dark' : 'bg-white'" style="max-height: 4rem;"> -->
+      <!--   <q-btn icon="edit" size="sm" padding="sm" :color="dark.isActive ? 'grey' : 'blue-grey-10'"> -->
+      <!--     <q-tooltip anchor="center right" self="center left" :offset="[2, 2]"> -->
+      <!--       Editar -->
+      <!--     </q-tooltip> -->
+      <!--   </q-btn> -->
+      <!--   <q-btn icon="visibility" size="sm" padding="sm" :color="dark.isActive ? 'grey' : 'blue-grey-10'"> -->
+      <!--     <q-tooltip anchor="center right" self="center left" :offset="[2, 2]"> -->
+      <!--       Pre-visualizar -->
+      <!--     </q-tooltip> -->
+      <!--   </q-btn> -->
+      <!-- </q-btn-group> -->
 
 
       <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
@@ -107,20 +127,19 @@
       <!-- </q-scroll-area> -->
 
 
-      <q-tabs vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
-        :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-        style="max-height: 4.5rem;">
-        <q-tab name="undo" icon="undo">
+      <q-btn-group flat unelevated class="column fixed-right q-mr-sm q-mt-md"
+        :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" style="max-height: 4rem;">
+        <q-btn icon="undo" size="sm" padding="sm">
           <q-tooltip anchor="center left" self="center right" :offset="[2, 2]">
             Retroceder
           </q-tooltip>
-        </q-tab>
-        <q-tab name="redo" icon="redo">
+        </q-btn>
+        <q-btn icon="redo" size="sm" padding="sm">
           <q-tooltip anchor="center left" self="center right" :offset="[2, 2]">
             Avançar
           </q-tooltip>
-        </q-tab>
-      </q-tabs>
+        </q-btn>
+      </q-btn-group>
     </q-scroll-area>
 
   </section>
@@ -215,7 +234,7 @@ const onDragEnd = (index: number) => {
 
   if (originalFieldIndex.value !== null && indexPointer.value !== null && originalFieldIndex.value !== indexPointer.value) {
     const draggedField = formFields[index]!
-    formStore.updateFieldIndex({ draggedField: draggedField, originalPosition: index, destinationIndex: indexPointer.value })
+    formStore.updateFieldIndex({ draggedField, originalPosition: index, destinationIndex: indexPointer.value })
   }
 
 

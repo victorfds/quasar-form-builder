@@ -7,9 +7,16 @@
           :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades">
           <q-card>
             <q-card-section>
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem, eius reprehenderit eos corrupti
-              commodi magni quaerat ex numquam, dolorum officiis modi facere maiores architecto suscipit iste
-              eveniet doloribus ullam aliquid.
+              <div>
+                <div class="row align-center justify-between">
+                  <label for="form-name">
+                    <span class="text-body2">
+                      Nome:
+                    </span>
+                  </label>
+                  <q-input id="form-name" filled color="cyan-8" dense type="text" />
+                </div>
+              </div>
             </q-card-section>
           </q-card>
         </q-expansion-item>
