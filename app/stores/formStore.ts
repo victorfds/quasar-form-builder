@@ -2,6 +2,7 @@ import type { FormKitSchemaDefinition, FormKitSchemaNode } from "@formkit/core"
 
 export const useFormStore = defineStore('formStore', () => {
 
+  const formData = ref<{ formName?: string }>({})
   const formFields = ref<FormKitSchemaDefinition[]>([])
 
   const { notify } = useQuasar()
@@ -42,6 +43,7 @@ export const useFormStore = defineStore('formStore', () => {
 
 
   return {
+    formData,
     formFields,
     addField,
     updateFieldIndex,

@@ -27,20 +27,6 @@
           </template>
         </q-tab>
       </q-tabs>
-      <!-- <q-btn-group unelevated class="fixed-left column q-ml-sm q-mt-md" -->
-      <!--   :class="dark.isActive ? 'bg-dark' : 'bg-white'" style="max-height: 4rem;"> -->
-      <!--   <q-btn icon="edit" size="sm" padding="sm" :color="dark.isActive ? 'grey' : 'blue-grey-10'"> -->
-      <!--     <q-tooltip anchor="center right" self="center left" :offset="[2, 2]"> -->
-      <!--       Editar -->
-      <!--     </q-tooltip> -->
-      <!--   </q-btn> -->
-      <!--   <q-btn icon="visibility" size="sm" padding="sm" :color="dark.isActive ? 'grey' : 'blue-grey-10'"> -->
-      <!--     <q-tooltip anchor="center right" self="center left" :offset="[2, 2]"> -->
-      <!--       Pre-visualizar -->
-      <!--     </q-tooltip> -->
-      <!--   </q-btn> -->
-      <!-- </q-btn-group> -->
-
 
       <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
       <!--     help="O que é isso?" /> -->
@@ -59,14 +45,20 @@
 
 
 
-      <!-- <q-scroll-area class="bg-yellow-9 full-width fit" :content-style="scrollAreaContentStyle" -->
-      <!--   :content-active-style="scrollAreaContentStyle"> -->
       <q-card flat class="preview-form-container q-px-lg q-my-md full-width full-height"
-        :class="dark.isActive ? 'bg-grey-10' : 'white'">
-        <q-card-section :class="{ 'bg-green-4': !formFields.length }">
+        :class="dark.isActive ? 'bg-dark' : 'white'">
+        <q-card-section>
           <FormKit type="form" @submit="onSubmit" v-model="values" :actions="false">
-            <div class="form-canvas full-height q-py-xl" ref="formDroppableRef" @drop.prevent="onDrop"
+            <div class="form-canvas q-py-xl rounded-borders" ref="formDroppableRef" @drop.prevent="onDrop"
               @dragover.prevent="handleDragover">
+
+              <!-- No elements display message -->
+              <div v-if="!formFields.length" class="overlay-drop-here row items-center justify-center rounded-borders"
+                @dragenter.prevent="onDragEnterFormSectionArea" @dragleave.prevent="onDragLeaveFormSectionArea"
+                :class="{ 'bg-green-8': !formFields.length && highlightDropArea }">Arraste e solte aqui os elementos
+                da coluna esquerda
+              </div>
+
               <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
                 @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
                 <FormKitSchema :schema="field" />
@@ -120,26 +112,33 @@
               </div>
             </div>
           </FormKit>
-          <!-- <pre wrap>{{ values }}</pre> -->
 
         </q-card-section>
       </q-card>
-      <!-- </q-scroll-area> -->
 
+      <q-tabs vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
+        :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+        style="max-height: 4.5rem;">
+        <q-tab name="undo">
+          <template #default>
+            <q-icon name="undo" size="xs">
+              <q-tooltip anchor="center left" self="center right" :offset="[12, 12]">
+                Retroceder
+              </q-tooltip>
+            </q-icon>
+          </template>
+        </q-tab>
+        <q-tab name="redo">
+          <template #default>
+            <q-icon name="redo" size="xs">
+              <q-tooltip anchor="center left" self="center right" :offset="[12, 12]">
+                Avançar
+              </q-tooltip>
+            </q-icon>
+          </template>
+        </q-tab>
+      </q-tabs>
 
-      <q-btn-group flat unelevated class="column fixed-right q-mr-sm q-mt-md"
-        :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" style="max-height: 4rem;">
-        <q-btn icon="undo" size="sm" padding="sm">
-          <q-tooltip anchor="center left" self="center right" :offset="[2, 2]">
-            Retroceder
-          </q-tooltip>
-        </q-btn>
-        <q-btn icon="redo" size="sm" padding="sm">
-          <q-tooltip anchor="center left" self="center right" :offset="[2, 2]">
-            Avançar
-          </q-tooltip>
-        </q-btn>
-      </q-btn-group>
     </q-scroll-area>
 
   </section>
@@ -149,6 +148,7 @@ import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core';
 import { FormKitSchema, reset } from '@formkit/vue';
 
 // local variables
+const highlightDropArea = ref<boolean>(false)
 const previewFormSectionRef = ref<HTMLElement | null>(null)
 const formDroppableRef = ref<HTMLElement | null>(null)
 const values = ref({})
@@ -186,6 +186,14 @@ onMounted(() => {
 onUnmounted(() => {
   if (stopListening) stopListening()
 })
+
+const onDragEnterFormSectionArea = () => {
+  highlightDropArea.value = true
+}
+
+const onDragLeaveFormSectionArea = () => {
+  highlightDropArea.value = false
+}
 
 const onSubmit = (data, form) => {
   reset(form, data);
@@ -280,11 +288,21 @@ const removeField = (index: number) => {
 
 .form-canvas {
   min-height: 100px;
+  height: fit-content;
 }
 
 .form-field {
   position: relative;
   pointer-events: auto;
+}
+
+.overlay-drop-here {
+  position: relative;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  height: 328px;
 }
 
 .overlay-preview-element {

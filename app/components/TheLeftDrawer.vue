@@ -42,6 +42,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'text',
       label: 'Texto',
+      propType: 'text'
     },
   },
   {
@@ -79,7 +80,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
     {
       $formkit: 'q-input',
       name: 'phone',
-      label: 'Número de telefone',
+      label: 'Telefone',
       mask: "(##) #####-####",
       'unmasked-value': true,
       propType: 'text'

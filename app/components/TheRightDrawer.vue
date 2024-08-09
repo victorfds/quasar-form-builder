@@ -8,13 +8,14 @@
           <q-card>
             <q-card-section>
               <div>
-                <div class="row align-center justify-between">
-                  <label for="form-name">
+                <div class="row align-center items-center justify-between">
+                  <label for="form-name" @click="onClickLabelFormName">
                     <span class="text-body2">
-                      Nome:
+                      Nome
                     </span>
                   </label>
-                  <q-input id="form-name" filled color="cyan-8" dense type="text" />
+                  <q-input id="form-name" ref="formNameInputRef" filled color="cyan-8" dense type="text"
+                    v-model="formStore.formData.formName" />
                 </div>
               </div>
             </q-card-section>
@@ -25,8 +26,14 @@
   </q-drawer>
 </template>
 <script setup lang="ts">
+
 const model = defineModel()
 const { dark } = useQuasar()
+const formStore = useFormStore()
 
-const expanded = ref(false)
+const formNameInputRef = ref<HTMLElement | null>(null)
+
+const onClickLabelFormName = () => {
+  formNameInputRef.value?.focus()
+}
 </script>
