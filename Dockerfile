@@ -7,6 +7,9 @@ WORKDIR /quasar-form-builder
 # Copy the package.json file into the working directory before copying the rest of the files to cache the dependencies
 COPY package.json /quasar-form-builder
 
+# install pnpm
+RUN npm install -g pnpm
+
 # Install the dependencies, you might want to use yarn or pnpm instead
 RUN pnpm install
 
