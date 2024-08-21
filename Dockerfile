@@ -1,5 +1,5 @@
 # Use any Node.js base image that you want (as long as it's Alpine)!
-FROM node:22-alpine:3.19
+FROM node:22-alpine
 
 # Set the working directory to /quasar-form-builder
 WORKDIR /quasar-form-builder
