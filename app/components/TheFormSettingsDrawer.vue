@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 const model = defineModel<boolean>()
 const { dark } = useQuasar()
 const formStore = useFormStore()
@@ -19,7 +18,8 @@ function onClickLabelFormName() {
 
 function onBlurName(_: Event) {
   elementStates.value.nameError = ''
-  if (elementStates.value.name === formStore.activeField?.name) return
+  if (elementStates.value.name === formStore.activeField?.name)
+    return
 
   const response = formStore.updateNameField(formStore.activeField.name, elementStates.value.name)
 
@@ -30,9 +30,7 @@ function onBlurName(_: Event) {
 
   if (response?.message === 'name already exists') {
     elementStates.value.nameError = 'Este nome já existe'
-    return
   }
-
 }
 </script>
 
@@ -41,18 +39,18 @@ function onBlurName(_: Event) {
     <div v-if="formStore.activeField">
       <q-list separator>
         <q-item
-          :class="{ 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }">
-
+          :class="{ 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
+        >
           <q-item-section avatar>
             <q-btn size="md" flat dense round icon="close" />
           </q-item-section>
 
-
           <q-item-section>
             <q-item-label>
-              <h6 class="text-h6 no-margin">{{ formStore.activeField?.name }}</h6>
+              <h6 class="text-h6 no-margin">
+                {{ formStore.activeField?.name }}
+              </h6>
             </q-item-label>
-
           </q-item-section>
 
           <q-item-section side>
@@ -62,11 +60,11 @@ function onBlurName(_: Event) {
               <q-btn size="md" flat dense round icon="more_vert" />
             </div>
           </q-item-section>
-
         </q-item>
         <q-expansion-item
           :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-          :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened>
+          :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened
+        >
           <q-card>
             <q-card-section>
               <div>
@@ -76,9 +74,11 @@ function onBlurName(_: Event) {
                       Nome
                     </span>
                   </label>
-                  <q-input id="form-name" ref="formNameInputRef" v-model.trim="elementStates.name"
+                  <q-input
+                    id="form-name" ref="formNameInputRef" v-model.trim="elementStates.name"
                     :error="Boolean(elementStates.nameError)" :error-message="elementStates.nameError" hide-bottom-space
-                    @blur="onBlurName" filled color="cyan-8" dense type="text" />
+                    filled color="cyan-8" dense type="text" @blur="onBlurName"
+                  />
                 </div>
               </div>
             </q-card-section>
@@ -90,7 +90,8 @@ function onBlurName(_: Event) {
       <q-list separator>
         <q-expansion-item
           :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-          :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened>
+          :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened
+        >
           <q-card>
             <q-card-section>
               <div>
@@ -100,8 +101,10 @@ function onBlurName(_: Event) {
                       Nome
                     </span>
                   </label>
-                  <q-input id="form-name" ref="formNameInputRef" v-model="formStore.formData.formName" filled
-                    color="cyan-8" dense type="text" />
+                  <q-input
+                    id="form-name" ref="formNameInputRef" v-model="formStore.formData.formName" filled
+                    color="cyan-8" dense type="text"
+                  />
                 </div>
               </div>
             </q-card-section>
@@ -109,6 +112,5 @@ function onBlurName(_: Event) {
         </q-expansion-item>
       </q-list>
     </div>
-
   </q-drawer>
 </template>

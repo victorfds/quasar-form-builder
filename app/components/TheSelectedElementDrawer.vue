@@ -16,7 +16,8 @@ function onClickLabelFormName() {
       <q-list separator>
         <q-expansion-item
           :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-          :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened>
+          :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened
+        >
           <q-card>
             <q-card-section>
               <div>
@@ -26,8 +27,10 @@ function onClickLabelFormName() {
                       Nome ELEMENTO
                     </span>
                   </label>
-                  <q-input id="form-name" ref="formNameInputRef" v-model="formStore.formData.formName" filled
-                    color="cyan-8" dense type="text" />
+                  <q-input
+                    id="form-name" ref="formNameInputRef" v-model="formStore.formData.formName" filled
+                    color="cyan-8" dense type="text"
+                  />
                 </div>
               </div>
             </q-card-section>

@@ -40,7 +40,6 @@ function fnTweak(offset: number) {
 
     <TheFormSettingsDrawer v-model="isFormSettingsDrawerOpened" />
 
-
     <q-page-container>
       <q-page :style-fn="fnTweak">
         <slot />
