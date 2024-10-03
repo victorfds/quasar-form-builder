@@ -6,7 +6,7 @@
  * @param target - A VueJS reference to the target HTML element to check for outside clicks.
  * @param handler - A function to handle the click event when it occurs outside the target element.
  * @param {boolean | AddEventListenerOptions} [options] - Optional options object for the event listener.
- * @returns A function to remove the event listener. 
+ * @returns A function to remove the event listener.
  *
  * @example
  * ```typescript
@@ -19,7 +19,7 @@
  * stopListening();
  * ```
  */
-export function useClickOutside<T extends Ref<HTMLElement | null>, F extends Ref<HTMLElement | null>, Fn extends (e: MouseEvent) => void>(outerElement: T, target: F, handler: Fn, options?: boolean | AddEventListenerOptions
+export function useClickOutside<T extends Ref<HTMLElement | null>, F extends Ref<HTMLElement | null>, Fn extends (e: MouseEvent) => void>(outerElement: T, target: F, handler: Fn, options?: boolean | AddEventListenerOptions,
 ): () => void {
   const targetValue = unref(target)
 

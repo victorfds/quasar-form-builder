@@ -1,6 +1,26 @@
+<script setup lang="ts">
+const isElementsDrawerOpened = ref(false)
+const isFormSettingsDrawerOpened = ref(false)
+
+// Global state
+const offsetPage = useState<number>('offset', () => 168)
+
+function toggleLeftDrawer() {
+  isElementsDrawerOpened.value = !isElementsDrawerOpened.value
+}
+
+function toggleRightDrawer() {
+  isFormSettingsDrawerOpened.value = !isFormSettingsDrawerOpened.value
+}
+
+function fnTweak(offset: number) {
+  offsetPage.value = offset
+  return { minHeight: offset ? `calc(100vh - ${offset}px)` : '100vh' }
+}
+</script>
+
 <template>
   <q-layout view="hHh lpR fFf">
-
     <q-header bordered class="bg-primary text-white" height-hint="98">
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
@@ -16,39 +36,15 @@
       </q-toolbar>
     </q-header>
 
-    <TheLeftDrawer v-model="leftDrawerOpen" />
+    <TheElementsDrawer v-model="isElementsDrawerOpened" />
 
-    <TheRightDrawer v-model="rightDrawerOpen" />
+    <TheFormSettingsDrawer v-model="isFormSettingsDrawerOpened" />
+
 
     <q-page-container>
       <q-page :style-fn="fnTweak">
         <slot />
       </q-page>
     </q-page-container>
-
   </q-layout>
 </template>
-
-<script setup lang="ts">
-
-const leftDrawerOpen = ref(false)
-const rightDrawerOpen = ref(false)
-
-// Global state
-const offsetPage = useState<number>('offset', () => 168)
-
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
-
-function toggleRightDrawer() {
-  rightDrawerOpen.value = !rightDrawerOpen.value
-}
-
-function fnTweak(offset: number, height: number) {
-  offsetPage.value = offset
-  return { minHeight: offset ? `calc(100vh - ${offset}px)` : '100vh' }
-}
-
-
-</script>

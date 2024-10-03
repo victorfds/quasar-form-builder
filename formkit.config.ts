@@ -1,38 +1,38 @@
-import { defineFormKitConfig } from "@formkit/vue"
-import { en, pt } from "@formkit/i18n"
-import { QuasarBtnToggle, QuasarCheckbox, QuasarDate, QuasarDatetime, QuasarEditor, QuasarInput, QuasarSelect } from "#components"
+import { QuasarBtnToggle, QuasarCheckbox, QuasarDate, QuasarDatetime, QuasarEditor, QuasarInput, QuasarSelect } from '#components'
+import { en, pt } from '@formkit/i18n'
+import { defineFormKitConfig } from '@formkit/vue'
 
-const quasarPlugin = () => { }
+function quasarPlugin() { }
 quasarPlugin.library = (node: FormKitNode) => {
   const type: string = node.props.type
   const quasarTypes = {
     'q-input': () => node.define({
-      type: "input",
-      props: ["inputType"],
+      type: 'input',
+      props: ['inputType'],
       component: QuasarInput,
     }),
     'q-select': () => node.define({
-      type: "input",
+      type: 'input',
       component: QuasarSelect,
     }),
     'q-btn-toggle': () => node.define({
-      type: "input",
+      type: 'input',
       component: QuasarBtnToggle,
     }),
     'q-checkbox': () => node.define({
-      type: "input",
+      type: 'input',
       component: QuasarCheckbox,
     }),
     'q-editor': () => node.define({
-      type: "input",
+      type: 'input',
       component: QuasarEditor,
     }),
     'q-date': () => node.define({
-      type: "input",
+      type: 'input',
       component: QuasarDate,
     }),
     'q-datetime': () => node.define({
-      type: "input",
+      type: 'input',
       component: QuasarDatetime,
     }),
 
@@ -43,8 +43,8 @@ quasarPlugin.library = (node: FormKitNode) => {
 
 export default defineFormKitConfig({
   plugins: [
-    quasarPlugin
+    quasarPlugin,
   ],
   locales: { en, pt },
-  locale: 'pt'
+  locale: 'pt',
 })

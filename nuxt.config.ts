@@ -3,13 +3,13 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: true,
   future: {
-    compatibilityVersion: 4
+    compatibilityVersion: 4,
   },
   css: ['@/assets/scss/_custom.scss'],
   modules: [
-    "nuxt-quasar-ui",
-    "@pinia/nuxt",
-    "@formkit/nuxt"
+    'nuxt-quasar-ui',
+    '@pinia/nuxt',
+    '@formkit/nuxt',
   ],
   quasar: {
     plugins: [
@@ -22,13 +22,13 @@ export default defineNuxtConfig({
       'LocalStorage',
       'Platform',
     ],
-    lang: "pt-BR",
+    lang: 'pt-BR',
     iconSet: 'material-icons',
     extras: { animations: 'all', fontIcons: ['material-icons-outlined'] },
-    config: { brand: { primary: '#6F511D' } }
+    config: { brand: { primary: '#6F511D' } },
   },
   formkit: {
     // Experimental support for auto loading (see note):
-    autoImport: true
-  }
+    autoImport: true,
+  },
 })

@@ -23,17 +23,17 @@
 export function useEventListener<
   T extends Ref<HTMLElement | null>,
   E extends keyof HTMLElementEventMap,
-  Fn extends (e: HTMLElementEventMap[E]) => void
+  Fn extends (e: HTMLElementEventMap[E]) => void,
 >(
   target: T,
   eventType: E,
   handler: Fn,
-  options?: boolean | AddEventListenerOptions
+  options?: boolean | AddEventListenerOptions,
 ): () => void {
   const element = unref(target)
 
   const eventHandler = (e: HTMLElementEventMap[E]) => {
-    handler(e);
+    handler(e)
   }
 
   element?.addEventListener(eventType, eventHandler, options)

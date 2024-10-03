@@ -1,9 +1,8 @@
-import type { FormKitEvent } from "@formkit/core"
+import type { FormKitEvent } from '@formkit/core'
 
 export function useValidationMessages(node: FormKitNode) {
-  const messages = ref<(string)[]>([])
+  const messages = ref<string[]>([])
   const hasError = ref<boolean>(false)
-
 
   const getMessages = computed(() => {
     return messages.value.join('\n')
@@ -59,7 +58,6 @@ export function useValidationMessages(node: FormKitNode) {
   return {
     getMessages,
     hasError,
-    checkForErrorMessages
+    checkForErrorMessages,
   }
-
 }

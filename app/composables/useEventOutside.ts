@@ -25,13 +25,13 @@ export function useEventOutside<
   T extends Ref<HTMLElement | null>,
   F extends Ref<HTMLElement | null>,
   E extends keyof HTMLElementEventMap,
-  Fn extends (e: HTMLElementEventMap[E]) => void
+  Fn extends (e: HTMLElementEventMap[E]) => void,
 >(
   outerElement: T,
   target: F,
   eventType: E,
   handler: Fn,
-  options?: boolean | AddEventListenerOptions
+  options?: boolean | AddEventListenerOptions,
 ): () => void {
   const targetValue = unref(target)
 

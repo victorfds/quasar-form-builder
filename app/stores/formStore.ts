@@ -1,31 +1,25 @@
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from "@formkit/core"
+import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 
 export const useFormStore = defineStore('formStore', () => {
-
   const formData = ref<{ formName?: string }>({})
   const formFields = ref<FormKitSchemaDefinition[]>([])
+  const activeField = ref<FormKitSchemaNode | null>(null)
 
   const { notify } = useQuasar()
 
   const addField = (field: FormKitSchemaNode, pos?: number | null) => {
     pos = Number(pos)
-    const nameExists = (name: string) => formFields.value.some(el => el?.name === name)
     const formLength = formFields.value.length
 
-    const generateUniqueName = (name: string): string => {
-      return [...Array(formLength + 1).keys()]
-        .map(counter => (counter === 0 ? name : `${name}_${counter}`))
-        .find(uniqueName => !nameExists(uniqueName)) || name
-    }
-
-    field.name = generateUniqueName(field?.name)
+    field.name = generateUniqueName(field?.name, formFields.value)
 
     if (pos <= 0) {
       formFields.value.unshift(field)
     }
     else if (pos >= formLength) {
       formFields.value.push(field)
-    } else {
+    }
+    else {
       formFields.value.splice(pos, 0, field)
     }
 
@@ -41,12 +35,37 @@ export const useFormStore = defineStore('formStore', () => {
     formFields.value.splice(index, 1)
   }
 
+  const copyField = (field: FormKitSchemaNode, index: number) => {
+    const newElemPosition = index + 1
+    const newField = { ...field, name: field?.name.split('_').at(0) }
+    addField(newField, newElemPosition)
+    setActiveField(newField)
+  }
+
+  const setActiveField = (newField: FormKitSchemaNode | null) => {
+    activeField.value = newField
+  }
+
+  const updateNameField = (oldName: string, newName: string) => {
+    const indexToUpdate = formFields.value.findIndex(field => field.name === oldName)
+    if (indexToUpdate === -1) return
+
+    if (!newName) return new Error('name cannot be empty', { cause: 500 })
+
+    if (nameExists(newName, formFields.value)) return new Error('name already exists', { cause: 500 })
+
+    formFields.value[indexToUpdate].name = newName
+  }
 
   return {
     formData,
     formFields,
+    activeField,
     addField,
     updateFieldIndex,
-    removeField
+    removeField,
+    copyField,
+    setActiveField,
+    updateNameField
   }
 })
