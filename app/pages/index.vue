@@ -50,6 +50,14 @@ watch(() => formStore.activeField, (newVal) => {
   }
 }, { deep: true })
 
+const getUserWidthInput = computed(() => {
+  // Returns the initial width form value
+  if (!formStore.formData.preview.width) return 432
+  if (formStore.formData.preview.width < 0) return 0
+
+  return formStore.formData.preview.width
+})
+
 function onDragEnterFormSectionArea() {
   highlightDropArea.value = true
 }
@@ -136,7 +144,7 @@ function handleCopyField(field: FormKitSchemaNode, index: number) {
 }
 
 function removeField(field: FormKitSchemaNode, index: number) {
-  formStore.removeField({ index })
+  formStore.removeField(field, index)
   if (formStore.activeField?.name === field?.name) {
     setActiveField(null)
   }
@@ -144,20 +152,16 @@ function removeField(field: FormKitSchemaNode, index: number) {
 </script>
 
 <template>
-  <section
-    ref="previewFormSectionRef" class=" row items-start justify-center full-width"
-    :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'"
-  >
+  <section class="full-width" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
     <!-- :style="`height: calc(100vh - ${offset}px);`" -->
-    <q-scroll-area
-      class="full-width relative-position" :content-style="scrollAreaContentStyle"
+    <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`"
-    >
-      <q-tabs
-        vertical dense shrink class="rounded-borders fixed-left q-ml-sm q-mt-md"
+      :thumb-style="{ width: '4px' }">
+
+
+      <q-tabs vertical dense shrink class="rounded-borders fixed-left q-ml-sm q-mt-md"
         :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-        active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;"
-      >
+        active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;">
         <q-tab name="edit">
           <template #default>
             <q-icon name="edit" size="xs">
@@ -193,113 +197,92 @@ function removeField(field: FormKitSchemaNode, index: number) {
       <!--   <FormKit type="q-date" name="date1" /> -->
       <!--   <FormKit type="q-datetime" name="date" /> -->
 
-      <q-card
-        flat class="preview-form-container q-px-lg q-my-md full-width full-height"
-        :class="dark.isActive ? 'bg-dark' : 'white'"
-      >
-        <q-card-section>
-          <FormKit v-model="values" type="form" :actions="false" @submit="onSubmit">
-            <div
-              ref="formDroppableRef" class="form-canvas q-py-xl rounded-borders" @drop.prevent="onDrop"
-              @dragover.prevent="handleDragover"
-            >
-              <!-- No elements display message -->
-              <div
-                v-if="!formFields.length" class="overlay-drop-here row items-center justify-center rounded-borders"
-                :class="{ 'bg-green-8': !formFields.length && highlightDropArea }"
-                @dragenter.prevent="onDragEnterFormSectionArea" @dragleave.prevent="onDragLeaveFormSectionArea"
-              >
-                Arraste e solte aqui os elementos
-                da coluna esquerda
-              </div>
+      <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
 
-              <div
-                v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
-                @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement"
-              >
-                <FormKitSchema :schema="field" />
-                <!-- Overlay preview -->
-                <div
-                  class="overlay-preview-element cursor-pointer" :class="{
+        <q-card flat class="preview-form-container q-px-lg q-my-md"
+          :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
+          :style="{ 'max-width': formStore.formData.preview.isFullWidth ? 'calc(9999px + 5rem)' : 'calc(100px + ' + getUserWidthInput + 'px)' }">
+          <q-card-section>
+            <FormKit v-model="values" type="form" :actions="false" @submit="onSubmit">
+              <div ref="formDroppableRef" class="form-canvas q-py-sm rounded-borders" @drop.prevent="onDrop"
+                @dragover.prevent="handleDragover">
+                <!-- No elements display message -->
+                <div v-if="!formFields.length" class="overlay-drop-here row items-center justify-center rounded-borders"
+                  :class="{ 'bg-green-8': !formFields.length && highlightDropArea }"
+                  @dragenter.prevent="onDragEnterFormSectionArea" @dragleave.prevent="onDragLeaveFormSectionArea">
+                  Arraste e solte aqui os elementos
+                  da coluna esquerda
+                </div>
+
+                <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
+                  @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
+                  <FormKitSchema :schema="field" />
+                  <!-- Overlay preview -->
+                  <div class="overlay-preview-element cursor-pointer" :class="{
                     __latest: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active.at(-1) === field?.name,
                     __active: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name),
                     __dragging: elementBeingDragged.field?.name === field?.name,
                     __hover: activeNameFields.hover === field?.name,
                   }" draggable="true" @click="onClickAtFormElement(field)" @dragstart="onDragStartField(field, index)"
-                  @dragend="onDragEnd(index)"
-                />
-                <!-- Top are drop  -->
-                <div
-                  class="preview-element-area-top"
-                  :class="{ hidden: elementBeingDragged.field?.name === field?.name }"
-                  @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) < index ? index - 1 : index)"
-                  @dragover.prevent="onDragOverDropArea"
-                >
-                  <div
-                    class="preview-element-label-wrapper preview-element-label-wrapper__top"
-                    :class="{ hidden: dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index) || (Number(elementBeingDragged?.index) < index && dragInIndicator.index !== index - 1) }"
-                  >
-                    <div class="preview-element-label">
-                      Drag it here
+                    @dragend="onDragEnd(index)" />
+                  <!-- Top are drop  -->
+                  <div class="preview-element-area-top"
+                    :class="{ hidden: elementBeingDragged.field?.name === field?.name }"
+                    @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) < index ? index - 1 : index)"
+                    @dragover.prevent="onDragOverDropArea">
+                    <div class="preview-element-label-wrapper preview-element-label-wrapper__top"
+                      :class="{ hidden: dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index) || (Number(elementBeingDragged?.index) < index && dragInIndicator.index !== index - 1) }">
+                      <div class="preview-element-label">
+                        Drag it here
+                      </div>
                     </div>
                   </div>
-                </div>
-                <!-- Bottom area drop -->
-                <div
-                  class="preview-element-area-bottom"
-                  :class="{ hidden: elementBeingDragged.field?.name === field?.name }"
-                  @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
-                  @dragover.prevent="onDragOverDropArea"
-                >
-                  <div
-                    class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
-                    :class="{ hidden: dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index + 1) || (Number(elementBeingDragged?.index) < index && dragInIndicator?.index !== index) }"
-                  >
-                    <div class="preview-element-label">
-                      Drag it here
+                  <!-- Bottom area drop -->
+                  <div class="preview-element-area-bottom"
+                    :class="{ hidden: elementBeingDragged.field?.name === field?.name }"
+                    @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
+                    @dragover.prevent="onDragOverDropArea">
+                    <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
+                      :class="{ hidden: dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index + 1) || (Number(elementBeingDragged?.index) < index && dragInIndicator?.index !== index) }">
+                      <div class="preview-element-label">
+                        Drag it here
+                      </div>
                     </div>
                   </div>
+                  <div
+                    v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                    class="preview-form-name" @click="onClickAtFormElement(field)">
+                    {{ field?.name }}
+                  </div>
+                  <q-icon
+                    v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                    name="content_copy" class="preview-form-copy-action cursor-pointer"
+                    @click="handleCopyField(field, index)">
+                    <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+                      self="bottom middle" :offset="[4, 4]">
+                      Clone
+                    </q-tooltip>
+                  </q-icon>
+                  <q-icon
+                    v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                    name="o_delete" class="preview-form-remove-action cursor-pointer"
+                    @click="removeField(field, index)">
+                    <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+                      self="bottom middle" :offset="[4, 4]">
+                      Remove
+                    </q-tooltip>
+                  </q-icon>
                 </div>
-                <div
-                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
-                  class="preview-form-name" @click="onClickAtFormElement(field)"
-                >
-                  {{ field?.name }}
-                </div>
-                <q-icon
-                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
-                  name="content_copy" class="preview-form-copy-action cursor-pointer"
-                  @click="handleCopyField(field, index)"
-                >
-                  <q-tooltip
-                    class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
-                    self="bottom middle" :offset="[4, 4]"
-                  >
-                    Clone
-                  </q-tooltip>
-                </q-icon>
-                <q-icon
-                  v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
-                  name="o_delete" class="preview-form-remove-action cursor-pointer" @click="removeField(field, index)"
-                >
-                  <q-tooltip
-                    class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
-                    self="bottom middle" :offset="[4, 4]"
-                  >
-                    Remove
-                  </q-tooltip>
-                </q-icon>
               </div>
-            </div>
-          </FormKit>
-        </q-card-section>
-      </q-card>
+            </FormKit>
+          </q-card-section>
+        </q-card>
 
-      <q-tabs
-        vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
+      </article>
+
+      <q-tabs vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
         :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-        style="max-height: 4.5rem;"
-      >
+        style="max-height: 4.5rem;">
         <q-tab name="undo">
           <template #default>
             <q-icon name="undo" size="xs">
@@ -330,8 +313,10 @@ function removeField(field: FormKitSchemaNode, index: number) {
 }
 
 .preview-form-container {
-  max-width: 580px;
+  margin-left: 4rem;
+  margin-right: 4rem;
   min-height: 100px;
+  width: 100%;
 }
 
 .form-canvas {

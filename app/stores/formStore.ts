@@ -1,7 +1,7 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 
 export const useFormStore = defineStore('formStore', () => {
-  const formData = ref<{ formName?: string }>({})
+  const formData = ref<{ formName?: string, preview: { width?: number, isFullWidth: boolean } }>({ formName: 'Meu Formulário', preview: { width: 432, isFullWidth: false } })
   const formFields = ref<FormKitSchemaDefinition[]>([])
   const activeField = ref<FormKitSchemaNode | null>(null)
 
@@ -31,11 +31,24 @@ export const useFormStore = defineStore('formStore', () => {
     formFields.value.splice(destinationIndex, 0, draggedField!)
   }
 
-  const removeField = ({ field, index }: { field?: FormKitSchemaNode, index: number }) => {
+  const removeField = (field: FormKitSchemaNode, index?: number) => {
+    if (!index) {
+      index = formFields.value.findIndex(ff => ff.name === field?.name)
+    }
+
+    if (index < 0) return
+
     formFields.value.splice(index, 1)
+
+    if (field?.name === activeField.value?.name) {
+      setActiveField(null)
+    }
   }
 
-  const copyField = (field: FormKitSchemaNode, index: number) => {
+  const copyField = (field: FormKitSchemaNode, index?: number) => {
+    if (!index) {
+      index = formFields.value.findIndex(ff => ff.name === field?.name)
+    }
     const newElemPosition = index + 1
     const newField = { ...field, name: field?.name.split('_').at(0) }
     addField(newField, newElemPosition)
@@ -58,6 +71,8 @@ export const useFormStore = defineStore('formStore', () => {
       return new Error('name already exists', { cause: 500 })
 
     formFields.value[indexToUpdate].name = newName
+
+    // TODO: cache form state values from this point
   }
 
   return {
