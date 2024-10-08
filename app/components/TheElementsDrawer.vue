@@ -28,6 +28,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       name: 'number',
       label: 'Número',
       propType: 'number',
+      validation: 'required'
     },
   },
   {
@@ -50,12 +51,12 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
     description: 'Número de telefone com máscara',
     schema:
     {
-      '$formkit': 'q-input',
-      'name': 'phone',
-      'label': 'Telefone',
-      'mask': '(##) #####-####',
+      $formkit: 'q-input',
+      name: 'phone',
+      label: 'Telefone',
+      mask: '(##) #####-####',
       'unmasked-value': true,
-      'propType': 'text',
+      propType: 'text',
     },
   },
 
@@ -87,6 +88,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
     },
   },
 ])
+const tab = ref('elements')
 
 function onDragStart(ev: DragEvent, tool: FormKitSchemaNode) {
   // Add this element's id to the drag payload so the drop handler will
@@ -97,36 +99,32 @@ function onDragStart(ev: DragEvent, tool: FormKitSchemaNode) {
 
 <template>
   <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="left" bordered>
-    <q-tabs
-      narrow-indicator :class="dark.isActive ? 'bg-transparent' : 'bg-blue-grey-1'" align="justify"
-      indicator-color="transparent" :active-bg-color="dark.isActive ? 'grey-9' : 'white'"
-    >
+    <q-tabs v-model="tab" narrow-indicator :class="dark.isActive ? 'bg-transparent' : 'bg-blue-grey-1'" align="justify"
+      indicator-color="transparent" :active-bg-color="dark.isActive ? 'grey-9' : 'white'">
       <q-tab name="elements" label="Elementos" no-caps />
       <q-tab name="tree" label="Árvore" no-caps />
     </q-tabs>
-    <q-scroll-area class="fit q-pa-md" visible>
-      <div
-        v-for="tool in tools" :key="tool.name" class="tool-item" draggable="true"
-        @dragstart="event => onDragStart(event, tool.schema)"
-      >
-        <div class="row items-start no-wrap q-mb-lg">
-          <q-avatar
-            rounded size="md" font-size="1.3rem" :color="dark.isActive ? 'grey-9' : 'blue-grey-2'"
-            :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'" :icon="tool.icon"
-          />
-          <div class="q-ml-sm">
-            <div
-              class="tool-title text-weight-semibold text-subtitle2"
-              :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'"
-            >
-              {{ tool.title }}
-            </div>
-            <div class="tool-description text-caption" :class="dark.isActive ? 'text-grey-7 ' : 'text-blue-grey-7'">
-              {{ tool.description }}
+    <q-scroll-area class="fit" visible>
+      <q-tab-panels v-model="tab" animated>
+        <q-tab-panel name="elements">
+          <div v-for="tool in tools" :key="tool.name" class="tool-item" draggable="true"
+            @dragstart="event => onDragStart(event, tool.schema)">
+            <div class="row items-start no-wrap q-mb-lg">
+              <q-avatar rounded size="md" font-size="1.3rem" :color="dark.isActive ? 'grey-9' : 'blue-grey-2'"
+                :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'" :icon="tool.icon" />
+              <div class="q-ml-sm">
+                <div class="tool-title text-weight-semibold text-subtitle2"
+                  :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
+                  {{ tool.title }}
+                </div>
+                <div class="tool-description text-caption" :class="dark.isActive ? 'text-grey-7 ' : 'text-blue-grey-7'">
+                  {{ tool.description }}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </q-tab-panel>
+      </q-tab-panels>
     </q-scroll-area>
   </q-drawer>
 </template>

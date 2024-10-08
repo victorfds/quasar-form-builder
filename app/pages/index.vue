@@ -6,7 +6,6 @@ import { FormKitSchema, reset } from '@formkit/vue'
 const highlightDropArea = ref<boolean>(false)
 const previewFormSectionRef = ref<HTMLElement | null>(null)
 const formDroppableRef = ref<HTMLElement | null>(null)
-const values = ref({})
 const indexPointer = ref<number | null>(null)
 const elementBeingDragged = ref<{ field?: FormKitSchemaDefinition, index?: number }>({})
 const originalFieldIndex = ref<number | null>(null)
@@ -50,12 +49,16 @@ watch(() => formStore.activeField, (newVal) => {
   }
 }, { deep: true })
 
-const getUserWidthInput = computed(() => {
-  // Returns the initial width form value
-  if (!formStore.formData.preview.width) return 432
-  if (formStore.formData.preview.width < 0) return 0
+watch(() => formStore.formSettings.previewMode, () => {
+  reset("myForm", {})
+})
 
-  return formStore.formData.preview.width
+const getUserWidthInput = computed(() => {
+  // Returns the initial width form value if undefined
+  if (!formStore.formSettings.preview.width) return 432
+  if (Number(formStore.formSettings.preview.width) < 0) return 0
+
+  return formStore.formSettings.preview.width
 })
 
 function onDragEnterFormSectionArea() {
@@ -67,6 +70,8 @@ function onDragLeaveFormSectionArea() {
 }
 
 function onSubmit(data, form) {
+  console.log(form)
+  console.log(data)
   reset(form, data)
 }
 
@@ -159,10 +164,11 @@ function removeField(field: FormKitSchemaNode, index: number) {
       :thumb-style="{ width: '4px' }">
 
 
-      <q-tabs vertical dense shrink class="rounded-borders fixed-left q-ml-sm q-mt-md"
+      <q-tabs v-model="formStore.formSettings.previewMode" vertical dense shrink
+        class="rounded-borders fixed-left q-ml-sm q-mt-md"
         :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
         active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;">
-        <q-tab name="edit">
+        <q-tab name="editing">
           <template #default>
             <q-icon name="edit" size="xs">
               <q-tooltip anchor="center right" self="center left" :offset="[12, 12]">
@@ -171,7 +177,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
             </q-icon>
           </template>
         </q-tab>
-        <q-tab name="alarms">
+        <q-tab name="previewing">
           <template #default>
             <q-icon name="visibility" size="xs">
               <q-tooltip anchor="center right" self="center left" :offset="[12, 12]">
@@ -182,28 +188,37 @@ function removeField(field: FormKitSchemaNode, index: number) {
         </q-tab>
       </q-tabs>
 
+      <!-- <FormKit v-model="values" id="myForm" type="form" :actions="true" @submit="onSubmit" #default="{ value }"> -->
+      <!--   <pre>{{ value }}</pre> -->
+
+      <!--   <FormKitSchema :schema="[ -->
+      <!--     { $formkit: 'email', label: 'Email address', name: 'email', validation: 'required' }, -->
+      <!--     { $formkit: 'text', label: 'First Name', name: 'firstName', validation: 'required|min:2' }, -->
+      <!--     { $formkit: 'text', label: 'Last Name', name: 'lastName', validation: 'required|min:2' }, -->
+      <!--     { $formkit: 'password', label: 'Password', name: 'password', validation: 'required|min:6' } -->
+      <!--   ]" /> -->
       <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
-      <!--     help="O que é isso?" /> -->
-      <!--   <FormKit type="q-input" label="Number label" name="number1" input-type="number" -->
-      <!--     validation="required:trim|number|min:1" /> -->
-      <!--   <FormKit type="q-input" label="Email" name="email" input-type="email" validation="required:trim|email" /> -->
-      <!--   <FormKit type="q-select" label="Select options" name="select1" -->
-      <!--     :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" -->
-      <!--     help="Select one of the two options" /> -->
-      <!--   <FormKit type="q-btn-toggle" label="Select options" name="toggle" -->
-      <!--     :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" /> -->
-      <!--   <FormKit type="q-checkbox" label="Concordo com os termos" name="check1" /> -->
-      <!--   <FormKit type="q-editor" name="editor" label="Edite seu texto aqui" /> -->
-      <!--   <FormKit type="q-date" name="date1" /> -->
-      <!--   <FormKit type="q-datetime" name="date" /> -->
+      <!--   help="O que é isso?" /> -->
+      <!-- <FormKit type="q-input" label="Number label" name="number1" input-type="number" -->
+      <!--   validation="required:trim|number|min:1" /> -->
+      <!-- <FormKit type="q-input" label="Email" name="email" input-type="email" validation="required:trim|email" /> -->
+      <!-- <FormKit type="q-select" label="Select options" name="select1" -->
+      <!--   :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" -->
+      <!--   help="Select one of the two options" /> -->
+      <!-- <FormKit type="q-btn-toggle" label="Select options" name="toggle" -->
+      <!--   :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" /> -->
+      <!-- <FormKit type="q-checkbox" label="Concordo com os termos" name="check1" /> -->
+      <!-- <FormKit type="q-editor" name="editor" label="Edite seu texto aqui" /> -->
+      <!-- <FormKit type="q-date" name="date1" /> -->
+      <!-- <FormKit type="q-datetime" name="date" /> -->
+      <!-- </FormKit> -->
 
       <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
-
         <q-card flat class="preview-form-container q-px-lg q-my-md"
           :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
-          :style="{ 'max-width': formStore.formData.preview.isFullWidth ? 'calc(9999px + 5rem)' : 'calc(100px + ' + getUserWidthInput + 'px)' }">
+          :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : 'calc(100px + ' + getUserWidthInput + 'px)' }">
           <q-card-section>
-            <FormKit v-model="values" type="form" :actions="false" @submit="onSubmit">
+            <FormKit v-model="formStore.values" id="myForm" type="form" :actions="false" @submit="onSubmit">
               <div ref="formDroppableRef" class="form-canvas q-py-sm rounded-borders" @drop.prevent="onDrop"
                 @dragover.prevent="handleDragover">
                 <!-- No elements display message -->
@@ -216,18 +231,22 @@ function removeField(field: FormKitSchemaNode, index: number) {
 
                 <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
                   @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
-                  <FormKitSchema :schema="field" />
+                  <FormKitSchema v-if="formStore.formSettings.previewMode === 'editing'" :schema="field" />
+                  <FormKit v-if="formStore.formSettings.previewMode === 'previewing'" :type="field.$formkit"
+                    :name="field.name" :label="field.label" :input-type="field.propType"
+                    :validation="field.validation" />
                   <!-- Overlay preview -->
                   <div class="overlay-preview-element cursor-pointer" :class="{
                     __latest: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active.at(-1) === field?.name,
                     __active: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name),
                     __dragging: elementBeingDragged.field?.name === field?.name,
                     __hover: activeNameFields.hover === field?.name,
+                    hidden: formStore.formSettings.previewMode !== 'editing'
                   }" draggable="true" @click="onClickAtFormElement(field)" @dragstart="onDragStartField(field, index)"
                     @dragend="onDragEnd(index)" />
                   <!-- Top are drop  -->
                   <div class="preview-element-area-top"
-                    :class="{ hidden: elementBeingDragged.field?.name === field?.name }"
+                    :class="{ hidden: elementBeingDragged.field?.name === field?.name || formStore.formSettings.previewMode !== 'editing' }"
                     @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) < index ? index - 1 : index)"
                     @dragover.prevent="onDragOverDropArea">
                     <div class="preview-element-label-wrapper preview-element-label-wrapper__top"
@@ -239,7 +258,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
                   </div>
                   <!-- Bottom area drop -->
                   <div class="preview-element-area-bottom"
-                    :class="{ hidden: elementBeingDragged.field?.name === field?.name }"
+                    :class="{ hidden: elementBeingDragged.field?.name === field?.name || formStore.formSettings.previewMode !== 'editing' }"
                     @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
                     @dragover.prevent="onDragOverDropArea">
                     <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
@@ -250,12 +269,12 @@ function removeField(field: FormKitSchemaNode, index: number) {
                     </div>
                   </div>
                   <div
-                    v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                    v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
                     class="preview-form-name" @click="onClickAtFormElement(field)">
                     {{ field?.name }}
                   </div>
                   <q-icon
-                    v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                    v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
                     name="content_copy" class="preview-form-copy-action cursor-pointer"
                     @click="handleCopyField(field, index)">
                     <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
@@ -264,7 +283,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
                     </q-tooltip>
                   </q-icon>
                   <q-icon
-                    v-if="!elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || activeNameFields.hover === field?.name"
+                    v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
                     name="o_delete" class="preview-form-remove-action cursor-pointer"
                     @click="removeField(field, index)">
                     <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"

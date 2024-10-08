@@ -1,9 +1,16 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 
+type FormSettingsType = {
+  formName?: string,
+  preview: { width?: string | number | null, isFullWidth: boolean },
+  previewMode: 'editing' | 'previewing',
+}
+
 export const useFormStore = defineStore('formStore', () => {
-  const formData = ref<{ formName?: string, preview: { width?: number, isFullWidth: boolean } }>({ formName: 'Meu Formulário', preview: { width: 432, isFullWidth: false } })
+  const formSettings = ref<FormSettingsType>({ formName: 'Meu Formulário', preview: { width: 432, isFullWidth: false }, previewMode: 'editing' })
   const formFields = ref<FormKitSchemaDefinition[]>([])
   const activeField = ref<FormKitSchemaNode | null>(null)
+  const values = ref({})
 
   const { notify } = useQuasar()
 
@@ -59,7 +66,9 @@ export const useFormStore = defineStore('formStore', () => {
     activeField.value = newField
   }
 
-  const updateNameField = (oldName: string, newName: string) => {
+  const updateNameField = (oldName?: string, newName?: string) => {
+    if (!oldName || !newName) return
+
     const indexToUpdate = formFields.value.findIndex(field => field.name === oldName)
     if (indexToUpdate === -1)
       return
@@ -75,8 +84,21 @@ export const useFormStore = defineStore('formStore', () => {
     // TODO: cache form state values from this point
   }
 
+  const changePreviewWidth = (newWidth: string | number | null) => {
+    formSettings.value.preview.width = newWidth
+
+    // TODO: cache form preview width
+  }
+
+  const togglePreviewFullWidth = (isFull: boolean) => {
+    formSettings.value.preview.isFullWidth = isFull
+
+    // TODO: cache form preview is full width
+  }
+
   return {
-    formData,
+    values,
+    formSettings,
     formFields,
     activeField,
     addField,
@@ -85,5 +107,7 @@ export const useFormStore = defineStore('formStore', () => {
     copyField,
     setActiveField,
     updateNameField,
+    changePreviewWidth,
+    togglePreviewFullWidth,
   }
 })
