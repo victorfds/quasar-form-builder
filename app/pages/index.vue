@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
-import { FormKitSchema, reset } from '@formkit/vue'
+import { clearErrors, FormKitSchema, reset } from '@formkit/vue'
 
 // local variables
 const highlightDropArea = ref<boolean>(false)
@@ -11,6 +11,7 @@ const elementBeingDragged = ref<{ field?: FormKitSchemaDefinition, index?: numbe
 const originalFieldIndex = ref<number | null>(null)
 const activeNameFields = ref<{ active: string[], hover?: string }>({ active: [] })
 const dragInIndicator = ref<{ index?: number, name?: string }>({})
+const isUserDraggingOver = ref(false)
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
@@ -50,7 +51,8 @@ watch(() => formStore.activeField, (newVal) => {
 }, { deep: true })
 
 watch(() => formStore.formSettings.previewMode, () => {
-  reset("myForm", {})
+  reset("myForm")
+  clearErrors("myForm", true)
 })
 
 const getUserWidthInput = computed(() => {
@@ -61,6 +63,7 @@ const getUserWidthInput = computed(() => {
   return formStore.formSettings.preview.width
 })
 
+
 function onDragEnterFormSectionArea() {
   highlightDropArea.value = true
 }
@@ -69,10 +72,8 @@ function onDragLeaveFormSectionArea() {
   highlightDropArea.value = false
 }
 
-function onSubmit(data: any, form: FormKitNode) {
-  console.log(form)
-  console.log(data)
-  reset(form, data)
+function onSubmit(data: any, node: FormKitNode) {
+  reset(node, data)
 }
 
 function onDrop(ev: DragEvent) {
@@ -90,6 +91,7 @@ function onDrop(ev: DragEvent) {
       indexPointer.value = null
       elementBeingDragged.value = {}
       dragInIndicator.value = {}
+      isUserDraggingOver.value = false
     }
   }
 }
@@ -101,6 +103,7 @@ function onDragStartField(field: FormKitSchemaDefinition, index: number) {
 
 function handleDragover(ev: DragEvent) {
   // this fn is needed in order to drop work in from area
+  isUserDraggingOver.value = true
 }
 
 function onDragEnterInDropArea(e: DragEvent, fieldName: string, index: number) {
@@ -291,7 +294,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
                     @dragend="onDragEnd(index)" />
                   <!-- Top are drop  -->
                   <div class="preview-element-area-top"
-                    :class="{ hidden: elementBeingDragged.field?.name === field?.name || formStore.formSettings.previewMode !== 'editing' }"
+                    :class="{ hidden: elementBeingDragged.field?.name === field?.name || !isUserDraggingOver }"
                     @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) < index ? index - 1 : index)"
                     @dragover.prevent="onDragOverDropArea">
                     <div class="preview-element-label-wrapper preview-element-label-wrapper__top"
@@ -303,7 +306,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
                   </div>
                   <!-- Bottom area drop -->
                   <div class="preview-element-area-bottom"
-                    :class="{ hidden: elementBeingDragged.field?.name === field?.name || formStore.formSettings.previewMode !== 'editing' }"
+                    :class="{ hidden: elementBeingDragged.field?.name === field?.name || !isUserDraggingOver }"
                     @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
                     @dragover.prevent="onDragOverDropArea">
                     <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"

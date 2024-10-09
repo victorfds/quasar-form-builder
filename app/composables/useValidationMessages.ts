@@ -1,4 +1,4 @@
-import type { FormKitEvent } from '@formkit/core'
+import type { FormKitEvent, FormKitNode } from '@formkit/core'
 
 export function useValidationMessages(node: FormKitNode) {
   const messages = ref<string[]>([])
@@ -23,16 +23,17 @@ export function useValidationMessages(node: FormKitNode) {
     const { type, value } = event.payload
 
     // console.log(`${name} =  ${value}`)
+    // console.log(`${name} \n ${type} = ${value}`)
     if (name === 'message-added') {
       if (type === 'validation') {
         messages.value.push(value)
-        checkForErrorMessages()
       }
     }
     if (name === 'message-removed') {
       if (type === 'validation') {
         const msgIdx = messages.value.findIndex(m => m === value)
         messages.value.splice(msgIdx, 1)
+        node.clearErrors(true)
         checkForErrorMessages()
       }
     }

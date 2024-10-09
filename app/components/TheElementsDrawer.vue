@@ -70,8 +70,8 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'textarea',
       label: 'Área de texto',
-      validation: 'required',
       inputType: 'textarea',
+      validation: 'required',
     },
   },
   {
