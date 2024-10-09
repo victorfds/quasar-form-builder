@@ -14,7 +14,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'text',
       label: 'Texto',
-      propType: 'text',
+      inputType: 'text',
     },
   },
   {
@@ -27,7 +27,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'number',
       label: 'Número',
-      propType: 'number',
+      inputType: 'number',
       validation: 'required'
     },
   },
@@ -41,7 +41,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'email',
       label: 'Email',
-      propType: 'email',
+      inputType: 'email',
     },
   },
   {
@@ -56,7 +56,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       label: 'Telefone',
       mask: '(##) #####-####',
       'unmasked-value': true,
-      propType: 'text',
+      inputType: 'text',
     },
   },
 

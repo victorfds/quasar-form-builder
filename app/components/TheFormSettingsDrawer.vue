@@ -129,7 +129,7 @@ function onBlurName(_: Event) {
               Informações
             </q-card-section>
             <q-card-section>
-              <pre>
+              <pre wrap>
                 {{ formStore.values }}
               </pre>
             </q-card-section>

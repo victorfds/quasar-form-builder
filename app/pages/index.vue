@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import type { FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import { FormKitSchema, reset } from '@formkit/vue'
 
 // local variables
@@ -69,7 +69,7 @@ function onDragLeaveFormSectionArea() {
   highlightDropArea.value = false
 }
 
-function onSubmit(data, form) {
+function onSubmit(data: any, form: FormKitNode) {
   console.log(form)
   console.log(data)
   reset(form, data)
@@ -159,9 +159,81 @@ function removeField(field: FormKitSchemaNode, index: number) {
 <template>
   <section class="full-width" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
     <!-- :style="`height: calc(100vh - ${offset}px);`" -->
+    <!-- <FormKit v-model="formStore.values" type="form" :actions="true" @submit="onSubmit" #default="{ value }"> -->
+    <!--   <pre wrap>{{ value }}</pre> -->
+    <!--   <FormKitSchema :schema="[ -->
+    <!--     { -->
+    <!--       $el: 'h1', -->
+    <!--       children: 'Register', -->
+    <!--       attrs: { -->
+    <!--         class: 'text-2xl font-bold mb-4', -->
+    <!--       }, -->
+    <!--     }, -->
+    <!--     { -->
+    <!--       $formkit: 'text', -->
+    <!--       name: 'email', -->
+    <!--       label: 'Email', -->
+    <!--       help: 'This will be used for your account.', -->
+    <!--       validation: 'required|email', -->
+    <!--     }, -->
+    <!--     { -->
+    <!--       $formkit: 'password', -->
+    <!--       name: 'password', -->
+    <!--       label: 'Password', -->
+    <!--       help: 'Enter your new password.', -->
+    <!--       validation: 'required|length:5,16', -->
+    <!--     }, -->
+    <!--     { -->
+    <!--       $formkit: 'password', -->
+    <!--       name: 'password_confirm', -->
+    <!--       label: 'Confirm password', -->
+    <!--       help: 'Enter your new password again to confirm it.', -->
+    <!--       validation: 'required|confirm', -->
+    <!--       validationLabel: 'password confirmation', -->
+    <!--     }, -->
+    <!--     { -->
+    <!--       $cmp: 'FormKit', -->
+    <!--       props: { -->
+    <!--         name: 'eu_citizen', -->
+    <!--         type: 'checkbox', -->
+    <!--         id: 'eu', -->
+    <!--         label: 'Are you a european citizen?', -->
+    <!--       }, -->
+    <!--     }, -->
+    <!--     { -->
+    <!--       $formkit: 'select', -->
+    <!--       if: '$get(eu).value', // 👀 Oooo, conditionals! -->
+    <!--       name: 'cookie_notice', -->
+    <!--       label: 'Cookie notice frequency', -->
+    <!--       options: { -->
+    <!--         refresh: 'Every page load', -->
+    <!--         hourly: 'Ever hour', -->
+    <!--         daily: 'Every day', -->
+    <!--       }, -->
+    <!--       help: 'How often should we display a cookie notice?', -->
+    <!--     }, -->
+    <!--   ]" /> -->
+
+    <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
+    <!--   help="O que é isso?" /> -->
+    <!-- <FormKit type="q-input" label="Number label" name="number1" input-type="number" -->
+    <!--   validation="required:trim|number|min:1" /> -->
+    <!-- <FormKit type="q-input" label="Email" name="email" input-type="email" validation="required:trim|email" /> -->
+    <!-- <FormKit type="q-select" label="Select options" name="select1" -->
+    <!--   :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" -->
+    <!--   help="Select one of the two options" /> -->
+    <!-- <FormKit type="q-btn-toggle" label="Select options" name="toggle" -->
+    <!--   :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" /> -->
+    <!-- <FormKit type="q-checkbox" label="Concordo com os termos" name="check1" /> -->
+    <!-- <FormKit type="q-editor" name="editor" label="Edite seu texto aqui" /> -->
+    <!-- <FormKit type="q-date" name="date1" /> -->
+    <!-- <FormKit type="q-datetime" name="date" /> -->
+    <!-- </FormKit> -->
     <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`"
       :thumb-style="{ width: '4px' }">
+
+
 
 
       <q-tabs v-model="formStore.formSettings.previewMode" vertical dense shrink
@@ -188,30 +260,6 @@ function removeField(field: FormKitSchemaNode, index: number) {
         </q-tab>
       </q-tabs>
 
-      <!-- <FormKit v-model="values" id="myForm" type="form" :actions="true" @submit="onSubmit" #default="{ value }"> -->
-      <!--   <pre>{{ value }}</pre> -->
-
-      <!--   <FormKitSchema :schema="[ -->
-      <!--     { $formkit: 'email', label: 'Email address', name: 'email', validation: 'required' }, -->
-      <!--     { $formkit: 'text', label: 'First Name', name: 'firstName', validation: 'required|min:2' }, -->
-      <!--     { $formkit: 'text', label: 'Last Name', name: 'lastName', validation: 'required|min:2' }, -->
-      <!--     { $formkit: 'password', label: 'Password', name: 'password', validation: 'required|min:6' } -->
-      <!--   ]" /> -->
-      <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
-      <!--   help="O que é isso?" /> -->
-      <!-- <FormKit type="q-input" label="Number label" name="number1" input-type="number" -->
-      <!--   validation="required:trim|number|min:1" /> -->
-      <!-- <FormKit type="q-input" label="Email" name="email" input-type="email" validation="required:trim|email" /> -->
-      <!-- <FormKit type="q-select" label="Select options" name="select1" -->
-      <!--   :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" -->
-      <!--   help="Select one of the two options" /> -->
-      <!-- <FormKit type="q-btn-toggle" label="Select options" name="toggle" -->
-      <!--   :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" /> -->
-      <!-- <FormKit type="q-checkbox" label="Concordo com os termos" name="check1" /> -->
-      <!-- <FormKit type="q-editor" name="editor" label="Edite seu texto aqui" /> -->
-      <!-- <FormKit type="q-date" name="date1" /> -->
-      <!-- <FormKit type="q-datetime" name="date" /> -->
-      <!-- </FormKit> -->
 
       <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
         <q-card flat class="preview-form-container q-px-lg q-my-md"
@@ -231,10 +279,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
 
                 <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
                   @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
-                  <FormKitSchema v-if="formStore.formSettings.previewMode === 'editing'" :schema="field" />
-                  <FormKit v-if="formStore.formSettings.previewMode === 'previewing'" :type="field.$formkit"
-                    :name="field.name" :label="field.label" :input-type="field.propType"
-                    :validation="field.validation" />
+                  <FormKitSchema :schema="field" />
                   <!-- Overlay preview -->
                   <div class="overlay-preview-element cursor-pointer" :class="{
                     __latest: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active.at(-1) === field?.name,
