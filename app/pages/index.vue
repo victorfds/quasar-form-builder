@@ -335,7 +335,6 @@ function removeField(field: FormKitSchemaNode, index: number) {
 }
 
 .form-canvas {
-  min-height: 100px;
   height: fit-content;
 }
 
