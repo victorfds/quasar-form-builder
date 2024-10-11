@@ -14,7 +14,7 @@ defineProps<{
   <q-input v-if="elem.type === 'text' && elem.inputType === 'password'" type="password" outlined :label="elem.label" />
   <q-input v-if="elem.type === 'text' && elem.inputType === 'url'" type="url" outlined :label="elem.label" />
   <q-input v-if="elem.type === 'location'" outlined :label="elem.label" />
-  <q-input v-if="elem.type === 'textarea'" type="textarea" outlined :label="elem.label" />
+  <q-input v-if="elem.type === 'textarea'" :autogrow="false" type="textarea" outlined :label="elem.label" />
   <q-editor v-if="elem.type === 'editor'" :label="elem.label" />
   <q-checkbox v-if="elem.type === 'checkbox'" :label="elem.text" />
   <div v-if="elem.type === 'checkboxgroup'">

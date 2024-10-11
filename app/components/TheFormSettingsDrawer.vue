@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { codeToHtml, createHighlighter } from 'shiki'
+
 const model = defineModel<boolean>()
 const { dark } = useQuasar()
 const formStore = useFormStore()
@@ -6,6 +8,14 @@ const { setActiveField, copyField, removeField, changePreviewWidth, togglePrevie
 
 const elementStates = ref<{ name?: string, nameError?: string }>({ name: formStore.activeField?.name })
 const formNameInputRef = ref<HTMLElement | null>(null)
+const highlighter = await createHighlighter({ langs: ['json'], themes: ['vitesse-dark'] })
+
+const htmlValues = computed(() => {
+  return highlighter.codeToHtml(JSON.stringify(formStore.values, null, 2), {
+    lang: 'json',
+    theme: 'vitesse-dark'
+  })
+})
 
 watch(() => formStore.activeField, (newVal) => {
   elementStates.value.name = newVal?.name
@@ -30,9 +40,7 @@ function onBlurName(_: Event) {
 
   if (response?.message === 'name already exists') {
     elementStates.value.nameError = 'Este nome já existe'
-    return
   }
-
 }
 </script>
 
@@ -44,8 +52,8 @@ function onBlurName(_: Event) {
           <q-item
             :class="{ 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }">
             <q-item-section avatar>
-              <q-btn size="sm" flat dense round icon="close" @click="setActiveField(null)"
-                :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" />
+              <q-btn size="sm" flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+                @click="setActiveField(null)" />
             </q-item-section>
 
             <q-item-section>
@@ -58,7 +66,6 @@ function onBlurName(_: Event) {
 
             <q-item-section side>
               <div class="q-gutter-xs">
-
                 <q-btn size="sm" flat dense round icon="o_content_copy"
                   :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" @click="copyField(formStore.activeField)" />
                 <q-btn size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
@@ -108,14 +115,13 @@ function onBlurName(_: Event) {
                   <div class="row align-center items-center justify-between q-mt-sm">
                     <div>
                       <label class="">Pré-visualizar largura</label>
-                      <q-checkbox :model-value="formStore.formSettings.preview.isFullWidth"
-                        @update:model-value="togglePreviewFullWidth" label="Total" size="sm" />
+                      <q-checkbox :model-value="formStore.formSettings.preview.isFullWidth" label="Total" size="sm"
+                        @update:model-value="togglePreviewFullWidth" />
                     </div>
                     <q-input v-if="!formStore.formSettings.preview.isFullWidth"
-                      :model-value="formStore.formSettings.preview.width" @update:model-value="changePreviewWidth"
-                      suffix="px" filled color="cyan-8" dense type="number" style="max-width: 100px;" />
+                      :model-value="formStore.formSettings.preview.width" suffix="px" filled color="cyan-8" dense
+                      type="number" style="max-width: 100px;" @update:model-value="changePreviewWidth" />
                   </div>
-
                 </div>
               </q-card-section>
             </q-card>
@@ -124,19 +130,22 @@ function onBlurName(_: Event) {
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'previewing'">
         <q-list separator>
-          <q-card>
+          <q-card flat>
             <q-card-section>
-              Informações
+              <div>
+                <span class="text-weight-semibold">
+                  Informações
+                </span>
+
+              </div>
             </q-card-section>
             <q-card-section>
-              <pre wrap>
-                {{ formStore.values }}
-              </pre>
+              <div v-html="htmlValues">
+              </div>
             </q-card-section>
           </q-card>
         </q-list>
       </div>
-
     </q-scroll-area>
   </q-drawer>
 </template>

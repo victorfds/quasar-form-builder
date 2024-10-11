@@ -1,4 +1,5 @@
 import { QuasarBtnToggle, QuasarCheckbox, QuasarDate, QuasarDatetime, QuasarEditor, QuasarInput, QuasarSelect } from '#components'
+import type { FormKitNode } from '@formkit/core'
 import { en, pt } from '@formkit/i18n'
 import { defineFormKitConfig } from '@formkit/vue'
 
@@ -8,31 +9,37 @@ quasarPlugin.library = (node: FormKitNode) => {
   const quasarTypes = {
     'q-input': () => node.define({
       type: 'input',
-      props: ['inputType'],
+      props: ['inputType', 'columns'],
       component: QuasarInput,
     }),
     'q-select': () => node.define({
       type: 'input',
+      props: ['columns'],
       component: QuasarSelect,
     }),
     'q-btn-toggle': () => node.define({
       type: 'input',
+      props: ['columns'],
       component: QuasarBtnToggle,
     }),
     'q-checkbox': () => node.define({
       type: 'input',
+      props: ['columns'],
       component: QuasarCheckbox,
     }),
     'q-editor': () => node.define({
       type: 'input',
+      props: ['columns'],
       component: QuasarEditor,
     }),
     'q-date': () => node.define({
       type: 'input',
+      props: ['columns'],
       component: QuasarDate,
     }),
     'q-datetime': () => node.define({
       type: 'input',
+      props: ['columns'],
       component: QuasarDatetime,
     }),
 

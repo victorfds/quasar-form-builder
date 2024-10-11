@@ -9,7 +9,7 @@ if (import.meta.client) {
     // INFO: It is needed timeout here to avoid mismatch hydration between server and client
     setTimeout(() => {
       dark.set(true)
-    }, 300)
+    }, 400)
   }
 }
 </script>

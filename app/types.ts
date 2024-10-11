@@ -22,3 +22,5 @@ export interface ElementType {
   accept?: string
   file?: { rules?: string[] }
 }
+
+export type ColumnsType = { container: number }

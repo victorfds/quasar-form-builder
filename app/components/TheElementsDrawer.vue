@@ -15,6 +15,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       name: 'text',
       label: 'Texto',
       inputType: 'text',
+      columns: { container: 6 }
     },
   },
   {
@@ -28,7 +29,8 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       name: 'number',
       label: 'Número',
       inputType: 'number',
-      validation: 'required'
+      validation: 'required',
+      columns: { container: 6 }
     },
   },
   {
@@ -51,12 +53,12 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
     description: 'Número de telefone com máscara',
     schema:
     {
-      $formkit: 'q-input',
-      name: 'phone',
-      label: 'Telefone',
-      mask: '(##) #####-####',
+      '$formkit': 'q-input',
+      'name': 'phone',
+      'label': 'Telefone',
+      'mask': '(##) #####-####',
       'unmasked-value': true,
-      inputType: 'text',
+      'inputType': 'text',
     },
   },
 

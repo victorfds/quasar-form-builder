@@ -1,9 +1,9 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 
-type FormSettingsType = {
-  formName?: string,
-  preview: { width?: string | number | null, isFullWidth: boolean },
-  previewMode: 'editing' | 'previewing',
+interface FormSettingsType {
+  formName?: string
+  preview: { width?: string | number | null, isFullWidth: boolean }
+  previewMode: 'editing' | 'previewing'
 }
 
 export const useFormStore = defineStore('formStore', () => {
@@ -43,7 +43,8 @@ export const useFormStore = defineStore('formStore', () => {
       index = formFields.value.findIndex(ff => ff.name === field?.name)
     }
 
-    if (index < 0) return
+    if (index < 0)
+      return
 
     formFields.value.splice(index, 1)
 
@@ -67,7 +68,8 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const updateNameField = (oldName?: string, newName?: string) => {
-    if (!oldName || !newName) return
+    if (!oldName || !newName)
+      return
 
     const indexToUpdate = formFields.value.findIndex(field => field.name === oldName)
     if (indexToUpdate === -1)

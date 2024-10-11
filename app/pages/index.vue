@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import { clearErrors, FormKitSchema, reset } from '@formkit/vue'
+import type { ColumnsType } from '~/types';
 
 // local variables
 const highlightDropArea = ref<boolean>(false)
@@ -51,18 +52,19 @@ watch(() => formStore.activeField, (newVal) => {
 }, { deep: true })
 
 watch(() => formStore.formSettings.previewMode, () => {
-  reset("myForm")
-  clearErrors("myForm", true)
+  reset('myForm')
+  clearErrors('myForm', true)
 })
 
 const getUserWidthInput = computed(() => {
   // Returns the initial width form value if undefined
-  if (!formStore.formSettings.preview.width) return 432
-  if (Number(formStore.formSettings.preview.width) < 0) return 0
+  if (!formStore.formSettings.preview.width)
+    return 432
+  if (Number(formStore.formSettings.preview.width) < 0)
+    return 0
 
   return formStore.formSettings.preview.width
 })
-
 
 function onDragEnterFormSectionArea() {
   highlightDropArea.value = true
@@ -129,6 +131,7 @@ function onDragEnd(index: number) {
   indexPointer.value = null
   elementBeingDragged.value = {}
   dragInIndicator.value = {}
+  isUserDraggingOver.value = false
 }
 
 function onClickAtFormElement(field: FormKitSchemaNode) {
@@ -164,58 +167,6 @@ function removeField(field: FormKitSchemaNode, index: number) {
     <!-- :style="`height: calc(100vh - ${offset}px);`" -->
     <!-- <FormKit v-model="formStore.values" type="form" :actions="true" @submit="onSubmit" #default="{ value }"> -->
     <!--   <pre wrap>{{ value }}</pre> -->
-    <!--   <FormKitSchema :schema="[ -->
-    <!--     { -->
-    <!--       $el: 'h1', -->
-    <!--       children: 'Register', -->
-    <!--       attrs: { -->
-    <!--         class: 'text-2xl font-bold mb-4', -->
-    <!--       }, -->
-    <!--     }, -->
-    <!--     { -->
-    <!--       $formkit: 'text', -->
-    <!--       name: 'email', -->
-    <!--       label: 'Email', -->
-    <!--       help: 'This will be used for your account.', -->
-    <!--       validation: 'required|email', -->
-    <!--     }, -->
-    <!--     { -->
-    <!--       $formkit: 'password', -->
-    <!--       name: 'password', -->
-    <!--       label: 'Password', -->
-    <!--       help: 'Enter your new password.', -->
-    <!--       validation: 'required|length:5,16', -->
-    <!--     }, -->
-    <!--     { -->
-    <!--       $formkit: 'password', -->
-    <!--       name: 'password_confirm', -->
-    <!--       label: 'Confirm password', -->
-    <!--       help: 'Enter your new password again to confirm it.', -->
-    <!--       validation: 'required|confirm', -->
-    <!--       validationLabel: 'password confirmation', -->
-    <!--     }, -->
-    <!--     { -->
-    <!--       $cmp: 'FormKit', -->
-    <!--       props: { -->
-    <!--         name: 'eu_citizen', -->
-    <!--         type: 'checkbox', -->
-    <!--         id: 'eu', -->
-    <!--         label: 'Are you a european citizen?', -->
-    <!--       }, -->
-    <!--     }, -->
-    <!--     { -->
-    <!--       $formkit: 'select', -->
-    <!--       if: '$get(eu).value', // 👀 Oooo, conditionals! -->
-    <!--       name: 'cookie_notice', -->
-    <!--       label: 'Cookie notice frequency', -->
-    <!--       options: { -->
-    <!--         refresh: 'Every page load', -->
-    <!--         hourly: 'Ever hour', -->
-    <!--         daily: 'Every day', -->
-    <!--       }, -->
-    <!--       help: 'How often should we display a cookie notice?', -->
-    <!--     }, -->
-    <!--   ]" /> -->
 
     <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
     <!--   help="O que é isso?" /> -->
@@ -235,10 +186,6 @@ function removeField(field: FormKitSchemaNode, index: number) {
     <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`"
       :thumb-style="{ width: '4px' }">
-
-
-
-
       <q-tabs v-model="formStore.formSettings.previewMode" vertical dense shrink
         class="rounded-borders fixed-left q-ml-sm q-mt-md"
         :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
@@ -263,24 +210,26 @@ function removeField(field: FormKitSchemaNode, index: number) {
         </q-tab>
       </q-tabs>
 
-
       <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
         <q-card flat class="preview-form-container q-px-lg q-my-md"
           :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
-          :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : 'calc(100px + ' + getUserWidthInput + 'px)' }">
+          :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }">
           <q-card-section>
-            <FormKit v-model="formStore.values" id="myForm" type="form" :actions="false" @submit="onSubmit">
-              <div ref="formDroppableRef" class="form-canvas q-py-sm rounded-borders" @drop.prevent="onDrop"
-                @dragover.prevent="handleDragover">
+            <FormKit id="myForm" v-model="formStore.values" type="form" :actions="false" @submit="onSubmit">
+              <div ref="formDroppableRef"
+                class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
+                @drop.prevent="onDrop" @dragover.prevent="handleDragover">
                 <!-- No elements display message -->
-                <div v-if="!formFields.length" class="overlay-drop-here row items-center justify-center rounded-borders"
+                <div v-if="!formFields.length"
+                  class="overlay-drop-here row items-center justify-center rounded-borders span-12"
                   :class="{ 'bg-green-8': !formFields.length && highlightDropArea }"
                   @dragenter.prevent="onDragEnterFormSectionArea" @dragleave.prevent="onDragLeaveFormSectionArea">
                   Arraste e solte aqui os elementos
                   da coluna esquerda
                 </div>
 
-                <div v-for="(field, index) in formFields" :key="field.name" class="form-field q-my-md"
+                <div v-for="(field, index) in formFields" :key="field.name" class="form-field grid span-6"
+                  :class="field.columns ? `span-${field.columns.container}` : `span-12`"
                   @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
                   <FormKitSchema :schema="field" />
                   <!-- Overlay preview -->
@@ -289,7 +238,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
                     __active: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name),
                     __dragging: elementBeingDragged.field?.name === field?.name,
                     __hover: activeNameFields.hover === field?.name,
-                    hidden: formStore.formSettings.previewMode !== 'editing'
+                    hidden: formStore.formSettings.previewMode !== 'editing',
                   }" draggable="true" @click="onClickAtFormElement(field)" @dragstart="onDragStartField(field, index)"
                     @dragend="onDragEnd(index)" />
                   <!-- Top are drop  -->
@@ -344,7 +293,6 @@ function removeField(field: FormKitSchemaNode, index: number) {
             </FormKit>
           </q-card-section>
         </q-card>
-
       </article>
 
       <q-tabs vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
