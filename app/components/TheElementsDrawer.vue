@@ -15,7 +15,6 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       name: 'text',
       label: 'Texto',
       inputType: 'text',
-      columns: { container: 6 }
     },
   },
   {
@@ -30,7 +29,6 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       label: 'Número',
       inputType: 'number',
       validation: 'required',
-      columns: { container: 6 }
     },
   },
   {

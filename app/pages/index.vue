@@ -94,6 +94,7 @@ function onDrop(ev: DragEvent) {
       elementBeingDragged.value = {}
       dragInIndicator.value = {}
       isUserDraggingOver.value = false
+      highlightDropArea.value = false
     }
   }
 }
