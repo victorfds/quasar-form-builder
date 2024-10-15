@@ -14,6 +14,15 @@ export const useFormStore = defineStore('formStore', () => {
 
   const { notify } = useQuasar()
 
+  const getSchema = computed(() => {
+    // @ts-expect-error the following lines is envolved in differents types, but certainly they should not fail
+    return formFields.value.reduce((acc, { name, ...rest }) => {
+      // @ts-expect-error this is fine since we know our node schema always have object style definition
+      acc[name] = rest
+      return acc
+    }, {})
+  })
+
   const addField = (field: FormKitSchemaNode, pos?: number | null) => {
     pos = Number(pos)
     const formLength = formFields.value.length
@@ -103,6 +112,7 @@ export const useFormStore = defineStore('formStore', () => {
     formSettings,
     formFields,
     activeField,
+    getSchema,
     addField,
     updateFieldIndex,
     removeField,

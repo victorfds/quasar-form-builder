@@ -229,9 +229,14 @@ function removeField(field: FormKitSchemaNode, index: number) {
                   da coluna esquerda
                 </div>
 
-                <div v-for="(field, index) in formFields" :key="field.name" class="form-field grid span-6"
-                  :class="field.columns ? `span-${field.columns.container}` : `span-12`"
-                  @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
+                <div v-for="(field, index) in formFields" :key="field.name" class="form-field flex" :class="[
+                  field.columns ? `span-${field.columns.container}` : 'span-12',
+                  field.align && {
+                    right: 'justify-end',
+                    center: 'justify-center',
+                    left: 'justify-start'
+                  }[field.align] || ''
+                ]" @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
                   <FormKitSchema :schema="field" />
                   <!-- Overlay preview -->
                   <div class="overlay-preview-element cursor-pointer" :class="{

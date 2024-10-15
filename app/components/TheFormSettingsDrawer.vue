@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { codeToHtml, createHighlighter } from 'shiki'
+import {  createHighlighter } from 'shiki'
 
 const model = defineModel<boolean>()
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const { setActiveField, copyField, removeField, changePreviewWidth, togglePreviewFullWidth } = formStore
 
+// copy all of this to settings components file
 const elementStates = ref<{ name?: string, nameError?: string }>({ name: formStore.activeField?.name })
 const formNameInputRef = ref<HTMLElement | null>(null)
 const highlighter = await createHighlighter({ langs: ['json'], themes: ['vitesse-dark'] })
@@ -94,6 +95,7 @@ function onBlurName(_: Event) {
               </q-card-section>
             </q-card>
           </q-expansion-item>
+          <pre>{{formStore.activeField}}</pre>
         </q-list>
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && !formStore.activeField">
