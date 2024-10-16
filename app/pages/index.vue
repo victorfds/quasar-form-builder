@@ -229,12 +229,12 @@ function removeField(field: FormKitSchemaNode, index: number) {
                   da coluna esquerda
                 </div>
 
-                <div v-for="(field, index) in formFields" :key="field.name" class="form-field flex" :class="[
+                <div v-for="(field, index) in formFields" :key="field.name" class="form-field" :class="[
                   field.columns ? `span-${field.columns.container}` : 'span-12',
                   field.align && {
-                    right: 'justify-end',
-                    center: 'justify-center',
-                    left: 'justify-start'
+                    right: 'flex justify-end',
+                    center: 'flex justify-center',
+                    left: 'flex justify-start'
                   }[field.align] || ''
                 ]" @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
                   <FormKitSchema :schema="field" />
