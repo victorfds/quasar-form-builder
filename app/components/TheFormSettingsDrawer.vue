@@ -2,10 +2,12 @@
 import { createHighlighter } from 'shiki'
 
 const model = defineModel<boolean>()
-const { dark } = useQuasar()
+const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
 const { setActiveField, copyField, removeField, changePreviewWidth, togglePreviewFullWidth } = formStore
 
+// Possible properties are: ["properties","submission","validation","layout"]
+const formClosed = JSON.parse(localStorage.getItem('form-closed') || '[]')
 const highlighter = await createHighlighter({ langs: ['json'], themes: ['vitesse-dark'] })
 const SettingsQBtnConfigComponent = resolveComponent('SettingsQBtnConfig')
 

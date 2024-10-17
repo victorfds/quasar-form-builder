@@ -5,16 +5,17 @@ const { setActiveField, copyField, removeField } = formStore
 
 const elementsClosed = localStorage.getItem('elements-closed')
 
-const elementStates = ref<{ name?: string, nameError?: string }>({ name: formStore.activeField?.name })
+const elementStates = ref<{ name?: string, nameError?: string, label?: string }>({ name: formStore.activeField?.name })
 const propNameInputRef = ref<HTMLElement | null>(null)
+const propLabelInputRef = ref<HTMLElement | null>(null)
 
 watch(() => formStore.activeField, (newVal) => {
   elementStates.value.name = newVal?.name
   elementStates.value.nameError = ''
 }, { deep: true })
 
-function onClickLabelFormName() {
-  propNameInputRef.value?.focus()
+function onClickLabel(refElement: HTMLElement | null) {
+  refElement?.focus()
 }
 
 function onBlurName(_: Event) {
@@ -34,6 +35,10 @@ function onBlurName(_: Event) {
   }
 }
 
+function onEnteredProp(propName: string, propValue?: string) {
+  if (!propName || !propValue) return
+  console.log(propName, propValue)
+}
 </script>
 <template>
   <q-list separator>
@@ -61,13 +66,13 @@ function onBlurName(_: Event) {
         </div>
       </q-item-section>
     </q-item>
-    <SettingsBaseWrapper>
+    <SettingsExpansionBaseWrapper>
       <template #properties>
         <q-card flat>
           <q-card-section>
             <div>
               <div class="row align-center items-center justify-between">
-                <label for="form-name" @click="onClickLabelFormName">
+                <label for="form-name" @click="onClickLabel(propNameInputRef)">
                   <span class="text-body2">
                     Nome
                   </span>
@@ -78,9 +83,44 @@ function onBlurName(_: Event) {
               </div>
             </div>
           </q-card-section>
+          <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'"/>
+          <q-card-section>
+            <div>
+              <div class="row align-center items-center justify-between">
+                <label for="form-label" @click="onClickLabel(propLabelInputRef)">
+                  <span class="text-body2">
+                    Rótulo
+                  </span>
+                </label>
+                <q-input id="form-label" ref="propLabelInputRef" v-model.trim="elementStates.label" hide-bottom-space
+                  filled color="cyan-8" dense type="text" @blur="onEnteredProp('label', elementStates.label)" />
+              </div>
+            </div>
+          </q-card-section>
+
         </q-card>
       </template>
-    </SettingsBaseWrapper>
+    </SettingsExpansionBaseWrapper>
+    <SettingsExpansionBaseWrapper label="Opções de botão">
+      <template #options>
+        <q-card flat>
+          <q-card-section>
+            <div>
+            </div>
+          </q-card-section>
+        </q-card>
+      </template>
+    </SettingsExpansionBaseWrapper>
+    <SettingsExpansionBaseWrapper>
+      <template #layout>
+        <q-card flat>
+          <q-card-section>
+            <div>
+            </div>
+          </q-card-section>
+        </q-card>
+      </template>
+    </SettingsExpansionBaseWrapper>
 
     <pre>{{ formStore.activeField }}</pre>
   </q-list>

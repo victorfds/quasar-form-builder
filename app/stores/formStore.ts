@@ -47,7 +47,9 @@ export const useFormStore = defineStore('formStore', () => {
     formFields.value.splice(destinationIndex, 0, draggedField!)
   }
 
-  const removeField = (field: FormKitSchemaNode, index?: number) => {
+  const removeField = (field: FormKitSchemaNode | null, index?: number) => {
+    if (!field) return
+
     if (!index) {
       index = formFields.value.findIndex(ff => ff.name === field?.name)
     }
@@ -62,7 +64,9 @@ export const useFormStore = defineStore('formStore', () => {
     }
   }
 
-  const copyField = (field: FormKitSchemaNode, index?: number) => {
+  const copyField = (field: FormKitSchemaNode | null, index?: number) => {
+    if (!field) return
+
     if (!index) {
       index = formFields.value.findIndex(ff => ff.name === field?.name)
     }

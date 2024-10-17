@@ -7,7 +7,7 @@ defineProps<{ context: FormKitFrameworkContext & { attrs: QBtnProps } }>()
 </script>
 
 <template>
-  <q-btn :class="{ 'full-width': context.attrs.full }" :label="context.label" :icon="context.attrs.icon"
+  <q-btn unelevated :class="{ 'full-width': context.attrs.full }" :label="context.label" :icon="context.attrs.icon"
     :color="context.attrs.color || 'primary'" :loading="context.attrs.loading || false"
     :disable="context.attrs.disable || false" :size="context.attrs.size || 'md'" v-bind="context.attrs"
     @click="(event) => context?.node.input(event)" />
