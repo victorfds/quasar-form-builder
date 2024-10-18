@@ -194,7 +194,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
         <q-tab name="editing">
           <template #default>
             <q-icon name="edit" size="xs">
-              <q-tooltip anchor="center right" self="center left" :offset="[12, 12]">
+              <q-tooltip class="bg-grey-10" anchor="center right" self="center left" :offset="[12, 12]">
                 Editar
               </q-tooltip>
             </q-icon>
@@ -203,7 +203,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
         <q-tab name="previewing">
           <template #default>
             <q-icon name="visibility" size="xs">
-              <q-tooltip anchor="center right" self="center left" :offset="[12, 12]">
+              <q-tooltip class="bg-grey-10" anchor="center right" self="center left" :offset="[12, 12]">
                 Pré-visualizar
               </q-tooltip>
             </q-icon>
@@ -236,7 +236,8 @@ function removeField(field: FormKitSchemaNode, index: number) {
                     center: 'flex justify-center',
                     left: 'flex justify-start'
                   }[field.align] || ''
-                ]" @mouseover.prevent="onMouseOverAtFormElement(field)" @mouseleave.prevent="onMouseLeaveAtFormElement">
+                ]" @mouseover.prevent="onMouseOverAtFormElement(field)"
+                  @mouseleave.prevent="onMouseLeaveAtFormElement">
                   <FormKitSchema :schema="field" />
                   <!-- Overlay preview -->
                   <div class="overlay-preview-element cursor-pointer" :class="{
@@ -307,7 +308,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
         <q-tab name="undo">
           <template #default>
             <q-icon name="undo" size="xs">
-              <q-tooltip anchor="center left" self="center right" :offset="[12, 12]">
+              <q-tooltip class="bg-grey-10" anchor="center left" self="center right" :offset="[12, 12]">
                 Retroceder
               </q-tooltip>
             </q-icon>
@@ -316,7 +317,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
         <q-tab name="redo">
           <template #default>
             <q-icon name="redo" size="xs">
-              <q-tooltip anchor="center left" self="center right" :offset="[12, 12]">
+              <q-tooltip class="bg-grey-10" anchor="center left" self="center right" :offset="[12, 12]">
                 Avançar
               </q-tooltip>
             </q-icon>

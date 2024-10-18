@@ -98,8 +98,7 @@ const statics = ref<{ name: string, icon: string, title: string, description: st
     {
       $formkit: 'q-btn',
       name: 'submit',
-      label: 'Finalizar',
-      type: 'input',
+      buttonLabel: 'Finalizar',
     },
   },
 ])

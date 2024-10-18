@@ -1,4 +1,16 @@
 <script setup lang="ts">
+defineProps<{
+  sectionLabels?: {
+    properties?: string;
+    decorators?: string;
+    layout?: string;
+    conditions?: string;
+    attributes?: string;
+    validation?: string;
+    data?: string;
+    options?: string;
+  }
+}>()
 const slots = defineSlots<{
   properties: string;
   decorators: string;
@@ -134,7 +146,8 @@ function toggleExpandAll() {
     <ClientOnly>
       <q-expansion-item :model-value="expansionState[slotKey]"
         :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-        :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'" :label="label || sections[slotKey]"
+        :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'"
+        :label="sectionLabels?.[slotKey] || sections[slotKey]"
         :default-opened="allExpanded ? true : !elementClosed.includes(slotKey)"
         @update:model-value="val => cachingDefaultClosed(slotKey, val)" v-for="slotKey in availableSlots"
         :key="slotKey">

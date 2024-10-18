@@ -99,6 +99,20 @@ export const useFormStore = defineStore('formStore', () => {
     // TODO: cache form state values from this point
   }
 
+  const updatePropFromActiveField = (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: string | number | null) => {
+    if (!propName || !newPropValue || !fieldElement) return
+
+    const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement?.name)
+    if (indexToUpdate === -1) return
+
+    if (!activeField.value) return
+
+    activeField.value[propName] = newPropValue
+    formFields.value[indexToUpdate][propName] = newPropValue
+
+    // TODO: cache form state values from this point
+  }
+
   const changePreviewWidth = (newWidth: string | number | null) => {
     formSettings.value.preview.width = newWidth
 
@@ -123,6 +137,7 @@ export const useFormStore = defineStore('formStore', () => {
     copyField,
     setActiveField,
     updateNameField,
+    updatePropFromActiveField,
     changePreviewWidth,
     togglePreviewFullWidth,
   }
