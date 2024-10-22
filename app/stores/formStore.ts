@@ -81,8 +81,7 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const updateNameField = (oldName?: string, newName?: string) => {
-    if (!oldName || !newName)
-      return
+    if (!oldName) return
 
     const indexToUpdate = formFields.value.findIndex(field => field.name === oldName)
     if (indexToUpdate === -1)
@@ -97,32 +96,42 @@ export const useFormStore = defineStore('formStore', () => {
     formFields.value[indexToUpdate].name = newName
 
     // TODO: cache form state values from this point
+    // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
-  const updatePropFromActiveField = (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: string | number | null) => {
-    if (!propName || !newPropValue || !fieldElement) return
+  const updatePropFromActiveField = (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: string | number | boolean | null) => {
+    if (!propName || !fieldElement) return
 
     const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement?.name)
     if (indexToUpdate === -1) return
 
     if (!activeField.value) return
 
+    if (newPropValue === false || newPropValue === "") {
+      delete activeField.value[propName]
+      delete formFields.value[indexToUpdate][propName]
+      return
+    }
+
     activeField.value[propName] = newPropValue
     formFields.value[indexToUpdate][propName] = newPropValue
 
     // TODO: cache form state values from this point
+    // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
   const changePreviewWidth = (newWidth: string | number | null) => {
     formSettings.value.preview.width = newWidth
 
     // TODO: cache form preview width
+    // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
   const togglePreviewFullWidth = (isFull: boolean) => {
     formSettings.value.preview.isFullWidth = isFull
 
     // TODO: cache form preview is full width
+    // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
   return {

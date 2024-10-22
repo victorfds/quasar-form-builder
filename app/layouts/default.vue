@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { dark, localStorage } = useQuasar()
 const isElementsDrawerOpened = ref(false)
 const isFormSettingsDrawerOpened = ref(false)
 
@@ -17,22 +18,31 @@ function fnTweak(offset: number) {
   offsetPage.value = offset
   return { minHeight: offset ? `calc(100vh - ${offset}px)` : '100vh' }
 }
+
+function toggleThemeFn(newState: boolean) {
+  const localTheme = newState ? 'dark' : 'light'
+  dark.set(newState)
+  localStorage.set('theme', localTheme)
+}
 </script>
 
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header bordered class="bg-primary text-white" height-hint="98">
+    <q-header bordered class="text-white" height-hint="98" :class="dark.isActive ? 'bg-grey-10' : 'bg-white'">
       <q-toolbar>
-        <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
+        <q-btn dense flat round icon="menu" @click="toggleLeftDrawer"
+          :color="dark.isActive ? 'grey-11' : 'blue-grey-8'" />
 
-        <q-toolbar-title>
-          <q-avatar>
-            <img src="https://cdn.quasar.dev/logo-v2/svg/logo-mono-white.svg">
-          </q-avatar>
-          Title
+        <q-toolbar-title :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
+          Construtor de formulário
         </q-toolbar-title>
+        <ClientOnly>
+          <q-toggle :model-value="dark.isActive" checked-icon="dark_mode" unchecked-icon="light_mode" size="3rem"
+            color="primary" keep-color @update:model-value="toggleThemeFn" />
+        </ClientOnly>
+        <q-btn dense flat round icon="menu" @click="toggleRightDrawer"
+          :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" />
 
-        <q-btn dense flat round icon="menu" @click="toggleRightDrawer" />
       </q-toolbar>
     </q-header>
 

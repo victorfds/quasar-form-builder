@@ -5,18 +5,30 @@ const { updatePropFromActiveField } = formStore
 
 const elementsClosed = localStorage.getItem('elements-closed')
 
-const elementStates = ref<{ name?: string, nameError?: string, label?: string, tooltip?: string, description?: string, buttonLabel?: string }>({
+const elementStates = ref<{
+  name?: string,
+  nameError?: string,
+  label?: string,
+  tooltip?: string,
+  description?: string,
+  buttonLabel?: string,
+  buttonType?: string,
+  buttonAction: { resets: boolean }
+}>({
   name: formStore.activeField?.name,
   label: formStore.activeField?.label,
   tooltip: formStore.activeField?.info,
   description: formStore.activeField?.description,
-  buttonLabel: formStore.activeField?.buttonLabel
+  buttonLabel: formStore.activeField?.buttonLabel,
+  buttonType: formStore.activeField?.color || 'primary',
+  buttonAction: { resets: false }
 })
 const propNameInputRef = ref<HTMLInputElement | null>(null)
 const propLabelInputRef = ref<HTMLInputElement | null>(null)
 const propTooltipInputRef = ref<HTMLInputElement | null>(null)
 const propDescriptionInputRef = ref<HTMLInputElement | null>(null)
 const propButtonLabelInputRef = ref<HTMLInputElement | null>(null)
+const propButtonTypeInputRef = ref<HTMLInputElement | null>(null)
 
 watch(() => formStore.activeField, (newVal) => {
   elementStates.value.name = newVal?.name
@@ -32,8 +44,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
 
 function onBlurName(_: Event) {
   elementStates.value.nameError = ''
-  if (elementStates.value.name === formStore.activeField?.name)
-    return
+  if (elementStates.value.name === formStore.activeField?.name) return
 
   const response = formStore.updateNameField(formStore.activeField?.name, elementStates.value.name)
 
@@ -47,8 +58,8 @@ function onBlurName(_: Event) {
   }
 }
 
-function onEnteredProp(propName: string, propValue?: string | number | null) {
-  if (!propName || !propValue) return
+function onEnteredProp(propName: string, propValue?: string | number | boolean | null) {
+  if (!propName) return
 
   updatePropFromActiveField(formStore.activeField, propName, propValue)
 }
@@ -119,20 +130,67 @@ function onEnteredProp(propName: string, propValue?: string | number | null) {
     <template #options>
       <q-card flat>
         <q-card-section>
-          <div>
-            <div class="row align-center items-center justify-between">
-              <label for="form-button-label" @click="onClickLabel(propButtonLabelInputRef, { select: true })">
-                <span class="text-body2">
-                  Texto do botão
-                </span>
-              </label>
-              <q-input id="form-button-label" ref="propButtonLabelInputRef" v-model.trim="elementStates.buttonLabel"
-                hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
-                @update:model-value="val => onEnteredProp('buttonLabel', val)" />
-            </div>
-
+          <div class="row align-center items-center justify-between">
+            <label for="form-button-label" @click="onClickLabel(propButtonLabelInputRef, { select: true })">
+              <span class="text-body2">
+                Texto do botão
+              </span>
+            </label>
+            <q-input id="form-button-label" ref="propButtonLabelInputRef" v-model.trim="elementStates.buttonLabel"
+              hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
+              @update:model-value="val => onEnteredProp('buttonLabel', val)" />
           </div>
         </q-card-section>
+        <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
+        <q-card-section>
+          <div class="row align-center items-center justify-between">
+            <label for="form-button-type" @click="onClickLabel(propButtonTypeInputRef)">
+              <span class="text-body2">
+                Tipo
+              </span>
+            </label>
+            <q-btn-toggle :model-value="elementStates.buttonType" id="form-button-type" no-wrap unelevated no-caps
+              toggle-color="primary" @update:model-value="val => {
+                elementStates.buttonType = val
+                onEnteredProp('color', val)
+              }" :color="dark.isActive ? 'grey-10' : 'grey-3'" rounded size="sm"
+              :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
+                { label: 'Primário', value: 'primary' },
+                { label: 'Secundário', value: 'secondary' },
+                { label: 'Risco', value: 'negative' }
+              ]" />
+          </div>
+        </q-card-section>
+        <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
+        <q-card-section>
+          <div class="row align-center items-center justify-between">
+            <label for="form-button-toggle-submit">
+              <span class="text-body2">
+                Concluir
+              </span>
+            </label>
+
+            <q-toggle :model-value="elementStates.buttonAction.resets" color="primary" :true-value="false"
+              :false-value="true" @update:model-value="val => {
+                elementStates.buttonAction.resets = val
+                onEnteredProp('resets', val)
+              }" />
+          </div>
+          <div class="row align-center items-center justify-between">
+            <label for="form-button-toggle-submit">
+              <span class="text-body2">
+                Reinicializar
+              </span>
+            </label>
+
+            <q-toggle :model-value="elementStates.buttonAction.resets" color="primary" @update:model-value="val => {
+                elementStates.buttonAction.resets = val
+                onEnteredProp('resets', val)
+              }" />
+          </div>
+
+        </q-card-section>
+
       </q-card>
     </template>
     <template #layout>

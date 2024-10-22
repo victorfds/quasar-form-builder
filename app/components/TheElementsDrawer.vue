@@ -51,12 +51,12 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
     description: 'Número de telefone com máscara',
     schema:
     {
-      '$formkit': 'q-input',
-      'name': 'phone',
-      'label': 'Telefone',
-      'mask': '(##) #####-####',
+      $formkit: 'q-input',
+      name: 'phone',
+      label: 'Telefone',
+      mask: '(##) #####-####',
       'unmasked-value': true,
-      'type': 'text',
+      type: 'text',
     },
   },
 
@@ -114,7 +114,7 @@ function onDragStart(ev: DragEvent, tool: FormKitSchemaNode) {
 </script>
 
 <template>
-  <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="left" bordered>
+  <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="left">
     <q-tabs v-model="tab" narrow-indicator :class="dark.isActive ? 'bg-transparent' : 'bg-blue-grey-1'" align="justify"
       indicator-color="transparent" :active-bg-color="dark.isActive ? 'grey-9' : 'white'">
       <q-tab name="elements" label="Elementos" no-caps />

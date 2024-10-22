@@ -189,7 +189,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
       :thumb-style="{ width: '4px' }">
       <q-tabs v-model="formStore.formSettings.previewMode" vertical dense shrink
         class="rounded-borders fixed-left q-ml-sm q-mt-md"
-        :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+        :class="dark.isActive ? 'bg-dark text-white' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
         active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;">
         <q-tab name="editing">
           <template #default>

@@ -8,7 +8,7 @@ const { setActiveField, copyField, removeField, changePreviewWidth, togglePrevie
 
 // Possible properties are: ["properties","submission","validation","layout"]
 const formClosed = JSON.parse(localStorage.getItem('form-closed') || '[]')
-const highlighter = await createHighlighter({ langs: ['json'], themes: ['vitesse-dark'] })
+const highlighter = await createHighlighter({ langs: ['json'], themes: ['vitesse-dark', 'vitesse-light'] })
 const SettingsQBtnConfigComponent = resolveComponent('SettingsQBtnConfig')
 
 const formNameInputRef = ref<HTMLElement | null>(null)
@@ -16,7 +16,12 @@ const formNameInputRef = ref<HTMLElement | null>(null)
 const htmlValues = computed(() => {
   return highlighter.codeToHtml(JSON.stringify(formStore.values, null, 2), {
     lang: 'json',
-    theme: 'vitesse-dark'
+    theme: dark.isActive ? 'vitesse-dark' : 'vitesse-light',
+    colorReplacements: {
+      'vitesse-dark': {
+        '#121212': '#1D1D1D'
+      },
+    }
   })
 })
 
@@ -33,7 +38,7 @@ function onClickLabelFormName() {
 </script>
 
 <template>
-  <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="right" :width="340" bordered>
+  <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="right" :width="340">
     <q-scroll-area class="fit" visible>
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
         <component :is="getComponentSettings" />

@@ -117,7 +117,7 @@ function toggleExpandAll() {
 </script>
 
 <template>
-  <q-list separator>
+  <q-list separator style="max-width: 340px;">
     <q-item :class="{ 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }">
       <q-item-section avatar>
         <q-btn size="sm" flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
@@ -126,7 +126,7 @@ function toggleExpandAll() {
 
       <q-item-section>
         <q-item-label>
-          <h6 class="text-h6 no-margin">
+          <h6 class="break-all text-h6 no-margin">
             {{ formStore.activeField?.name }}
           </h6>
         </q-item-label>
