@@ -34,7 +34,7 @@ function toggleThemeFn(newState: boolean) {
           :color="dark.isActive ? 'grey-11' : 'blue-grey-8'" />
 
         <q-toolbar-title :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
-          Construtor de formulário
+          Construtor de Formulários
         </q-toolbar-title>
         <ClientOnly>
           <q-toggle :model-value="dark.isActive" checked-icon="dark_mode" unchecked-icon="light_mode" size="3rem"

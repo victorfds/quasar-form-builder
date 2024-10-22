@@ -13,7 +13,11 @@ const elementStates = ref<{
   description?: string,
   buttonLabel?: string,
   buttonType?: string,
-  buttonAction: { resets: boolean }
+  buttonAction: { resets: boolean },
+  fullWidth: boolean,
+  align: 'left' | 'center' | 'right',
+  size: 'xs' | 'sm' | 'md' | 'lg'
+
 }>({
   name: formStore.activeField?.name,
   label: formStore.activeField?.label,
@@ -21,7 +25,9 @@ const elementStates = ref<{
   description: formStore.activeField?.description,
   buttonLabel: formStore.activeField?.buttonLabel,
   buttonType: formStore.activeField?.color || 'primary',
-  buttonAction: { resets: false }
+  buttonAction: { resets: false },
+  fullWidth: formStore.activeField?.full || false,
+  align: formStore.activeField?.align || 'left'
 })
 const propNameInputRef = ref<HTMLInputElement | null>(null)
 const propLabelInputRef = ref<HTMLInputElement | null>(null)
@@ -163,32 +169,33 @@ function onEnteredProp(propName: string, propValue?: string | number | boolean |
         </q-card-section>
         <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
         <q-card-section>
-          <div class="row align-center items-center justify-between">
-            <label for="form-button-toggle-submit">
-              <span class="text-body2">
-                Concluir
-              </span>
-            </label>
+          <div>
+            <div class="row align-center items-center justify-between">
+              <label for="form-button-toggle-submit">
+                <span class="text-body2">
+                  Concluir
+                </span>
+              </label>
 
-            <q-toggle :model-value="elementStates.buttonAction.resets" color="primary" :true-value="false"
-              :false-value="true" @update:model-value="val => {
+              <q-toggle :model-value="elementStates.buttonAction.resets" color="primary" :true-value="false"
+                :false-value="true" @update:model-value="val => {
+                  elementStates.buttonAction.resets = val
+                  onEnteredProp('resets', val)
+                }" />
+            </div>
+            <div class="row align-center items-center justify-between">
+              <label for="form-button-toggle-submit">
+                <span class="text-body2">
+                  Limpar
+                </span>
+              </label>
+
+              <q-toggle :model-value="elementStates.buttonAction.resets" color="primary" @update:model-value="val => {
                 elementStates.buttonAction.resets = val
                 onEnteredProp('resets', val)
               }" />
+            </div>
           </div>
-          <div class="row align-center items-center justify-between">
-            <label for="form-button-toggle-submit">
-              <span class="text-body2">
-                Reinicializar
-              </span>
-            </label>
-
-            <q-toggle :model-value="elementStates.buttonAction.resets" color="primary" @update:model-value="val => {
-                elementStates.buttonAction.resets = val
-                onEnteredProp('resets', val)
-              }" />
-          </div>
-
         </q-card-section>
 
       </q-card>
@@ -196,8 +203,39 @@ function onEnteredProp(propName: string, propValue?: string | number | boolean |
     <template #layout>
       <q-card flat>
         <q-card-section>
-          <div>
+          <div class="row align-center items-center justify-between">
+            <label for="form-button-toggle-submit">
+              <span class="text-body2">
+                Largura máxima
+              </span>
+            </label>
+
+            <q-toggle :model-value="elementStates.fullWidth" color="primary" @update:model-value="val => {
+              elementStates.fullWidth = val
+              onEnteredProp('full', val)
+            }" />
           </div>
+        </q-card-section>
+        <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
+        <q-card-section>
+          <div class="row align-center items-center justify-between">
+            <label for="form-button-align">
+              <span class="text-body2">
+                Alinhar
+              </span>
+            </label>
+            <q-btn-toggle :model-value="elementStates.align" id="form-button-align" no-wrap unelevated no-caps
+              toggle-color="primary" @update:model-value="val => {
+                elementStates.align = val
+                onEnteredProp('align', val)
+              }" :color="dark.isActive ? 'grey-10' : 'grey-3'" rounded size="sm"
+              :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
+                { icon: 'format_align_left', value: 'left' },
+                { icon: 'format_align_center', value: 'center' },
+                { icon: 'format_align_right', value: 'right' }
+              ]" />
+          </div>
+
         </q-card-section>
       </q-card>
     </template>

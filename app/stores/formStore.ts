@@ -99,7 +99,7 @@ export const useFormStore = defineStore('formStore', () => {
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
-  const updatePropFromActiveField = (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: string | number | boolean | null) => {
+  const updatePropFromActiveField = async (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: string | number | boolean | null) => {
     if (!propName || !fieldElement) return
 
     const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement?.name)
@@ -107,15 +107,16 @@ export const useFormStore = defineStore('formStore', () => {
 
     if (!activeField.value) return
 
+    activeField.value[propName] = newPropValue
+    formFields.value[indexToUpdate][propName] = newPropValue
+
+    await nextTick()
+
     if (newPropValue === false || newPropValue === "") {
       delete activeField.value[propName]
       delete formFields.value[indexToUpdate][propName]
       return
     }
-
-    activeField.value[propName] = newPropValue
-    formFields.value[indexToUpdate][propName] = newPropValue
-
     // TODO: cache form state values from this point
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
