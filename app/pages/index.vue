@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import { clearErrors, FormKitSchema, reset } from '@formkit/vue'
-import type { ColumnsType } from '~/types';
 
 // local variables
 const highlightDropArea = ref<boolean>(false)

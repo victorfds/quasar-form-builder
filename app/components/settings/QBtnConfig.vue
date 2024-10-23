@@ -108,7 +108,7 @@ function onEnteredProp(propName: string, propValue?: string | number | boolean |
                 </span>
                 <q-icon name="info" :color="dark.isActive ? 'grey' : 'grey-13'" class="cursor-pointer">
                   <q-tooltip class="bg-grey-10" :offset="[10, 10]">
-                    Apenas exibido em combinação com rótulo
+                    Apenas exibido em combinação com cabeçalho
                   </q-tooltip>
                 </q-icon>
               </label>
