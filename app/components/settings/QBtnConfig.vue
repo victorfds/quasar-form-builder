@@ -14,10 +14,9 @@ const elementStates = ref<{
   buttonLabel?: string,
   buttonType?: string,
   buttonAction: { resets: boolean },
-  fullWidth: boolean,
-  align: 'left' | 'center' | 'right',
-  size: 'xs' | 'sm' | 'md' | 'lg'
-
+  fullWidth?: boolean,
+  align?: 'left' | 'center' | 'right',
+  size?: 'default' | 'sm' | 'md' | 'lg'
 }>({
   name: formStore.activeField?.name,
   label: formStore.activeField?.label,
@@ -27,7 +26,8 @@ const elementStates = ref<{
   buttonType: formStore.activeField?.color || 'primary',
   buttonAction: { resets: false },
   fullWidth: formStore.activeField?.full || false,
-  align: formStore.activeField?.align || 'left'
+  align: formStore.activeField?.align || 'left',
+  size: formStore.activeField?.size || 'default'
 })
 const propNameInputRef = ref<HTMLInputElement | null>(null)
 const propLabelInputRef = ref<HTMLInputElement | null>(null)
@@ -159,7 +159,7 @@ function onEnteredProp(propName: string, propValue?: string | number | boolean |
               toggle-color="primary" @update:model-value="val => {
                 elementStates.buttonType = val
                 onEnteredProp('color', val)
-              }" :color="dark.isActive ? 'grey-10' : 'grey-3'" rounded size="sm"
+              }" :color="dark.isActive ? 'grey-10' : 'grey-3'" rounded dense
               :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { label: 'Primário', value: 'primary' },
                 { label: 'Secundário', value: 'secondary' },
@@ -235,8 +235,33 @@ function onEnteredProp(propName: string, propValue?: string | number | boolean |
                 { icon: 'format_align_right', value: 'right' }
               ]" />
           </div>
-
         </q-card-section>
+        <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
+        <q-card-section>
+          <div class="row align-center items-center justify-between">
+            <label for="form-button-size">
+              <span class="text-body2">
+                Tamanho
+              </span>
+            </label>
+            <q-btn-toggle :model-value="elementStates.size" id="form-button-size" no-wrap unelevated no-caps
+              toggle-color="primary" @update:model-value="val => {
+                elementStates.size = val
+                if (val === 'default') {
+                  onEnteredProp('size', '')
+                  return
+                }
+                onEnteredProp('size', val)
+              }" :color="dark.isActive ? 'grey-10' : 'grey-3'" rounded dense 
+              :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
+                { label: 'Padrão', value: 'default' },
+                { label: 'Pequeno', value: 'sm' },
+                { label: 'Médio', value: 'md' },
+                { label: 'Grande', value: 'lg' }
+              ]" />
+          </div>
+        </q-card-section>
+
       </q-card>
     </template>
   </SettingsExpansionBaseWrapper>
