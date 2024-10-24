@@ -28,7 +28,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       name: 'number',
       label: 'Número',
       type: 'number',
-      validation: 'required',
+      validation: 'number',
     },
   },
   {
@@ -42,6 +42,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       name: 'email',
       label: 'Email',
       type: 'email',
+      validation: 'email'
     },
   },
   {
@@ -71,7 +72,6 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       name: 'textarea',
       label: 'Área de texto',
       type: 'textarea',
-      validation: 'required',
     },
   },
   {
