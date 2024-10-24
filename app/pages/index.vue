@@ -243,7 +243,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
                     __latest: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active.at(-1) === field?.name,
                     __active: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name),
                     __dragging: elementBeingDragged.field?.name === field?.name,
-                    __hover: activeNameFields.hover === field?.name,
+                    __hover: !activeNameFields.active?.includes(field?.name) && activeNameFields.hover === field?.name,
                     hidden: formStore.formSettings.previewMode !== 'editing',
                   }" draggable="true" @click="onClickAtFormElement(field)" @dragstart="onDragStartField(field, index)"
                     @dragend="onDragEnd(index)" />
@@ -294,6 +294,14 @@ function removeField(field: FormKitSchemaNode, index: number) {
                       Remove
                     </q-tooltip>
                   </q-icon>
+                  <!-- Resizer icon -->
+                  <div
+                    v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
+                    class="preview-element-resizer-icon" />
+                  <!-- Resizer -->
+                  <div
+                    v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
+                    class="preview-element-resizer" draggable="true" />
                 </div>
               </div>
             </FormKit>
@@ -478,5 +486,30 @@ function removeField(field: FormKitSchemaNode, index: number) {
   height: fit-content;
   padding: 4px;
   z-index: 2;
+}
+
+.preview-element-resizer-icon {
+  position: absolute;
+  pointer-events: none;
+  background-color: white;
+  border: 1px solid $blue-grey-6;
+  border-radius: .125rem;
+  top: 50%;
+  bottom: 0;
+  right: 0;
+  height: .562rem;
+  width: .562rem;
+  translate: 44% -50%;
+  z-index: 1;
+}
+
+.preview-element-resizer {
+  cursor: col-resize;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -.25rem;
+  width: .5rem;
+  z-index: 9999;
 }
 </style>
