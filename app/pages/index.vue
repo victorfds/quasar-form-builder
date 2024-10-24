@@ -139,7 +139,6 @@ function onClickAtFormElement(field: FormKitSchemaNode) {
   activeNameFields.value.active[1] = field?.name
   setActiveField(field)
 }
-
 function onMouseOverAtFormElement(field: FormKitSchemaNode) {
   activeNameFields.value.hover = field?.name
 }
@@ -211,10 +210,10 @@ function removeField(field: FormKitSchemaNode, index: number) {
       </q-tabs>
 
       <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
-        <q-card flat class="preview-form-container q-px-lg q-my-md"
+        <q-card flat class="preview-form-container q-my-md"
           :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
           :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }">
-          <q-card-section>
+          <q-card-section class="no-padding">
             <FormKit id="myForm" v-model="formStore.values" type="form" :actions="false" @submit="onSubmit">
               <div ref="formDroppableRef"
                 class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
@@ -302,6 +301,12 @@ function removeField(field: FormKitSchemaNode, index: number) {
                   <div
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
                     class="preview-element-resizer" draggable="true" />
+                  <!-- Columns display -->
+                  <div
+                    v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
+                    class="preview-element-columns-display">
+                    <span>{{ field.columns?.container || 12 }}</span>
+                  </div>
                 </div>
               </div>
             </FormKit>
@@ -345,6 +350,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
   margin-left: 4rem;
   margin-right: 4rem;
   min-height: 100px;
+  padding: 3.125rem;
   width: 100%;
 }
 
@@ -511,5 +517,23 @@ function removeField(field: FormKitSchemaNode, index: number) {
   right: -.25rem;
   width: .5rem;
   z-index: 9999;
+}
+
+.preview-element-columns-display {
+  position: absolute;
+  background-color: white;
+  border: 1px solid $blue-grey-6;
+  border-radius: .125rem;
+  bottom: 0;
+  color: $grey-10;
+  top: 50%;
+  left: 0;
+  font-size: .875rem;
+  pointer-events: none;
+  translate: -50% -50%;
+  height: 1rem;
+  line-height: 1;
+  width: auto;
+  z-index: 1;
 }
 </style>
