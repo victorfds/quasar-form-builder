@@ -1,22 +1,26 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
-import { clearErrors, FormKitSchema, reset } from '@formkit/vue'
+import { clearErrors, FormKitSchema, reset, type FormKitComponent } from '@formkit/vue'
 
 // local variables
 const highlightDropArea = ref<boolean>(false)
 const previewFormSectionRef = ref<HTMLElement | null>(null)
 const formDroppableRef = ref<HTMLElement | null>(null)
+const formRefComponent = ref<HTMLElement | null>(null)
 const indexPointer = ref<number | null>(null)
 const elementBeingDragged = ref<{ field?: FormKitSchemaDefinition, index?: number }>({})
 const originalFieldIndex = ref<number | null>(null)
 const activeNameFields = ref<{ active: string[], hover?: string }>({ active: [] })
 const dragInIndicator = ref<{ index?: number, name?: string }>({})
 const isUserDraggingOver = ref(false)
+const isDragging = ref(true)
+const startX = ref(0)
+const lastDeltaColumns = ref(0)
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const formFields: FormKitSchemaDefinition[] = formStore.formFields
-const { setActiveField, copyField } = formStore
+const { setActiveField, copyField, updateActiveFieldColumns, updateActiveFieldOnFormFields } = formStore
 
 const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
 
@@ -25,6 +29,11 @@ const offset = useState('offset')
 
 // unsubscribe from listener
 let stopListening: () => void
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousemove', throttleResize);
+  document.removeEventListener('mouseup', stopResize);
+})
 
 onMounted(() => {
   stopListening = useClickOutside(previewFormSectionRef, formDroppableRef, () => {
@@ -55,14 +64,14 @@ watch(() => formStore.formSettings.previewMode, () => {
   clearErrors('myForm', true)
 })
 
-const getUserWidthInput = computed(() => {
+const getUserWidthInput: ComputedRef<number> = computed(() => {
   // Returns the initial width form value if undefined
   if (!formStore.formSettings.preview.width)
     return 432
   if (Number(formStore.formSettings.preview.width) < 0)
     return 0
 
-  return formStore.formSettings.preview.width
+  return Number(formStore.formSettings.preview.width)
 })
 
 function onDragEnterFormSectionArea() {
@@ -159,6 +168,45 @@ function removeField(field: FormKitSchemaNode, index: number) {
     setActiveField(null)
   }
 }
+
+function startResize(evt: MouseEvent, field: FormKitSchemaNode | null) {
+  setActiveField(field)
+  isDragging.value = true
+  startX.value = evt.clientX
+  document.addEventListener('mousemove', throttleResize);
+  document.addEventListener('mouseup', stopResize);
+}
+
+function resize(event: MouseEvent) {
+  if (!isDragging.value) return
+  const containerWidth = getUserWidthInput.value
+  const columnWidth = containerWidth / 12
+  const deltaX = event.clientX - startX.value
+  const deltaColumns = Math.round(deltaX / columnWidth)
+  const direction = deltaColumns > lastDeltaColumns.value ? 1 : -1 // from left-to-right (positive), from right-to-left (negative)
+
+  // Calculate column change based on the absolute movement
+  const columnChange = formStore.getActiveFieldColumns + direction
+
+  const newColumns = Math.max(1, Math.min(12, columnChange))
+
+  if (newColumns !== formStore.getActiveFieldColumns && lastDeltaColumns.value !== deltaColumns) {
+    lastDeltaColumns.value = deltaColumns
+    updateActiveFieldColumns(newColumns)
+  }
+}
+
+function throttleResize(event: MouseEvent) {
+  requestAnimationFrame(() => resize(event))
+}
+
+function stopResize() {
+  isDragging.value = false
+  lastDeltaColumns.value = 0
+  updateActiveFieldOnFormFields()
+  document.removeEventListener('mousemove', throttleResize)
+  document.removeEventListener('mouseup', stopResize)
+}
 </script>
 
 <template>
@@ -213,8 +261,9 @@ function removeField(field: FormKitSchemaNode, index: number) {
         <q-card flat class="preview-form-container q-my-md"
           :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
           :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }">
-          <q-card-section class="no-padding">
-            <FormKit id="myForm" v-model="formStore.values" type="form" :actions="false" @submit="onSubmit">
+          <q-card-section class="my-form-wrapper no-padding">
+            <FormKit id="myForm" v-model="formStore.values" type="form" :actions="false" @submit="onSubmit"
+              ref="formRefComponent">
               <div ref="formDroppableRef"
                 class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
                 @drop.prevent="onDrop" @dragover.prevent="handleDragover">
@@ -300,7 +349,8 @@ function removeField(field: FormKitSchemaNode, index: number) {
                   <!-- Resizer -->
                   <div
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
-                    class="preview-element-resizer" draggable="true" />
+                    class="preview-element-resizer" draggable="true"
+                    @mousedown.prevent="evt => startResize(evt, field)" />
                   <!-- Columns display -->
                   <div
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"

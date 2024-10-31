@@ -1,4 +1,5 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import type { ColumnsType } from '~/types'
 
 interface FormSettingsType {
   formName?: string
@@ -9,7 +10,7 @@ interface FormSettingsType {
 export const useFormStore = defineStore('formStore', () => {
   const formSettings = ref<FormSettingsType>({ formName: 'Meu Formulário', preview: { width: 432, isFullWidth: false }, previewMode: 'editing' })
   const formFields = ref<FormKitSchemaDefinition[]>([])
-  const activeField = ref<FormKitSchemaNode | null>(null)
+  const activeField = ref<FormKitSchemaNode & { columns: ColumnsType } | null>(null)
   const values = ref({})
 
   const { notify } = useQuasar()
@@ -21,6 +22,10 @@ export const useFormStore = defineStore('formStore', () => {
       acc[name] = rest
       return acc
     }, {})
+  })
+
+  const getActiveFieldColumns = computed(() => {
+    return activeField.value?.columns?.container || 12
   })
 
   const addField = (field: FormKitSchemaNode, pos?: number | null) => {
@@ -135,12 +140,29 @@ export const useFormStore = defineStore('formStore', () => {
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
+  const updateActiveFieldColumns = (newColumns: number) => {
+    if (activeField.value) {
+      if (!activeField.value?.columns) {
+        activeField.value.columns = { container: newColumns }
+        return
+      }
+
+      activeField.value.columns.container = newColumns
+    }
+  }
+
+  const updateActiveFieldOnFormFields = () => {
+    const indexToUpdate = formFields.value.findIndex(field => field.name === activeField.value.name)
+    formFields.value[indexToUpdate] = { ...activeField.value }
+  }
+
   return {
     values,
     formSettings,
     formFields,
     activeField,
     getSchema,
+    getActiveFieldColumns,
     addField,
     updateFieldIndex,
     removeField,
@@ -150,5 +172,7 @@ export const useFormStore = defineStore('formStore', () => {
     updatePropFromActiveField,
     changePreviewWidth,
     togglePreviewFullWidth,
+    updateActiveFieldColumns,
+    updateActiveFieldOnFormFields
   }
 })

@@ -14,7 +14,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'text',
       label: 'Texto',
-      type: 'text',
+      inputType: 'text',
     },
   },
   {
@@ -27,7 +27,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'number',
       label: 'Número',
-      type: 'number',
+      inputType: 'number',
       validation: 'number',
     },
   },
@@ -41,8 +41,8 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'email',
       label: 'Email',
-      type: 'email',
-      validation: 'email'
+      inputType: 'email',
+      validation: 'email',
     },
   },
   {
@@ -57,7 +57,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       label: 'Telefone',
       mask: '(##) #####-####',
       'unmasked-value': true,
-      type: 'text',
+      inputType: 'text',
     },
   },
 
@@ -71,7 +71,7 @@ const tools = ref<{ name: string, icon: string, title: string, description: stri
       $formkit: 'q-input',
       name: 'textarea',
       label: 'Área de texto',
-      type: 'textarea',
+      inputType: 'textarea',
     },
   },
   {
