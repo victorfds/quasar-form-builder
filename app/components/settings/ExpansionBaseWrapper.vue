@@ -1,25 +1,25 @@
 <script setup lang="ts">
 defineProps<{
   sectionLabels?: {
-    properties?: string;
-    decorators?: string;
-    layout?: string;
-    conditions?: string;
-    attributes?: string;
-    validation?: string;
-    data?: string;
-    options?: string;
+    properties?: string
+    decorators?: string
+    layout?: string
+    conditions?: string
+    attributes?: string
+    validation?: string
+    data?: string
+    options?: string
   }
 }>()
 const slots = defineSlots<{
-  properties: string;
-  decorators: string;
-  layout: string;
-  conditions: string;
-  attributes: string;
-  validation: string;
-  data: string;
-  options: string;
+  properties: string
+  decorators: string
+  layout: string
+  conditions: string
+  attributes: string
+  validation: string
+  data: string
+  options: string
 }>()
 
 const { dark, localStorage } = useQuasar()
@@ -28,14 +28,11 @@ const { setActiveField, copyField, removeField } = formStore
 
 const elementsClosed = localStorage.getItem('elements-closed')
 
-// const slots = useSlots()
-const slotsKeys = Object.keys(slots)
-
 // Retrieve and parse the localStorage item, and handle cases where it might be `null`
 // This variable is initialized only once
 const elementClosed: string[] = JSON.parse(localStorage.getItem('element-closed') || '[]')
 
-// Allowed options 
+// Allowed options
 const sections: Record<string, string> = {
   properties: 'Propriedades',
   decorators: 'Decorações',
@@ -51,23 +48,17 @@ const label = ref('')
 const allExpanded = ref(!elementClosed.length || false)
 const expansionState = ref<Record<string, boolean>>({})
 
-// Compute the default label based on the available slots and sections
-const defaultLabel = computed(() => {
-  if (label.value) return label.value
-  const availableSlots = Object.keys(sections).filter((key) => slots[key])
-  return availableSlots.length ? sections[availableSlots[0]!] : ''
-})
-
 // Dynamically get the available slots
 const availableSlots = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 
-availableSlots.value.forEach(slotKey => {
+availableSlots.value.forEach((slotKey) => {
   expansionState.value[slotKey] = !elementClosed.includes(slotKey)
 })
 
 function cachingDefaultClosed(slotKey: keyof typeof slots, isOpen: boolean) {
-  const elementClosed: string[] = JSON.parse(localStorage.getItem('element-closed') || '[]');
-  if (!slotKey || !Array.isArray(elementClosed)) return
+  const elementClosed: string[] = JSON.parse(localStorage.getItem('element-closed') || '[]')
+  if (!slotKey || !Array.isArray(elementClosed))
+    return
 
   if (!isOpen) {
     allExpanded.value = false
@@ -76,7 +67,8 @@ function cachingDefaultClosed(slotKey: keyof typeof slots, isOpen: boolean) {
       elementClosed.push(slotKey)
       localStorage.setItem('element-closed', JSON.stringify(elementClosed))
     }
-  } else if (isOpen) {
+  }
+  else if (isOpen) {
     const indexOf = elementClosed.findIndex(el => el === slotKey)
     if (indexOf !== -1) {
       elementClosed.splice(indexOf, 1)
@@ -88,7 +80,6 @@ function cachingDefaultClosed(slotKey: keyof typeof slots, isOpen: boolean) {
   if (Object.values(expansionState.value).every(Boolean)) {
     allExpanded.value = true
   }
-
 }
 
 function toggleExpandAll() {
@@ -103,7 +94,8 @@ function toggleExpandAll() {
       return acc
     }, {} as Record<string, boolean>)
     elementClosed = []
-  } else {
+  }
+  else {
     // Collapse all
     expansionState.value = availableSlots.value.reduce((acc, slotKey) => {
       acc[slotKey] = false
@@ -120,8 +112,10 @@ function toggleExpandAll() {
   <q-list separator style="max-width: 340px;">
     <q-item :class="{ 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }">
       <q-item-section avatar>
-        <q-btn size="sm" flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-          @click="setActiveField(null)" />
+        <q-btn
+          size="sm" flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+          @click="setActiveField(null)"
+        />
       </q-item-section>
 
       <q-item-section>
@@ -134,23 +128,31 @@ function toggleExpandAll() {
 
       <q-item-section side>
         <div class="q-gutter-xs">
-          <q-btn size="sm" flat dense round icon="o_content_copy" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            @click="copyField(formStore.activeField)" />
-          <q-btn size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            @click="removeField(formStore.activeField)" />
-          <q-btn size="sm" flat dense round :icon="allExpanded ? 'minimize' : 'o_expand'"
-            :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" @click="toggleExpandAll" />
+          <q-btn
+            size="sm" flat dense round icon="o_content_copy" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+            @click="copyField(formStore.activeField)"
+          />
+          <q-btn
+            size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+            @click="removeField(formStore.activeField)"
+          />
+          <q-btn
+            size="sm" flat dense round :icon="allExpanded ? 'minimize' : 'o_expand'"
+            :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" @click="toggleExpandAll"
+          />
         </div>
       </q-item-section>
     </q-item>
     <ClientOnly>
-      <q-expansion-item :model-value="expansionState[slotKey]"
+      <q-expansion-item
+        v-for="slotKey in availableSlots"
+        :key="slotKey"
+        :model-value="expansionState[slotKey]"
         :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
         :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'"
-        :label="sectionLabels?.[slotKey] || sections[slotKey]"
-        :default-opened="allExpanded ? true : !elementClosed.includes(slotKey)"
-        @update:model-value="val => cachingDefaultClosed(slotKey, val)" v-for="slotKey in availableSlots"
-        :key="slotKey">
+        :label="sectionLabels?.[slotKey] || sections[slotKey]" :default-opened="allExpanded ? true : !elementClosed.includes(slotKey)"
+        @update:model-value="val => cachingDefaultClosed(slotKey, val)"
+      >
         <slot :name="slotKey" :foo="(newLabel: string) => { label = newLabel }" />
       </q-expansion-item>
     </ClientOnly>

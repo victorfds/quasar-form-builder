@@ -26,6 +26,6 @@ export default defineNuxtConfig({
     iconSet: 'material-icons',
     extras: { animations: 'all', fontIcons: ['material-icons', 'material-icons-outlined'] },
     config: { brand: { primary: '#FFA726' } },
-    sassVariables: true
+    sassVariables: true,
   },
 })

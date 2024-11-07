@@ -8,7 +8,9 @@ const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(p
 </script>
 
 <template>
-  <q-input :model-value="context.value" :label="context.label" filled :type="context.attrs.inputType || 'text'"
+  <q-input
+    :model-value="context.value" :label="context.label" filled :type="context.attrs.inputType || 'text'"
     :hint="context.help" hide-bottom-space :error-message="getMessages" :error="hasError"
-    @update:model-value="(val) => context?.node.input(val)" @blur="checkForErrorMessages" v-bind="context.attrs" />
+    v-bind="context.attrs" @update:model-value="(val) => context?.node.input(val)" @blur="checkForErrorMessages"
+  />
 </template>

@@ -23,4 +23,6 @@ export interface ElementType {
   file?: { rules?: string[] }
 }
 
-export type ColumnsType = { container: number }
+export interface ColumnsType { container?: number | null, default?: { container: number } | null, sm?: { container: number } | null, lg?: { container: number } | null }
+
+export type FormViewportType = 'default' | 'sm' | 'lg'

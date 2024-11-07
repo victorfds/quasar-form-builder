@@ -1,14 +1,15 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
-import type { ColumnsType } from '~/types'
+import type { ColumnsType, FormViewportType } from '~/types'
 
 interface FormSettingsType {
   formName?: string
   preview: { width?: string | number | null, isFullWidth: boolean }
   previewMode: 'editing' | 'previewing'
+  columns: FormViewportType
 }
 
 export const useFormStore = defineStore('formStore', () => {
-  const formSettings = ref<FormSettingsType>({ formName: 'Meu Formulário', preview: { width: 432, isFullWidth: false }, previewMode: 'editing' })
+  const formSettings = ref<FormSettingsType>({ formName: 'Meu Formulário', preview: { width: 432, isFullWidth: false }, previewMode: 'editing', columns: 'default' })
   const formFields = ref<FormKitSchemaDefinition[]>([])
   const activeField = ref<FormKitSchemaNode & { columns: ColumnsType } | null>(null)
   const values = ref({})
@@ -25,7 +26,11 @@ export const useFormStore = defineStore('formStore', () => {
   })
 
   const getActiveFieldColumns = computed(() => {
-    return activeField.value?.columns?.container || 12
+    if (!activeField.value?.columns?.default && !activeField.value?.columns?.sm && !activeField.value?.columns?.lg) {
+      return activeField.value?.columns?.container || 12
+    }
+
+    return activeField.value?.columns?.[formSettings.value.columns]?.container || 12
   })
 
   const addField = (field: FormKitSchemaNode, pos?: number | null) => {
@@ -53,7 +58,8 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const removeField = (field: FormKitSchemaNode | null, index?: number) => {
-    if (!field) return
+    if (!field)
+      return
 
     if (!index) {
       index = formFields.value.findIndex(ff => ff.name === field?.name)
@@ -70,7 +76,8 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const copyField = (field: FormKitSchemaNode | null, index?: number) => {
-    if (!field) return
+    if (!field)
+      return
 
     if (!index) {
       index = formFields.value.findIndex(ff => ff.name === field?.name)
@@ -86,7 +93,8 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const updateNameField = (oldName?: string, newName?: string) => {
-    if (!oldName) return
+    if (!oldName)
+      return
 
     const indexToUpdate = formFields.value.findIndex(field => field.name === oldName)
     if (indexToUpdate === -1)
@@ -104,23 +112,25 @@ export const useFormStore = defineStore('formStore', () => {
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
-  const updatePropFromActiveField = async (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: string | number | boolean | null) => {
-    if (!propName || !fieldElement) return
+  const updatePropFromActiveField = async (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: any) => {
+    if (!propName || !fieldElement)
+      return
 
     const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement?.name)
-    if (indexToUpdate === -1) return
+    if (indexToUpdate === -1)
+      return
 
-    if (!activeField.value) return
+    if (!activeField.value)
+      return
 
     activeField.value[propName] = newPropValue
     formFields.value[indexToUpdate][propName] = newPropValue
 
     await nextTick()
 
-    if (newPropValue === false || newPropValue === "") {
+    if (newPropValue === false || newPropValue === '' || isEmptyObject(newPropValue)) {
       delete activeField.value[propName]
       delete formFields.value[indexToUpdate][propName]
-      return
     }
     // TODO: cache form state values from this point
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
@@ -140,6 +150,10 @@ export const useFormStore = defineStore('formStore', () => {
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
+  const changeViewport = (viewportToChange: FormViewportType) => {
+    formSettings.value.columns = viewportToChange
+  }
+
   const updateActiveFieldColumns = (newColumns: number) => {
     if (activeField.value) {
       if (!activeField.value?.columns) {
@@ -147,7 +161,18 @@ export const useFormStore = defineStore('formStore', () => {
         return
       }
 
-      activeField.value.columns.container = newColumns
+      if (!activeField.value.columns?.default && !activeField.value?.columns.sm && !activeField.value.columns?.lg && formSettings.value.columns === 'default') {
+        activeField.value.columns.container = newColumns
+        return
+      }
+
+      activeField.value.columns[formSettings.value.columns] = { container: newColumns }
+
+      // If has container value save it inside default scope
+      if (formSettings.value.columns !== 'default' && activeField.value.columns.container) {
+        activeField.value.columns.default = { container: activeField.value.columns.container }
+        delete activeField.value.columns.container
+      }
     }
   }
 
@@ -172,7 +197,8 @@ export const useFormStore = defineStore('formStore', () => {
     updatePropFromActiveField,
     changePreviewWidth,
     togglePreviewFullWidth,
+    changeViewport,
     updateActiveFieldColumns,
-    updateActiveFieldOnFormFields
+    updateActiveFieldOnFormFields,
   }
 })

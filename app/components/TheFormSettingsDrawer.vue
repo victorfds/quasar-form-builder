@@ -10,6 +10,7 @@ const { setActiveField, copyField, removeField, changePreviewWidth, togglePrevie
 const formClosed = JSON.parse(localStorage.getItem('form-closed') || '[]')
 const highlighter = await createHighlighter({ langs: ['json'], themes: ['vitesse-dark', 'vitesse-light'] })
 const SettingsQBtnConfigComponent = resolveComponent('SettingsQBtnConfig')
+const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConfig')
 
 const formNameInputRef = ref<HTMLElement | null>(null)
 
@@ -19,22 +20,22 @@ const htmlValues = computed(() => {
     theme: dark.isActive ? 'vitesse-dark' : 'vitesse-light',
     colorReplacements: {
       'vitesse-dark': {
-        '#121212': '#1D1D1D'
+        '#121212': '#1D1D1D',
       },
-    }
+    },
   })
 })
 
 const getComponentSettings = computed(() => {
-  if (formStore.activeField?.$formkit === 'q-btn') return SettingsQBtnConfigComponent
+  if (formStore.activeField?.$formkit === 'q-btn')
+    return SettingsQBtnConfigComponent
 
-  return ''
+  return SettingsDefaultNoConfigComponent
 })
 
 function onClickLabelFormName() {
   formNameInputRef.value?.focus()
 }
-
 </script>
 
 <template>
@@ -47,7 +48,8 @@ function onClickLabelFormName() {
         <q-list separator>
           <q-expansion-item
             :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-            :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened>
+            :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened
+          >
             <q-card>
               <q-card-section>
                 <div>
@@ -55,19 +57,25 @@ function onClickLabelFormName() {
                     <label for="form-name" @click="onClickLabelFormName">
                       Nome
                     </label>
-                    <q-input id="form-name" ref="formNameInputRef" v-model.trim="formStore.formSettings.formName" filled
-                      color="cyan-8" dense type="text" />
+                    <q-input
+                      id="form-name" ref="formNameInputRef" v-model.trim="formStore.formSettings.formName" filled
+                      color="cyan-8" dense type="text"
+                    />
                   </div>
 
                   <div class="row align-center items-center justify-between q-mt-sm">
                     <div>
                       <label class="">Pré-visualizar largura</label>
-                      <q-checkbox :model-value="formStore.formSettings.preview.isFullWidth" label="Total" size="sm"
-                        @update:model-value="togglePreviewFullWidth" />
+                      <q-checkbox
+                        :model-value="formStore.formSettings.preview.isFullWidth" label="Total" size="sm"
+                        @update:model-value="togglePreviewFullWidth"
+                      />
                     </div>
-                    <q-input v-if="!formStore.formSettings.preview.isFullWidth"
+                    <q-input
+                      v-if="!formStore.formSettings.preview.isFullWidth"
                       :model-value="formStore.formSettings.preview.width" suffix="px" filled color="cyan-8" dense
-                      type="number" style="max-width: 100px;" @update:model-value="changePreviewWidth" />
+                      type="number" style="max-width: 100px;" @update:model-value="changePreviewWidth"
+                    />
                   </div>
                 </div>
               </q-card-section>
@@ -83,12 +91,10 @@ function onClickLabelFormName() {
                 <span class="text-weight-semibold">
                   Informações
                 </span>
-
               </div>
             </q-card-section>
             <q-card-section>
-              <div v-html="htmlValues">
-              </div>
+              <div v-html="htmlValues" />
             </q-card-section>
           </q-card>
         </q-list>

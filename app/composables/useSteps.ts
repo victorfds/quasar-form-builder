@@ -1,4 +1,4 @@
-import { getNode, createMessage, type FormKitNode } from '@formkit/core'
+import { createMessage, type FormKitNode, getNode } from '@formkit/core'
 
 export default function useSteps() {
   const activeStep = ref('')
@@ -21,7 +21,7 @@ export default function useSteps() {
             key: 'submitted',
             value: true,
             visible: false,
-          })
+          }),
         )
       })
     })
@@ -34,7 +34,7 @@ export default function useSteps() {
   }
 
   const stepPlugin = (node: FormKitNode) => {
-    if (node.props.type == "group") {
+    if (node.props.type == 'group') {
       // builds an object of the top-level groups
       // @ts-expect-error all step props are runtime defined
       steps[node.name] = steps[node.name] || {}

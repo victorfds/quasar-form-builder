@@ -30,19 +30,24 @@ function toggleThemeFn(newState: boolean) {
   <q-layout view="hHh lpR fFf">
     <q-header bordered class="text-white" height-hint="98" :class="dark.isActive ? 'bg-grey-10' : 'bg-white'">
       <q-toolbar>
-        <q-btn dense flat round icon="menu" @click="toggleLeftDrawer"
-          :color="dark.isActive ? 'grey-11' : 'blue-grey-8'" />
+        <q-btn
+          dense flat round icon="menu" :color="dark.isActive ? 'grey-11' : 'blue-grey-8'"
+          @click="toggleLeftDrawer"
+        />
 
         <q-toolbar-title :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
           Construtor de Formulários
         </q-toolbar-title>
         <ClientOnly>
-          <q-toggle :model-value="dark.isActive" checked-icon="dark_mode" unchecked-icon="light_mode" size="3rem"
-            color="primary" keep-color @update:model-value="toggleThemeFn" />
+          <q-toggle
+            :model-value="dark.isActive" checked-icon="dark_mode" unchecked-icon="light_mode" size="3rem"
+            color="primary" keep-color @update:model-value="toggleThemeFn"
+          />
         </ClientOnly>
-        <q-btn dense flat round icon="menu" @click="toggleRightDrawer"
-          :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" />
-
+        <q-btn
+          dense flat round icon="menu" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+          @click="toggleRightDrawer"
+        />
       </q-toolbar>
     </q-header>
 

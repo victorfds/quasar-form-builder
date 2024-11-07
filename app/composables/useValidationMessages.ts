@@ -22,8 +22,6 @@ export function useValidationMessages(node: FormKitNode) {
     const { name } = event
     const { type, value } = event.payload
 
-    // console.log(`${name} =  ${value}`)
-    // console.log(`${name} \n ${type} = ${value}`)
     if (name === 'message-added') {
       if (type === 'validation') {
         messages.value.push(value)
