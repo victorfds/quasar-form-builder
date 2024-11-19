@@ -141,11 +141,9 @@ function handleCheckboxUpdate(isChecked: boolean) {
                   Nome
                 </span>
               </label>
-              <q-input
-                id="form-name" ref="propNameInputRef" v-model.trim="elementStates.name"
+              <q-input id="form-name" ref="propNameInputRef" v-model.trim="elementStates.name"
                 :error="Boolean(elementStates.nameError)" :error-message="elementStates.nameError" hide-bottom-space
-                filled class="mw-200" color="cyan-8" dense type="text" @blur="onBlurName"
-              />
+                filled class="mw-200" color="cyan-8" dense type="text" @blur="onBlurName" />
             </div>
           </div>
         </q-card-section>
@@ -158,11 +156,9 @@ function handleCheckboxUpdate(isChecked: boolean) {
                   Cabeçalho
                 </span>
               </label>
-              <q-input
-                id="form-label" ref="propLabelInputRef" v-model.trim="elementStates.label" hide-bottom-space
+              <q-input id="form-label" ref="propLabelInputRef" v-model.trim="elementStates.label" hide-bottom-space
                 filled class="mw-200" color="cyan-8" dense type="text"
-                @update:model-value="val => onEnteredProp('label', val)"
-              />
+                @update:model-value="val => onEnteredProp('label', val)" />
             </div>
             <div class="row align-center items-center justify-between q-mt-sm">
               <label for="form-tooltip" @click="onClickLabel(propTooltipInputRef)">
@@ -175,11 +171,9 @@ function handleCheckboxUpdate(isChecked: boolean) {
                   </q-tooltip>
                 </q-icon>
               </label>
-              <q-input
-                id="form-tooltip" ref="propTooltipInputRef" v-model.trim="elementStates.tooltip"
+              <q-input id="form-tooltip" ref="propTooltipInputRef" v-model.trim="elementStates.tooltip"
                 hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
-                @update:model-value="val => onEnteredProp('info', val)"
-              />
+                @update:model-value="val => onEnteredProp('info', val)" />
             </div>
           </div>
         </q-card-section>
@@ -191,11 +185,9 @@ function handleCheckboxUpdate(isChecked: boolean) {
                 Descrição
               </span>
             </label>
-            <q-input
-              id="form-description" ref="propDescriptionInputRef" v-model.trim="elementStates.description"
+            <q-input id="form-description" ref="propDescriptionInputRef" v-model.trim="elementStates.description"
               hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
-              @update:model-value="val => onEnteredProp('description', val)"
-            />
+              @update:model-value="val => onEnteredProp('description', val)" />
           </div>
         </q-card-section>
       </q-card>
@@ -209,11 +201,9 @@ function handleCheckboxUpdate(isChecked: boolean) {
                 Texto do botão
               </span>
             </label>
-            <q-input
-              id="form-button-label" ref="propButtonLabelInputRef" v-model.trim="elementStates.buttonLabel"
+            <q-input id="form-button-label" ref="propButtonLabelInputRef" v-model.trim="elementStates.buttonLabel"
               hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
-              @update:model-value="val => onEnteredProp('buttonLabel', val)"
-            />
+              @update:model-value="val => onEnteredProp('buttonLabel', val)" />
           </div>
         </q-card-section>
         <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -224,18 +214,16 @@ function handleCheckboxUpdate(isChecked: boolean) {
                 Tipo
               </span>
             </label>
-            <q-btn-toggle
-              id="form-button-type" :model-value="elementStates.buttonType" no-wrap unelevated no-caps
-              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" dense :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
+            <q-btn-toggle id="form-button-type" :model-value="elementStates.buttonType" no-wrap unelevated no-caps
+              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" dense
+              :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { label: 'Primário', value: 'primary' },
                 { label: 'Secundário', value: 'secondary' },
                 { label: 'Risco', value: 'negative' },
-              ]"
-              @update:model-value="val => {
+              ]" @update:model-value="val => {
                 elementStates.buttonType = val
                 onEnteredProp('color', val)
-              }"
-            />
+              }" />
           </div>
         </q-card-section>
         <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -248,13 +236,11 @@ function handleCheckboxUpdate(isChecked: boolean) {
                 </span>
               </label>
 
-              <q-toggle
-                :model-value="elementStates.buttonAction.resets" color="primary" :true-value="false"
+              <q-toggle :model-value="elementStates.buttonAction.resets" color="primary" :true-value="false"
                 :false-value="true" @update:model-value="val => {
                   elementStates.buttonAction.resets = val
                   onEnteredProp('resets', val)
-                }"
-              />
+                }" />
             </div>
             <div class="row align-center items-center justify-between">
               <label for="form-button-toggle-submit">
@@ -263,12 +249,10 @@ function handleCheckboxUpdate(isChecked: boolean) {
                 </span>
               </label>
 
-              <q-toggle
-                :model-value="elementStates.buttonAction.resets" color="primary" @update:model-value="val => {
-                  elementStates.buttonAction.resets = val
-                  onEnteredProp('resets', val)
-                }"
-              />
+              <q-toggle :model-value="elementStates.buttonAction.resets" color="primary" @update:model-value="val => {
+                elementStates.buttonAction.resets = val
+                onEnteredProp('resets', val)
+              }" />
             </div>
           </div>
         </q-card-section>
@@ -284,12 +268,10 @@ function handleCheckboxUpdate(isChecked: boolean) {
               </span>
             </label>
 
-            <q-toggle
-              :model-value="elementStates.fullWidth" color="primary" @update:model-value="val => {
-                elementStates.fullWidth = val
-                onEnteredProp('full', val)
-              }"
-            />
+            <q-toggle :model-value="elementStates.fullWidth" color="primary" @update:model-value="val => {
+              elementStates.fullWidth = val
+              onEnteredProp('full', val)
+            }" />
           </div>
         </q-card-section>
         <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -300,18 +282,16 @@ function handleCheckboxUpdate(isChecked: boolean) {
                 Alinhar
               </span>
             </label>
-            <q-btn-toggle
-              id="form-button-align" :model-value="elementStates.align" no-wrap unelevated no-caps
-              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" size="sm" :text-color="dark.isActive ? 'white' : 'grey-10'"
-              :options="[
+            <q-btn-toggle id="form-button-align" :model-value="elementStates.align" no-wrap unelevated no-caps
+              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" size="sm"
+              :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { icon: 'format_align_left', value: 'left' },
                 { icon: 'format_align_center', value: 'center' },
                 { icon: 'format_align_right', value: 'right' },
               ]" @update:model-value="val => {
                 elementStates.align = val
                 onEnteredProp('align', val)
-              }"
-            />
+              }" />
           </div>
         </q-card-section>
         <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -322,23 +302,21 @@ function handleCheckboxUpdate(isChecked: boolean) {
                 Tamanho
               </span>
             </label>
-            <q-btn-toggle
-              id="form-button-size" :model-value="elementStates.size" no-wrap unelevated no-caps
-              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" dense :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
+            <q-btn-toggle id="form-button-size" :model-value="elementStates.size" no-wrap unelevated no-caps
+              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" dense
+              :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { label: 'Padrão', value: 'default' },
                 { label: 'Pequeno', value: 'sm' },
                 { label: 'Médio', value: 'md' },
                 { label: 'Grande', value: 'lg' },
-              ]"
-              @update:model-value="val => {
+              ]" @update:model-value="val => {
                 elementStates.size = val
                 if (val === 'default') {
                   onEnteredProp('size', '')
                   return
                 }
                 onEnteredProp('size', val)
-              }"
-            />
+              }" />
           </div>
         </q-card-section>
         <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -349,23 +327,18 @@ function handleCheckboxUpdate(isChecked: boolean) {
                 Colunas
               </span>
             </label>
-            <q-btn-toggle
-              id="form-button-columns" :model-value="formStore.formSettings.columns"
-              no-wrap unelevated no-caps toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'"
-              dense :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
+            <q-btn-toggle id="form-button-columns" :model-value="formStore.formSettings.columns" no-wrap unelevated
+              no-caps toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" dense
+              :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { label: 'Padrão', value: 'default' },
                 { label: 'Tablet', value: 'sm' },
                 { label: 'Desktop', value: 'lg' },
-              ]"
-              @update:model-value="changeViewport"
-            />
+              ]" @update:model-value="changeViewport" />
           </div>
-          <q-checkbox
-            :model-value="isColumnDefault" label="Largura de coluna padrão"
-            @update:model-value="handleCheckboxUpdate"
-          />
-          <q-btn-toggle
-            v-if="!isColumnDefault" no-wrap unelevated dense spread toggle-color="primary"
+          <q-checkbox :model-value="isColumnDefault" label="Largura de coluna padrão"
+            @update:model-value="handleCheckboxUpdate" />
+          <q-btn-toggle v-if="!isColumnDefault" no-wrap unelevated dense spread toggle-color="primary"
+            :text-color="dark.isActive ? 'white' : 'grey-10'" :color="dark.isActive ? 'grey-10' : 'grey-3'"
             :model-value="formStore.activeField?.columns?.[formStore.formSettings.columns]?.container || formStore.activeField?.columns?.container"
             :options="[
               { label: '1', value: 1 },
@@ -380,8 +353,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
               { label: '10', value: 10 },
               { label: '11', value: 11 },
               { label: '12', value: 12 },
-            ]" @update:model-value="updateActiveFieldColumns"
-          />
+            ]" @update:model-value="updateActiveFieldColumns" />
         </q-card-section>
       </q-card>
     </template>
