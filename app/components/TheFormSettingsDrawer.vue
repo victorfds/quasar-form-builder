@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { except } from '@formkit/utils'
 import { createHighlighter } from 'shiki'
 
 const model = defineModel<boolean>()
@@ -15,7 +16,8 @@ const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConf
 const formNameInputRef = ref<HTMLElement | null>(null)
 
 const htmlValues = computed(() => {
-  return highlighter.codeToHtml(JSON.stringify(formStore.values, null, 2), {
+  const validValues = except(formStore.values, ['submit', 'slots', 'empty', 'eq'])
+  return highlighter.codeToHtml(JSON.stringify(validValues, null, 2), {
     lang: 'json',
     theme: dark.isActive ? 'vitesse-dark' : 'vitesse-light',
     colorReplacements: {
@@ -48,8 +50,7 @@ function onClickLabelFormName() {
         <q-list separator>
           <q-expansion-item
             :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-            :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened
-          >
+            :expand-icon-class="dark.isActive ? 'text-grey-11' : 'text-grey-10'" label="Propriedades" default-opened>
             <q-card>
               <q-card-section>
                 <div>
@@ -57,25 +58,19 @@ function onClickLabelFormName() {
                     <label for="form-name" @click="onClickLabelFormName">
                       Nome
                     </label>
-                    <q-input
-                      id="form-name" ref="formNameInputRef" v-model.trim="formStore.formSettings.formName" filled
-                      color="cyan-8" dense type="text"
-                    />
+                    <q-input id="form-name" ref="formNameInputRef" v-model.trim="formStore.formSettings.formName" filled
+                      color="cyan-8" dense type="text" />
                   </div>
 
                   <div class="row align-center items-center justify-between q-mt-sm">
                     <div>
                       <label class="">Pré-visualizar largura</label>
-                      <q-checkbox
-                        :model-value="formStore.formSettings.preview.isFullWidth" label="Total" size="sm"
-                        @update:model-value="togglePreviewFullWidth"
-                      />
+                      <q-checkbox :model-value="formStore.formSettings.preview.isFullWidth" label="Total" size="sm"
+                        @update:model-value="togglePreviewFullWidth" />
                     </div>
-                    <q-input
-                      v-if="!formStore.formSettings.preview.isFullWidth"
+                    <q-input v-if="!formStore.formSettings.preview.isFullWidth"
                       :model-value="formStore.formSettings.preview.width" suffix="px" filled color="cyan-8" dense
-                      type="number" style="max-width: 100px;" @update:model-value="changePreviewWidth"
-                    />
+                      type="number" style="max-width: 100px;" @update:model-value="changePreviewWidth" />
                   </div>
                 </div>
               </q-card-section>

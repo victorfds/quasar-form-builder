@@ -1,13 +1,29 @@
 <script setup lang="ts">
 import type { ColumnsType } from '~/types'
 
+type LogicField = {
+  name: string,
+  operator: string,
+  value: string
+}
+
 const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
 const { updatePropFromActiveField, changeViewport, updateActiveFieldColumns } = formStore
 
 const elementsClosed = localStorage.getItem('elements-closed')
 
-const elementStates = ref<{
+const operators = [
+  { value: 'empty', label: 'Está vazio' },
+  { value: 'notEmpty', label: 'Não está vazio' },
+  { value: 'equals', label: 'Equals' },
+  { value: 'not_equals', label: 'Not Equals' },
+  { value: 'greater_than', label: 'Greater Than' },
+  { value: 'less_than', label: 'Less Than' },
+  { value: 'contains', label: 'Contains' }
+]
+
+const elementStates = reactive<{
   name?: string
   nameError?: string
   label?: string
@@ -20,7 +36,8 @@ const elementStates = ref<{
   align?: 'left' | 'center' | 'right'
   size?: 'default' | 'sm' | 'md' | 'lg'
   columns?: ColumnsType
-  columnsPreferencies: { hasDefault?: boolean, hasTablet?: boolean, hasDesktop?: boolean }
+  columnsPreferencies: { hasDefault?: boolean, hasTablet?: boolean, hasDesktop?: boolean },
+  logicFields: LogicField[]
 }>({
   name: formStore.activeField?.name,
   label: formStore.activeField?.label,
@@ -34,6 +51,7 @@ const elementStates = ref<{
   size: formStore.activeField?.size || 'default',
   columns: formStore.activeField?.columns,
   columnsPreferencies: { hasDefault: Boolean(!formStore.activeField?.columns?.container || formStore.activeField?.columns?.container || formStore.activeField?.columns?.default), hasTablet: Boolean(formStore.activeField?.columns?.sm), hasDesktop: Boolean(formStore.activeField?.columns?.lg) },
+  logicFields: [{ name: '', operator: '', value: '' }]
 })
 const propNameInputRef = ref<HTMLInputElement | null>(null)
 const propLabelInputRef = ref<HTMLInputElement | null>(null)
@@ -41,10 +59,12 @@ const propTooltipInputRef = ref<HTMLInputElement | null>(null)
 const propDescriptionInputRef = ref<HTMLInputElement | null>(null)
 const propButtonLabelInputRef = ref<HTMLInputElement | null>(null)
 const propButtonTypeInputRef = ref<HTMLInputElement | null>(null)
+const conditionDialog = ref<boolean>(false)
+const showConditionsForm = ref<boolean>(false)
 
 watch(() => formStore.activeField, (newVal) => {
-  elementStates.value.name = newVal?.name
-  elementStates.value.nameError = ''
+  elementStates.name = newVal?.name
+  elementStates.nameError = ''
 }, { deep: true })
 
 const isColumnDefault = computed(() => {
@@ -63,6 +83,19 @@ const isColumnDefault = computed(() => {
   return !formStore.activeField?.columns?.[formStore.formSettings.columns]?.container
 })
 
+const getFieldList = computed(() => {
+  const list = Object.keys(formStore.values).filter(k => k !== elementStates.name && k !== 'slots')
+  if (!list.length) return [{ label: 'A lista está vazia', value: null, cannotSelect: true }]
+
+  return list
+})
+
+const getOperatorList = computed(() => {
+
+
+  return ['']
+})
+
 function onClickLabel(refElement: HTMLInputElement | null, { select = false }: { select?: boolean } = {}) {
   refElement?.focus()
   if (select) {
@@ -71,19 +104,19 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
 }
 
 function onBlurName(_: Event) {
-  elementStates.value.nameError = ''
-  if (elementStates.value.name === formStore.activeField?.name)
+  elementStates.nameError = ''
+  if (elementStates.name === formStore.activeField?.name)
     return
 
-  const response = formStore.updateNameField(formStore.activeField?.name, elementStates.value.name)
+  const response = formStore.updateNameField(formStore.activeField?.name, elementStates.name)
 
   if (response?.message === 'name cannot be empty') {
-    elementStates.value.nameError = 'Nome não pode ser vazio'
+    elementStates.nameError = 'Nome não pode ser vazio'
     return
   }
 
   if (response?.message === 'name already exists') {
-    elementStates.value.nameError = 'Este nome já existe'
+    elementStates.nameError = 'Este nome já existe'
   }
 }
 
@@ -101,10 +134,10 @@ function handleCheckboxUpdate(isChecked: boolean) {
   const defaultContainer = { container: currentColumns.default?.container || currentColumns.container || 12 }
 
   if (isChecked) {
-    elementStates.value.columns = { ...currentColumns, container: null, [columnKey]: null }
+    elementStates.columns = { ...currentColumns, container: null, [columnKey]: null }
   }
   else if (columnKey === 'sm' || columnKey === 'lg') {
-    elementStates.value.columns = {
+    elementStates.columns = {
       ...currentColumns,
       [columnKey]: { container: 12 },
       container: currentColumns.container ? null : undefined,
@@ -112,20 +145,20 @@ function handleCheckboxUpdate(isChecked: boolean) {
     }
   }
   else if (hasSmOrLg) {
-    elementStates.value.columns = { ...currentColumns, [columnKey]: defaultContainer }
+    elementStates.columns = { ...currentColumns, [columnKey]: defaultContainer }
   }
   else {
-    elementStates.value.columns = defaultContainer
+    elementStates.columns = defaultContainer
   }
 
   // Remove any columns set to null
   const filteredColumns = Object.fromEntries(
-    Object.entries(elementStates.value.columns).filter(([_, value]) => value !== null),
+    Object.entries(elementStates.columns).filter(([_, value]) => value !== null),
   )
   const hasOnlyDefaultEntry = hasOnlyOneKeyWithName(filteredColumns, 'default')
 
-  elementStates.value.columns = hasOnlyDefaultEntry ? defaultContainer : filteredColumns
-  onEnteredProp('columns', elementStates.value.columns)
+  elementStates.columns = hasOnlyDefaultEntry ? defaultContainer : filteredColumns
+  onEnteredProp('columns', elementStates.columns)
 }
 </script>
 
@@ -143,7 +176,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
               </label>
               <q-input id="form-name" ref="propNameInputRef" v-model.trim="elementStates.name"
                 :error="Boolean(elementStates.nameError)" :error-message="elementStates.nameError" hide-bottom-space
-                filled class="mw-200" color="cyan-8" dense type="text" @blur="onBlurName" />
+                filled class="mw-200" color="secondary" dense type="text" @blur="onBlurName" />
             </div>
           </div>
         </q-card-section>
@@ -215,7 +248,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
               </span>
             </label>
             <q-btn-toggle id="form-button-type" :model-value="elementStates.buttonType" no-wrap unelevated no-caps
-              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" dense
+              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'" dense
               :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { label: 'Primário', value: 'primary' },
                 { label: 'Secundário', value: 'secondary' },
@@ -283,7 +316,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
               </span>
             </label>
             <q-btn-toggle id="form-button-align" :model-value="elementStates.align" no-wrap unelevated no-caps
-              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" size="sm"
+              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'" size="sm"
               :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { icon: 'format_align_left', value: 'left' },
                 { icon: 'format_align_center', value: 'center' },
@@ -303,7 +336,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
               </span>
             </label>
             <q-btn-toggle id="form-button-size" :model-value="elementStates.size" no-wrap unelevated no-caps
-              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" dense
+              toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'" dense
               :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { label: 'Padrão', value: 'default' },
                 { label: 'Pequeno', value: 'sm' },
@@ -328,7 +361,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
               </span>
             </label>
             <q-btn-toggle id="form-button-columns" :model-value="formStore.formSettings.columns" no-wrap unelevated
-              no-caps toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'grey-3'" dense
+              no-caps toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'" dense
               :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
                 { label: 'Padrão', value: 'default' },
                 { label: 'Tablet', value: 'sm' },
@@ -338,7 +371,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
           <q-checkbox :model-value="isColumnDefault" label="Largura de coluna padrão"
             @update:model-value="handleCheckboxUpdate" />
           <q-btn-toggle v-if="!isColumnDefault" no-wrap unelevated dense spread toggle-color="primary"
-            :text-color="dark.isActive ? 'white' : 'grey-10'" :color="dark.isActive ? 'grey-10' : 'grey-3'"
+            :text-color="dark.isActive ? 'white' : 'grey-10'" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'"
             :model-value="formStore.activeField?.columns?.[formStore.formSettings.columns]?.container || formStore.activeField?.columns?.container"
             :options="[
               { label: '1', value: 1 },
@@ -357,7 +390,75 @@ function handleCheckboxUpdate(isChecked: boolean) {
         </q-card-section>
       </q-card>
     </template>
+    <template #conditions>
+      <q-card flat>
+        <q-card-section>
+          <div class="row align-center items-center justify-between q-pa-sm rounded-borders "
+            :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
+            <div class="text-body2">
+              Este elemento não contém condições
+            </div>
+            <q-btn no-caps label="Editar" color="primary" dense @click="conditionDialog = !conditionDialog" />
+          </div>
+        </q-card-section>
+      </q-card>
+    </template>
+
   </SettingsExpansionBaseWrapper>
+  <q-dialog v-model="conditionDialog" backdrop-filter="brightness(50%)"
+    @before-hide="() => { showConditionsForm = false }">
+    <q-card style="width: 700px; max-width: 80vw;">
+      <q-card-section class="row items-center" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
+        <div>
+          <h5 class="text-weight-semibold no-margin">Condições</h5>
+          <div class="text-body1" :class="dark.isActive ? 'text-grey-7' : 'text-blue-grey-6'">{{ elementStates.name }}
+          </div>
+        </div>
+        <q-space />
+        <q-btn flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" v-close-popup />
+
+      </q-card-section>
+
+      <q-card-section>
+        <div v-if="!formStore.activeField?.if && !showConditionsForm"
+          class="column align-center content-center justify-center text-center q-py-xl">
+          <div class="text-body2 text-weight-semibold">
+            Sem condições
+          </div>
+          <div class="text-body2" :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'">A lista de condições está
+            vazia
+          </div>
+          <q-btn no-caps class="q-mt-sm" label="Adicionar condição" color="primary"
+            @click="showConditionsForm = !showConditionsForm" />
+        </div>
+        <div v-else class="q-py-sm">
+          <div v-for="(field, index) in elementStates.logicFields" :key="index">
+            <div class="condition-wrapper">
+              <q-select :options="getFieldList" v-model="field.name" option-disable="cannotSelect" filled
+                label="Campo" />
+
+              <div
+                :class="!field.operator?.includes('empty') && !field.operator?.includes('notEmpty') ? 'two-columns' : 'one-column'">
+                <q-select :options="operators" v-model="field.operator" filled emit-value map-options />
+                <q-select v-if="!field.operator?.includes('empty') && !field.operator?.includes('notEmpty')"
+                  :options="operators" v-model="field.value" filled label="valor" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+
+      <q-separator />
+
+      <q-card-actions>
+        <q-btn v-close-popup no-caps color="primary" label="Salvar" />
+        <q-btn v-close-popup no-caps flat :color="dark.isActive ? 'grey' : 'blue-grey'" label="Recomeçar" />
+        <q-space />
+
+        <q-btn v-close-popup no-caps flat :color="dark.isActive ? 'grey' : 'blue-grey'" label="Cancelar" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 
   <pre>{{ formStore.activeField }}</pre>
 </template>
@@ -365,5 +466,23 @@ function handleCheckboxUpdate(isChecked: boolean) {
 <style lang="scss" scoped>
 .mw-200 {
   max-width: 200px;
+}
+
+.condition-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+}
+
+.one-column {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
 }
 </style>

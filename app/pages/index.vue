@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import { empty, eq } from '@formkit/utils'
 import { clearErrors, FormKitSchema, reset } from '@formkit/vue'
 
 // local variables
@@ -16,6 +17,7 @@ const isUserDraggingOver = ref(false)
 const isDragging = ref(true)
 const startX = ref(0)
 const lastDeltaColumns = ref(0)
+
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
@@ -72,6 +74,13 @@ const getUserWidthInput: ComputedRef<number> = computed(() => {
     return 0
 
   return Number(formStore.formSettings.preview.width)
+})
+
+const data = computed(() => {
+  /* 
+  This returned functions are essentials for FormKit's data expression
+  */
+  return { ...formStore.values, empty, eq }
 })
 
 function onDragEnterFormSectionArea() {
@@ -233,17 +242,13 @@ function stopResize() {
     <!-- <FormKit type="q-date" name="date1" /> -->
     <!-- <FormKit type="q-datetime" name="date" /> -->
     <!-- </FormKit> -->
-    <q-scroll-area
-      class="full-width relative-position" :content-style="scrollAreaContentStyle"
+    <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`"
-      :thumb-style="{ width: '4px' }"
-    >
-      <q-tabs
-        v-model="formStore.formSettings.previewMode" vertical dense shrink
+      :thumb-style="{ width: '4px' }">
+      <q-tabs v-model="formStore.formSettings.previewMode" vertical dense shrink
         class="rounded-borders fixed-left q-ml-sm q-mt-md"
         :class="dark.isActive ? 'bg-dark text-white' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-        active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;"
-      >
+        active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;">
         <q-tab name="editing">
           <template #default>
             <q-icon name="edit" size="xs">
@@ -265,82 +270,62 @@ function stopResize() {
       </q-tabs>
 
       <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
-        <q-card
-          flat class="preview-form-container q-my-md"
+        <q-card flat class="preview-form-container q-my-md"
           :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
-          :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }"
-        >
+          :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }">
           <q-card-section class="my-form-wrapper no-padding">
-            <FormKit
-              id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="false"
-              @submit="onSubmit"
-            >
-              <div
-                ref="formDroppableRef"
+            <FormKit id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="false"
+              @submit="onSubmit">
+              <div ref="formDroppableRef"
                 class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
-                @drop.prevent="onDrop" @dragover.prevent="handleDragover"
-              >
+                @drop.prevent="onDrop" @dragover.prevent="handleDragover">
                 <!-- No elements display message -->
-                <div
-                  v-if="!formFields.length"
+                <div v-if="!formFields.length"
                   class="overlay-drop-here row items-center justify-center rounded-borders span-12"
                   :class="{ 'bg-green-8': !formFields.length && highlightDropArea }"
-                  @dragenter.prevent="onDragEnterFormSectionArea" @dragleave.prevent="onDragLeaveFormSectionArea"
-                >
+                  @dragenter.prevent="onDragEnterFormSectionArea" @dragleave.prevent="onDragLeaveFormSectionArea">
                   Arraste e solte aqui os elementos
                   da coluna esquerda
                 </div>
 
-                <div
-                  v-for="(field, index) in formFields" :key="field.name" class="form-field" :class="[
-                    field.columns ? `span-${formStore.formSettings.columns === 'default' ? field.columns?.container || field.columns?.default?.container || 12 : field.columns?.[formStore.formSettings.columns]?.container || 12}` : 'span-12',
-                    field.align && {
-                      right: 'flex justify-end',
-                      center: 'flex justify-center',
-                      left: 'flex justify-start',
-                    }[field.align] || '',
-                  ]" @mouseover.prevent="onMouseOverAtFormElement(field)"
-                  @mouseleave.prevent="onMouseLeaveAtFormElement"
-                >
-                  <FormKitSchema :schema="field" />
+                <div v-for="(field, index) in formFields" :key="field.name" class="form-field" :class="[
+                  field.columns ? `span-${formStore.formSettings.columns === 'default' ? field.columns?.container || field.columns?.default?.container || 12 : field.columns?.[formStore.formSettings.columns]?.container || 12}` : 'span-12',
+                  field.align && {
+                    right: 'flex justify-end',
+                    center: 'flex justify-center',
+                    left: 'flex justify-start',
+                  }[field.align] || '',
+                ]" @mouseover.prevent="onMouseOverAtFormElement(field)"
+                  @mouseleave.prevent="onMouseLeaveAtFormElement">
+                  <FormKitSchema :schema="field" :data="data" />
                   <!-- Overlay preview -->
-                  <div
-                    class="overlay-preview-element cursor-pointer" :class="{
-                      __latest: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active.at(-1) === field?.name,
-                      __active: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name),
-                      __dragging: elementBeingDragged.field?.name === field?.name,
-                      __hover: !activeNameFields.active?.includes(field?.name) && activeNameFields.hover === field?.name,
-                      hidden: formStore.formSettings.previewMode !== 'editing',
-                    }" draggable="true" @click="onClickAtFormElement(field)" @dragstart="onDragStartField(field, index)"
-                    @dragend="onDragEnd(index)"
-                  />
+                  <div class="overlay-preview-element cursor-pointer" :class="{
+                    __latest: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active.at(-1) === field?.name,
+                    __active: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name),
+                    __dragging: elementBeingDragged.field?.name === field?.name,
+                    __hover: !activeNameFields.active?.includes(field?.name) && activeNameFields.hover === field?.name,
+                    hidden: formStore.formSettings.previewMode !== 'editing',
+                  }" draggable="true" @click="onClickAtFormElement(field)" @dragstart="onDragStartField(field, index)"
+                    @dragend="onDragEnd(index)" />
                   <!-- Top are drop  -->
-                  <div
-                    class="preview-element-area-top"
+                  <div class="preview-element-area-top"
                     :class="{ hidden: elementBeingDragged.field?.name === field?.name || !isUserDraggingOver }"
                     @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) < index ? index - 1 : index)"
-                    @dragover.prevent="onDragOverDropArea"
-                  >
-                    <div
-                      class="preview-element-label-wrapper preview-element-label-wrapper__top"
-                      :class="{ hidden: dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index) || (Number(elementBeingDragged?.index) < index && dragInIndicator.index !== index - 1) }"
-                    >
+                    @dragover.prevent="onDragOverDropArea">
+                    <div class="preview-element-label-wrapper preview-element-label-wrapper__top"
+                      :class="{ hidden: dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index) || (Number(elementBeingDragged?.index) < index && dragInIndicator.index !== index - 1) }">
                       <div class="preview-element-label">
                         Drag it here
                       </div>
                     </div>
                   </div>
                   <!-- Bottom area drop -->
-                  <div
-                    class="preview-element-area-bottom"
+                  <div class="preview-element-area-bottom"
                     :class="{ hidden: elementBeingDragged.field?.name === field?.name || !isUserDraggingOver }"
                     @dragenter.prevent="(ev) => onDragEnterInDropArea(ev, field?.name, Number(elementBeingDragged?.index) > index ? index + 1 : index)"
-                    @dragover.prevent="onDragOverDropArea"
-                  >
-                    <div
-                      class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
-                      :class="{ hidden: dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index + 1) || (Number(elementBeingDragged?.index) < index && dragInIndicator?.index !== index) }"
-                    >
+                    @dragover.prevent="onDragOverDropArea">
+                    <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
+                      :class="{ hidden: dragInIndicator.name !== field?.name || (Number(elementBeingDragged?.index) > index && dragInIndicator.index !== index + 1) || (Number(elementBeingDragged?.index) < index && dragInIndicator?.index !== index) }">
                       <div class="preview-element-label">
                         Drag it here
                       </div>
@@ -348,55 +333,45 @@ function stopResize() {
                   </div>
                   <div
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
-                    class="preview-form-name" @click="onClickAtFormElement(field)"
-                  >
+                    class="preview-form-name" @click="onClickAtFormElement(field)">
                     {{ field?.name }}
                   </div>
                   <q-icon
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
                     name="content_copy" class="preview-form-copy-action cursor-pointer"
-                    @click="handleCopyField(field, index)"
-                  >
-                    <q-tooltip
-                      class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
-                      self="bottom middle" :offset="[4, 4]"
-                    >
+                    @click="handleCopyField(field, index)">
+                    <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+                      self="bottom middle" :offset="[4, 4]">
                       Clone
                     </q-tooltip>
                   </q-icon>
                   <q-icon
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
                     name="o_delete" class="preview-form-remove-action cursor-pointer"
-                    @click="removeField(field, index)"
-                  >
-                    <q-tooltip
-                      class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
-                      self="bottom middle" :offset="[4, 4]"
-                    >
+                    @click="removeField(field, index)">
+                    <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+                      self="bottom middle" :offset="[4, 4]">
                       Remove
                     </q-tooltip>
                   </q-icon>
                   <!-- Resizer icon -->
                   <div
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
-                    class="preview-element-resizer-icon"
-                  />
+                    class="preview-element-resizer-icon" />
                   <!-- Resizer -->
                   <div
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
                     class="preview-element-resizer" draggable="true"
-                    @mousedown.prevent="evt => startResize(evt, field)"
-                  />
+                    @mousedown.prevent="evt => startResize(evt, field)" />
                   <!-- Columns display -->
                   <div
                     v-if="formStore.formSettings.previewMode === 'editing' && !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active?.includes(field?.name) || (activeNameFields.hover === field?.name && formStore.formSettings.previewMode === 'editing')"
-                    class="preview-element-columns-display"
-                  >
+                    class="preview-element-columns-display">
                     <span>
                       {{
                         formStore.formSettings.columns === 'default' ? field.columns?.container
                           || field.columns?.default?.container || 12
-                        : field.columns?.[formStore.formSettings.columns]?.container
+                          : field.columns?.[formStore.formSettings.columns]?.container
                           || 12 }}
                     </span>
                   </div>
@@ -407,11 +382,9 @@ function stopResize() {
         </q-card>
       </article>
 
-      <q-tabs
-        vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
+      <q-tabs vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
         :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-        style="max-height: 4.5rem;"
-      >
+        style="max-height: 4.5rem;">
         <q-tab name="undo">
           <template #default>
             <q-icon name="undo" size="xs">

@@ -1,4 +1,5 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import { empty, eq } from '@formkit/utils'
 import type { ColumnsType, FormViewportType } from '~/types'
 
 interface FormSettingsType {
@@ -12,7 +13,8 @@ export const useFormStore = defineStore('formStore', () => {
   const formSettings = ref<FormSettingsType>({ formName: 'Meu Formulário', preview: { width: 432, isFullWidth: false }, previewMode: 'editing', columns: 'default' })
   const formFields = ref<FormKitSchemaDefinition[]>([])
   const activeField = ref<FormKitSchemaNode & { columns: ColumnsType } | null>(null)
-  const values = ref({})
+  const values = reactive({})
+
 
   const { notify } = useQuasar()
 

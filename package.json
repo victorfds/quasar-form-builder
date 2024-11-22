@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@formkit/core": "^1.6.7",
+    "@formkit/utils": "^1.6.9",
     "@formkit/vue": "^1.6.7",
     "@quasar/extras": "^1.16.12",
     "nuxt": "^3.13.2",
