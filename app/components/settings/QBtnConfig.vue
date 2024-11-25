@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { ColumnsType } from '~/types'
 
 type LogicField = {
   name: string,
   operator: string,
-  value: string
+  value: string,
+  values: string[],
+  or: LogicField[] | null
 }
 
 const { dark, localStorage } = useQuasar()
@@ -14,12 +17,14 @@ const { updatePropFromActiveField, changeViewport, updateActiveFieldColumns } = 
 const elementsClosed = localStorage.getItem('elements-closed')
 
 const operators = [
-  { value: 'empty', label: 'Está vazio' },
-  { value: 'notEmpty', label: 'Não está vazio' },
-  { value: 'equals', label: 'Equals' },
-  { value: 'not_equals', label: 'Not Equals' },
-  { value: 'greater_than', label: 'Greater Than' },
-  { value: 'less_than', label: 'Less Than' },
+  { value: 'empty', label: 'está vazio' },
+  { value: 'notEmpty', label: 'não está vazio' },
+  { value: 'equals', label: 'é igual a' },
+  { value: 'notEquals', label: 'é diferente de' },
+  { value: 'greaterThan', label: '> do que' },
+  { value: 'greaterOrEqualsThan', label: '>= do que' },
+  { value: 'lessThan', label: '< do que' },
+  { value: 'lessOrEqualsThan', label: '<= do que' },
   { value: 'contains', label: 'Contains' }
 ]
 
@@ -51,7 +56,7 @@ const elementStates = reactive<{
   size: formStore.activeField?.size || 'default',
   columns: formStore.activeField?.columns,
   columnsPreferencies: { hasDefault: Boolean(!formStore.activeField?.columns?.container || formStore.activeField?.columns?.container || formStore.activeField?.columns?.default), hasTablet: Boolean(formStore.activeField?.columns?.sm), hasDesktop: Boolean(formStore.activeField?.columns?.lg) },
-  logicFields: [{ name: '', operator: '', value: '' }]
+  logicFields: [{ name: '', operator: '', value: '', values: [], or: [] }]
 })
 const propNameInputRef = ref<HTMLInputElement | null>(null)
 const propLabelInputRef = ref<HTMLInputElement | null>(null)
@@ -61,6 +66,7 @@ const propButtonLabelInputRef = ref<HTMLInputElement | null>(null)
 const propButtonTypeInputRef = ref<HTMLInputElement | null>(null)
 const conditionDialog = ref<boolean>(false)
 const showConditionsForm = ref<boolean>(false)
+const inputValue = ref('')
 
 watch(() => formStore.activeField, (newVal) => {
   elementStates.name = newVal?.name
@@ -160,6 +166,23 @@ function handleCheckboxUpdate(isChecked: boolean) {
   elementStates.columns = hasOnlyDefaultEntry ? defaultContainer : filteredColumns
   onEnteredProp('columns', elementStates.columns)
 }
+
+function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
+  if (!fieldName) return []
+
+  const field = formStore.formFields.find(element => element.name === fieldName)
+  if (field?.options) {
+    return field?.options
+  }
+  return []
+}
+
+function saveLogic() {
+  if (!elementStates.logicFields.length) return
+
+  console.log(elementStates.logicFields)
+}
+
 </script>
 
 <template>
@@ -431,28 +454,140 @@ function handleCheckboxUpdate(isChecked: boolean) {
           <q-btn no-caps class="q-mt-sm" label="Adicionar condição" color="primary"
             @click="showConditionsForm = !showConditionsForm" />
         </div>
-        <div v-else class="q-py-sm">
-          <div v-for="(field, index) in elementStates.logicFields" :key="index">
+        <div v-else>
+          <div class="condition-and" v-for="(field, index) in elementStates.logicFields" :key="index">
             <div class="condition-wrapper">
-              <q-select :options="getFieldList" v-model="field.name" option-disable="cannotSelect" filled
-                label="Campo" />
+              <q-select :options="getFieldList" v-model="field.name" option-disable="cannotSelect" filled label="Campo"
+                @update:model-value="() => {
+                  field.values = []
+                }" />
 
               <div
-                :class="!field.operator?.includes('empty') && !field.operator?.includes('notEmpty') ? 'two-columns' : 'one-column'">
-                <q-select :options="operators" v-model="field.operator" filled emit-value map-options />
-                <q-select v-if="!field.operator?.includes('empty') && !field.operator?.includes('notEmpty')"
-                  :options="operators" v-model="field.value" filled label="valor" />
+                :class="field.name && field.operator && !field.operator?.includes('empty') && !field.operator?.includes('notEmpty') ? 'two-columns' : 'one-column'">
+                <q-select :options="field.name ? operators : []" v-model="field.operator" filled emit-value map-options>
+                  <template v-slot:no-option>
+                    <q-item>
+                      <q-item-section class="text-grey">
+                        Escolha um campo primeiro
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                </q-select>
+
+                <q-select
+                  v-if="field.name && field.operator && (field.operator === 'equals' || field.operator === 'notEquals') && getOptionsBasedOnField(field.name)?.length"
+                  :options="getOptionsBasedOnField(field.name)" multiple v-model="field.values" filled label="valor"
+                  map-options emit-value>
+                  <template v-slot:no-option>
+                    <q-item>
+                      <q-item-section class="text-italic text-grey">
+                        Sem opções
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                </q-select>
+                <q-input
+                  v-if="field.name && field.operator && !field.operator?.includes('empty') && !field.operator?.includes('notEmpty') && !getOptionsBasedOnField(field.name)?.length && (field.operator === 'equals' || field.operator === 'notEquals')"
+                  v-model="inputValue" filled @keyup.enter="function addTag() {
+                    const value = inputValue.trim()
+                    if (value && !field.values.includes(value)) {
+                      field.values.push(value)
+                    }
+                    inputValue = ''
+                  }" clearable>
+                  <template v-slot:prepend>
+                    <div class="q-gutter-xs row flex-wrap">
+                      <q-chip v-for="(tag, index) in field.values" :key="index" removable @remove="() => (function removeTag(index: number) {
+                        field.values.splice(index, 1)
+                      })(index)
+                        ">
+                        {{ tag }}
+                      </q-chip>
+                    </div>
+                  </template>
+                </q-input>
+
+                <q-input
+                  v-if="field.name && field.operator && !field.operator?.includes('empty') && !field.operator?.includes('notEmpty') && field.operator !== 'equals' && field.operator !== 'notEquals'"
+                  v-model="field.value" filled />
               </div>
             </div>
+
+            <div class="condition-or" v-for="(fieldOr, indexOr) in elementStates.logicFields[index]?.or" :key="indexOr">
+              <div class="condition-wrapper-or">
+                <q-select :options="getFieldList" v-model="fieldOr.name" option-disable="cannotSelect" filled
+                  label="Campo" @update:model-value="() => {
+                    fieldOr.values = []
+                  }" />
+
+                <div
+                  :class="fieldOr.name && fieldOr.operator && !fieldOr.operator?.includes('empty') && !fieldOr.operator?.includes('notEmpty') ? 'two-columns' : 'one-column'">
+                  <q-select :options="fieldOr.name ? operators : []" v-model="fieldOr.operator" filled emit-value
+                    map-options>
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-grey">
+                          Escolha um campo primeiro
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
+
+                  <q-select
+                    v-if="fieldOr.name && fieldOr.operator && (fieldOr.operator === 'equals' || fieldOr.operator === 'notEquals') && getOptionsBasedOnField(field.name)?.length"
+                    :options="getOptionsBasedOnField(fieldOr.name)" multiple v-model="fieldOr.values" filled
+                    label="valor" map-options emit-value>
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-italic text-grey">
+                          Sem opções
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
+                  <q-input
+                    v-if="fieldOr.name && fieldOr.operator && !fieldOr.operator?.includes('empty') && !fieldOr.operator?.includes('notEmpty') && !getOptionsBasedOnField(fieldOr.name)?.length && (fieldOr.operator === 'equals' || fieldOr.operator === 'notEquals')"
+                    v-model="inputValue" filled @keyup.enter="function addTag() {
+                      const value = inputValue.trim()
+                      if (value && !fieldOr.values.includes(value)) {
+                        fieldOr.values.push(value)
+                      }
+                      inputValue = ''
+                    }" clearable>
+                    <template v-slot:prepend>
+                      <div class="q-gutter-xs row flex-wrap">
+                        <q-chip v-for="(tag, indexTag) in fieldOr.values" :key="indexTag" removable @remove="() => (function removeTag(index: number) {
+                          fieldOr.values.splice(index, 1)
+                        })(indexTag)
+                          ">
+                          {{ tag }}
+                        </q-chip>
+                      </div>
+                    </template>
+                  </q-input>
+
+                  <q-input
+                    v-if="fieldOr.name && fieldOr.operator && !fieldOr.operator?.includes('empty') && !fieldOr.operator?.includes('notEmpty') && fieldOr.operator !== 'equals' && fieldOr.operator !== 'notEquals'"
+                    v-model="fieldOr.value" filled />
+                </div>
+              </div>
+
+
+            </div>
+            <q-btn color="primary" label="Ou" no-caps class="q-mt-md"
+              @click="elementStates.logicFields[index]?.or?.push({ name: '', operator: '', value: '', values: [], or: null })" />
+
           </div>
+          <q-btn color="primary" label="E" class="q-mt-md"
+            @click="elementStates.logicFields.push({ name: '', operator: '', value: '', values: [], or: [] })" />
         </div>
       </q-card-section>
 
       <q-separator />
 
       <q-card-actions>
-        <q-btn v-close-popup no-caps color="primary" label="Salvar" />
-        <q-btn v-close-popup no-caps flat :color="dark.isActive ? 'grey' : 'blue-grey'" label="Recomeçar" />
+        <q-btn no-caps color="primary" label="Salvar" @click="saveLogic" />
+        <q-btn no-caps flat :color="dark.isActive ? 'grey' : 'blue-grey'" label="Recomeçar" />
         <q-space />
 
         <q-btn v-close-popup no-caps flat :color="dark.isActive ? 'grey' : 'blue-grey'" label="Cancelar" />
@@ -472,6 +607,49 @@ function handleCheckboxUpdate(isChecked: boolean) {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 1rem;
+
+  &::before {
+    background: var(--description-separator-color, grey);
+    color: white;
+    content: 'E';
+    font-variant-caps: all-small-caps;
+    z-index: 222;
+    position: absolute;
+    line-height: 2rem;
+    text-align: center;
+    left: 0;
+    right: 0;
+    bottom: 50%;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+  }
+}
+
+.condition-wrapper-or {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+  margin-top: 1rem;
+  position: relative;
+
+  > :first-child::before {
+    background: var(--description-separator-color, grey);
+    color: white;
+    content: 'Ou';
+    font-variant-caps: all-small-caps;
+    position: absolute;
+    line-height: 2rem;
+    text-align: center;
+    left: -3rem;
+    right: 0;
+    bottom: 0;
+    top: calc(50% - 1rem);
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+  }
+
 }
 
 .one-column {
@@ -484,5 +662,42 @@ function handleCheckboxUpdate(isChecked: boolean) {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 1rem;
+}
+
+.condition-and {
+  position: relative;
+  padding-left: 3rem;
+  padding-right: 1rem;
+  margin-bottom: 1rem;
+
+  &::before {
+    background: var(--line-color, grey);
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 120%;
+    left: 1rem;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+}
+
+.condition-or {
+  position: relative;
+  padding-left: 2rem;
+  margin-left: 1rem;
+
+  &::before {
+    background: var(--line-color, grey);
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 150%;
+    left: 0;
+    right: 0;
+    top: -1rem;
+    bottom: 0;
+  }
 }
 </style>
