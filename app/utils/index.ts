@@ -26,3 +26,28 @@ export function hasOnlyOneKeyWithName(obj: Record<string, any>, keyName: string)
   const keys = Object.keys(obj)
   return keys.length === 1 && keys[0] === keyName
 }
+
+export function contains(input: string | number | any[], value: string | number): boolean {
+  if (input === undefined || input === null || value === undefined || value === null) return false
+
+  // Handle arrays
+  if (Array.isArray(input)) {
+    return input.includes(value)
+  }
+
+  // Handle strings
+  if (typeof input === 'string') {
+    return input.includes(String(value)) // Check if the string representation of `value` is in `input`
+  }
+
+  // Handle numbers
+  if (typeof input === 'number') {
+    if (typeof value === 'number') {
+      return input === value // Exact match
+    }
+    return String(input).includes(String(value)) // Check if `value` as a string is part of `input`
+  }
+
+  return false
+}
+

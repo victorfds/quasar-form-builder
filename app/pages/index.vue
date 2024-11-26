@@ -80,8 +80,9 @@ const data = computed(() => {
   /* 
   This returned functions are essentials for FormKit's data expression
   */
-  return { ...formStore.values, empty, eq }
+  return { ...formStore.values, empty, eq, contains }
 })
+
 
 function onDragEnterFormSectionArea() {
   highlightDropArea.value = true

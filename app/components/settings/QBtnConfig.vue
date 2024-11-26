@@ -7,7 +7,7 @@ type LogicField = {
   operator: string,
   value: string,
   values: string[],
-  or: LogicField[] | null
+  or?: LogicField[] | null
 }
 
 const { dark, localStorage } = useQuasar()
@@ -25,7 +25,7 @@ const operators = [
   { value: 'greaterOrEqualsThan', label: '>= do que' },
   { value: 'lessThan', label: '< do que' },
   { value: 'lessOrEqualsThan', label: '<= do que' },
-  { value: 'contains', label: 'Contains' }
+  { value: 'contains', label: 'contém' }
 ]
 
 const elementStates = reactive<{
@@ -56,7 +56,7 @@ const elementStates = reactive<{
   size: formStore.activeField?.size || 'default',
   columns: formStore.activeField?.columns,
   columnsPreferencies: { hasDefault: Boolean(!formStore.activeField?.columns?.container || formStore.activeField?.columns?.container || formStore.activeField?.columns?.default), hasTablet: Boolean(formStore.activeField?.columns?.sm), hasDesktop: Boolean(formStore.activeField?.columns?.lg) },
-  logicFields: [{ name: '', operator: '', value: '', values: [], or: [] }]
+  logicFields: parseLogic(formStore.activeField?.if)
 })
 const propNameInputRef = ref<HTMLInputElement | null>(null)
 const propLabelInputRef = ref<HTMLInputElement | null>(null)
@@ -66,7 +66,6 @@ const propButtonLabelInputRef = ref<HTMLInputElement | null>(null)
 const propButtonTypeInputRef = ref<HTMLInputElement | null>(null)
 const conditionDialog = ref<boolean>(false)
 const showConditionsForm = ref<boolean>(false)
-const inputValue = ref('')
 
 watch(() => formStore.activeField, (newVal) => {
   elementStates.name = newVal?.name
@@ -94,12 +93,6 @@ const getFieldList = computed(() => {
   if (!list.length) return [{ label: 'A lista está vazia', value: null, cannotSelect: true }]
 
   return list
-})
-
-const getOperatorList = computed(() => {
-
-
-  return ['']
 })
 
 function onClickLabel(refElement: HTMLInputElement | null, { select = false }: { select?: boolean } = {}) {
@@ -177,12 +170,181 @@ function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
   return []
 }
 
+function transformOperatorValue(operatorValue: string): string {
+  const operatorMap: Record<string, string> = {
+    empty: '$empty',
+    notEmpty: '!$empty',
+    equals: '==',
+    notEquals: '!=',
+    greaterThan: '>',
+    greaterOrEqualsThan: '>=',
+    lessThan: '<',
+    lessOrEqualsThan: '<=',
+    contains: '$contains'
+  }
+
+  return operatorMap[operatorValue] ?? ''
+}
+
+function reverseOperatorValue(symbol?: string): string {
+  const reverseOperatorMap: Record<string, string> = {
+    '$empty': 'empty',
+    '!$empty': 'notEmpty',
+    '==': 'equals',
+    '!=': 'notEquals',
+    '>': 'greaterThan',
+    '>=': 'greaterOrEqualsThan',
+    '<': 'lessThan',
+    '<=': 'lessOrEqualsThan',
+    '$contains': 'contains'
+  }
+
+  if (!symbol) return ''
+
+  return reverseOperatorMap[symbol] ?? ''
+}
+
+// Helper function to process individual conditions
+function processSingleCondition(condition: LogicField, orData: string[]): string {
+  const { name, operator, value, values } = condition
+
+  if (['$empty', '!$empty'].includes(operator)) {
+    return `${operator}($${name})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+  }
+
+  if (['$contains'].includes(operator)) {
+    return `${operator}($${name},${value})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+  }
+
+  if (['==', '!='].includes(operator)) {
+    const valuesInString = values.map((val: any) => `$${name} ${operator} ${val}`).join(' || ')
+    return `${valuesInString}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+  }
+
+  return `$${name} ${operator} ${value}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+}
+
+// Helper function to process a list of "or" conditions
+function processConditions(conditions: LogicField[]): string[] {
+  return conditions.map(orCondition => {
+    const { name, operator, value, values } = orCondition
+
+    if (['$empty', '!$empty'].includes(operator)) {
+      return `${operator}($${name})`
+    }
+
+    if (['$contains'].includes(operator)) {
+      return `${operator}($${name},${value})`
+    }
+
+    if (['==', '!='].includes(operator)) {
+      return values.map((val: any) => `$${name} ${operator} ${val}`).join(' || ')
+    }
+
+    return `$${name} ${operator} ${value}`
+  })
+}
+
 function saveLogic() {
   if (!elementStates.logicFields.length) return
 
-  console.log(elementStates.logicFields)
+  // Transform conditions and nested "or" fields
+  const transformedConditions = elementStates.logicFields.map(logicField => ({
+    ...logicField,
+    operator: transformOperatorValue(logicField.operator),
+    or: logicField.or?.map(orField => ({
+      ...orField,
+      operator: transformOperatorValue(orField.operator)
+    })).filter(transformed => (transformed.name && transformed.operator) || (transformed.value || transformed.values.length))
+  })).filter(transformed => (transformed.name && transformed.operator) || (transformed.value || transformed.values.length))
+
+  const data: string[] = []
+
+  transformedConditions.forEach(condition => {
+    const orData = condition.or ? processConditions(condition.or) : []
+    const conditionString = processSingleCondition(condition, orData)
+
+    if (conditionString) data.push(conditionString)
+  })
+
+  onEnteredProp('if', data.join(' && '))
 }
 
+
+function parseLogic(logicString?: string): LogicField[] {
+  if (!logicString) return [{ name: '', operator: '', value: '', values: [], or: [] }]
+
+  const logicFields: LogicField[] = []
+
+  // Split by "&&" to separate main conditions
+  const mainConditions = logicString.split(' && ')
+
+  mainConditions.forEach(mainConditionString => {
+    // Split by "||" to handle "or" conditions
+    const orConditionsStrings = mainConditionString.split(' || ')
+    const mainCondition = parseCondition(orConditionsStrings.shift()!) // First is the main condition
+
+    if (orConditionsStrings.length) {
+      mainCondition.or = orConditionsStrings.map(parseCondition)
+    }
+
+    logicFields.push(mainCondition)
+  })
+
+  return logicFields
+}
+
+function parseCondition(conditionString: string): LogicField {
+  // Match operators like $empty(name), !$empty(name), $contains(name, value)
+  const functionMatch = conditionString.match(/^(!?\$empty|\$contains)\((.*?)\)$/)
+  if (functionMatch) {
+    const operator = reverseOperatorValue(functionMatch[1])
+
+    // For $contains, we have 2 parameters: name and value
+    if (operator === '$contains') {
+      const [name = '', value = ''] = functionMatch[2]?.split(',').map(item => item.trim())!
+      return {
+        operator: operator,
+        name: name?.replace('$', ''),
+        value: value,
+        values: []
+      }
+    }
+
+    return {
+      operator: operator,
+      name: functionMatch[2] || '',
+      value: '',
+      values: []
+    }
+  }
+
+  // Match equality operators (== or !=) with multiple values
+  const equalityMatch = conditionString.match(/^\$(.*?)\s(==|!=)\s(.+)$/)
+  if (equalityMatch) {
+    const [_, name, operator, valuesString] = equalityMatch
+    const values = valuesString?.split(' || ').map(val => val.trim()) || []
+    return {
+      name: name || '',
+      operator: reverseOperatorValue(operator),
+      value: '',
+      values
+    }
+  }
+
+  // Match comparison operators (>, >=, <, <=)
+  const comparisonMatch = conditionString.match(/^\$(.*?)\s(>|>=|<|<=)\s(.+)$/)
+  if (comparisonMatch) {
+    return {
+      name: comparisonMatch[1] || '',
+      operator: reverseOperatorValue(comparisonMatch[2]),
+      value: comparisonMatch[3]?.trim() || '',
+      values: []
+    }
+  }
+
+  throw new Error(`Invalid condition format: ${conditionString}`)
+}
 </script>
 
 <template>
@@ -488,12 +650,18 @@ function saveLogic() {
                 </q-select>
                 <q-input
                   v-if="field.name && field.operator && !field.operator?.includes('empty') && !field.operator?.includes('notEmpty') && !getOptionsBasedOnField(field.name)?.length && (field.operator === 'equals' || field.operator === 'notEquals')"
-                  v-model="inputValue" filled @keyup.enter="function addTag() {
-                    const value = inputValue.trim()
+                  v-model="field.value" filled @keyup.enter="function addTag() {
+                    const value = field.value.trim()
                     if (value && !field.values.includes(value)) {
                       field.values.push(value)
                     }
-                    inputValue = ''
+                    field.value = ''
+                  }" @blur="function addTag() {
+                    const value = field.value.trim()
+                    if (value && !field.values.includes(value)) {
+                      field.values.push(value)
+                    }
+                    field.value = ''
                   }" clearable>
                   <template v-slot:prepend>
                     <div class="q-gutter-xs row flex-wrap">
@@ -547,12 +715,18 @@ function saveLogic() {
                   </q-select>
                   <q-input
                     v-if="fieldOr.name && fieldOr.operator && !fieldOr.operator?.includes('empty') && !fieldOr.operator?.includes('notEmpty') && !getOptionsBasedOnField(fieldOr.name)?.length && (fieldOr.operator === 'equals' || fieldOr.operator === 'notEquals')"
-                    v-model="inputValue" filled @keyup.enter="function addTag() {
-                      const value = inputValue.trim()
+                    v-model="fieldOr.value" filled @keyup.enter="function addTag() {
+                      const value = fieldOr.value.trim()
                       if (value && !fieldOr.values.includes(value)) {
                         fieldOr.values.push(value)
                       }
-                      inputValue = ''
+                      fieldOr.value = ''
+                    }" @blur="function addTag() {
+                      const value = fieldOr.value.trim()
+                      if (value && !fieldOr.values.includes(value)) {
+                        fieldOr.values.push(value)
+                      }
+                      fieldOr.value = ''
                     }" clearable>
                     <template v-slot:prepend>
                       <div class="q-gutter-xs row flex-wrap">
