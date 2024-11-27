@@ -271,6 +271,35 @@ function saveLogic() {
   onEnteredProp('if', data.join(' && '))
 }
 
+function groupConditions(values: string[]): string[] {
+  // Group conditions using reduce
+  const grouped = values.reduce<Record<string, string[]>>((acc, condition) => {
+    // Match for "key == value" or "key != value"
+    const match = condition.match(/(.+?)(==|!=)\s*(.+)/)
+    if (match) {
+      const keyOperator = match[1] + match[2].trim() // Extract "key ==" or "key !="
+      const value = match[3].trim() // Extract value
+      return {
+        ...acc,
+        [keyOperator]: [...(acc[keyOperator] || []), value],
+      }
+    }
+    return acc
+  }, {})
+
+  // Map grouped conditions into formatted strings
+  const groupedConditions = Object.entries(grouped).map(
+    ([keyOperator, values]) => `${keyOperator} ${values.join(", ")}`
+  )
+
+  // Filter unique conditions (not grouped)
+  const uniqueConditions = values.filter(
+    condition => !condition.match(/(.+?)(==|!=)\s*(.+)/)
+  )
+
+  // Combine grouped and unique conditions
+  return [...groupedConditions, ...uniqueConditions]
+}
 
 function parseLogic(logicString?: string): LogicField[] {
   if (!logicString) return [{ name: '', operator: '', value: '', values: [], or: [] }]
@@ -286,7 +315,8 @@ function parseLogic(logicString?: string): LogicField[] {
     const mainCondition = parseCondition(orConditionsStrings.shift()!) // First is the main condition
 
     if (orConditionsStrings.length) {
-      mainCondition.or = orConditionsStrings.map(parseCondition)
+      const grouped = groupConditions(orConditionsStrings)
+      mainCondition.or = grouped.map(parseCondition)
     }
 
     if (!orConditionsStrings.length) {
@@ -306,8 +336,9 @@ function parseCondition(conditionString: string): LogicField {
     const operator = reverseOperatorValue(functionMatch[1])
 
     // For $contains, we have 2 parameters: name and value
-    if (operator === '$contains') {
+    if (operator === 'contains') {
       const [name = '', value = ''] = functionMatch[2]?.split(',').map(item => item.trim())!
+
       return {
         operator: operator,
         name: name?.replace('$', ''),
@@ -349,6 +380,45 @@ function parseCondition(conditionString: string): LogicField {
   }
 
   throw new Error(`Invalid condition format: ${conditionString}`)
+}
+
+function generateHumanReadableText(parsedLogic: LogicField[], operators: { value: string; label: string }[]): string {
+  // Helper to map operator values to human-readable labels
+  const getOperatorLabel = (operator: string): string => {
+    const foundOperator = operators.find(op => op.value === operator)
+    return foundOperator ? foundOperator.label : operator
+  }
+
+  // Helper to format a single condition
+  const formatCondition = (condition: LogicField): string => {
+    const { name, operator, value, values } = condition
+    const label = getOperatorLabel(operator)
+
+    if (values.length) {
+      return `${name} ${label} [${values.join(', ')}]`
+    }
+
+    if (value) {
+      return `${name} ${label} ${value}`
+    }
+
+    return `${name} ${label}`
+  }
+
+  // Helper to process main and "or" conditions
+  const formatLogicField = (field: LogicField): string => {
+    const mainCondition = formatCondition(field)
+
+    if (field.or && field.or.length) {
+      const orConditions = field.or.map(formatCondition).join(' ou ')
+      return `${mainCondition} ou ${orConditions}`
+    }
+
+    return mainCondition
+  }
+
+  // Map all logic fields into a readable format
+  return parsedLogic.map(formatLogicField).join(' e ')
 }
 </script>
 
@@ -583,10 +653,15 @@ function parseCondition(conditionString: string): LogicField {
     <template #conditions>
       <q-card flat>
         <q-card-section>
-          <div class="row align-center items-center justify-between q-pa-sm rounded-borders "
+          <div class="row align-center items-center justify-between q-pa-sm rounded-borders"
             :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
-            <div class="text-body2">
+            <div v-if="!formStore.activeField?.if" class="text-body2">
               Este elemento não contém condições
+            </div>
+            <div v-else class="text-body2">
+              <code>
+                {{ generateHumanReadableText(parseLogic(formStore.activeField.if), operators) }}
+              </code>
             </div>
             <q-btn no-caps label="Editar" color="primary" dense @click="conditionDialog = !conditionDialog" />
           </div>
