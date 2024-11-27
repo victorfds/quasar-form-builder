@@ -267,6 +267,7 @@ function saveLogic() {
     if (conditionString) data.push(conditionString)
   })
 
+  // Saving condition 
   onEnteredProp('if', data.join(' && '))
 }
 
@@ -286,6 +287,10 @@ function parseLogic(logicString?: string): LogicField[] {
 
     if (orConditionsStrings.length) {
       mainCondition.or = orConditionsStrings.map(parseCondition)
+    }
+
+    if (!orConditionsStrings.length) {
+      mainCondition.or = []
     }
 
     logicFields.push(mainCondition)
@@ -313,7 +318,7 @@ function parseCondition(conditionString: string): LogicField {
 
     return {
       operator: operator,
-      name: functionMatch[2] || '',
+      name: functionMatch[2]?.replace('$', '') || '',
       value: '',
       values: []
     }
@@ -325,7 +330,7 @@ function parseCondition(conditionString: string): LogicField {
     const [_, name, operator, valuesString] = equalityMatch
     const values = valuesString?.split(' || ').map(val => val.trim()) || []
     return {
-      name: name || '',
+      name: name?.replace('$', '') || '',
       operator: reverseOperatorValue(operator),
       value: '',
       values
@@ -336,7 +341,7 @@ function parseCondition(conditionString: string): LogicField {
   const comparisonMatch = conditionString.match(/^\$(.*?)\s(>|>=|<|<=)\s(.+)$/)
   if (comparisonMatch) {
     return {
-      name: comparisonMatch[1] || '',
+      name: comparisonMatch[1]?.replace('$', '') || '',
       operator: reverseOperatorValue(comparisonMatch[2]),
       value: comparisonMatch[3]?.trim() || '',
       values: []
