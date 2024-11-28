@@ -848,8 +848,6 @@ function generateHumanReadableText(parsedLogic: LogicField[], operators: { value
       </q-card-actions>
     </q-card>
   </q-dialog>
-
-  <pre>{{ formStore.activeField }}</pre>
 </template>
 
 <style lang="scss" scoped>
