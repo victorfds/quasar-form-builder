@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 const { dark, localStorage } = useQuasar()
 
 dark.set(false)

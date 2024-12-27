@@ -26,3 +26,11 @@ export interface ElementType {
 export interface ColumnsType { container?: number | null, default?: { container: number } | null, sm?: { container: number } | null, lg?: { container: number } | null }
 
 export type FormViewportType = 'default' | 'sm' | 'lg'
+
+export type LogicField = {
+  name: string,
+  operator: string,
+  value: string,
+  values: string[],
+  or?: LogicField[] | null
+}
