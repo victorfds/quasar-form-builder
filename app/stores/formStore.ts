@@ -1,6 +1,6 @@
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
-import { empty, eq } from '@formkit/utils'
-import type { ColumnsType, FormViewportType } from '~/types'
+import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
+import {empty, eq, clone} from '@formkit/utils'
+import type {ColumnsType, FormViewportType} from '~/types'
 
 interface FormSettingsType {
   formName?: string
@@ -10,21 +10,37 @@ interface FormSettingsType {
 }
 
 export const useFormStore = defineStore('formStore', () => {
-  const formSettings = ref<FormSettingsType>({ formName: 'Meu Formulário', preview: { width: 432, isFullWidth: false }, previewMode: 'editing', columns: 'default' })
+  const formSettings = ref<FormSettingsType>({
+    formName: 'Meu Formulário',
+    preview: {width: 432, isFullWidth: false},
+    previewMode: 'editing',
+    columns: 'default'
+  })
   const formFields = ref<FormKitSchemaDefinition[]>([])
   const activeField = ref<FormKitSchemaNode & { columns: ColumnsType } | null>(null)
   const values = reactive({})
 
-
-  const { notify } = useQuasar()
+  const {notify} = useQuasar()
 
   const getSchema = computed(() => {
     // @ts-expect-error the following lines is envolved in differents types, but certainly they should not fail
-    return formFields.value.reduce((acc, { name, ...rest }) => {
+    return formFields.value.reduce((acc, {name, ...rest}) => {
       // @ts-expect-error this is fine since we know our node schema always have object style definition
       acc[name] = rest
       return acc
     }, {})
+  })
+
+  const getFields = computed(() => {
+    const cloned = JSON.parse(JSON.stringify(formFields.value))
+    return cloned.map(it => {
+      if (formSettings.value.previewMode === 'editing' && Object.keys(it).some(objKey => objKey.includes('if'))) {
+        const {if: [], ...rest} = it
+        return {...rest, hasCondition: true}
+      }
+
+      return it
+    })
   })
 
   const getActiveFieldColumns = computed(() => {
@@ -43,18 +59,20 @@ export const useFormStore = defineStore('formStore', () => {
 
     if (pos <= 0) {
       formFields.value.unshift(field)
-    }
-    else if (pos >= formLength) {
+    } else if (pos >= formLength) {
       formFields.value.push(field)
-    }
-    else {
+    } else {
       formFields.value.splice(pos, 0, field)
     }
 
-    notify({ color: 'dark', message: `${field?.name} added` })
+    notify({color: 'dark', message: `${field?.name} added`})
   }
 
-  const updateFieldIndex = ({ draggedField, originalPosition, destinationIndex }: { draggedField: FormKitSchemaDefinition, originalPosition: number, destinationIndex: number }) => {
+  const updateFieldIndex = ({draggedField, originalPosition, destinationIndex}: {
+    draggedField: FormKitSchemaDefinition,
+    originalPosition: number,
+    destinationIndex: number
+  }) => {
     formFields.value.splice(originalPosition, 1)
     formFields.value.splice(destinationIndex, 0, draggedField!)
   }
@@ -85,7 +103,7 @@ export const useFormStore = defineStore('formStore', () => {
       index = formFields.value.findIndex(ff => ff.name === field?.name)
     }
     const newElemPosition = index + 1
-    const newField = { ...field, name: field?.name.split('_').at(0) }
+    const newField = {...field, name: field?.name.split('_').at(0)}
     addField(newField, newElemPosition)
     setActiveField(newField)
   }
@@ -103,10 +121,10 @@ export const useFormStore = defineStore('formStore', () => {
       return
 
     if (!newName)
-      return new Error('name cannot be empty', { cause: 500 })
+      return new Error('name cannot be empty', {cause: 500})
 
     if (nameExists(newName, formFields.value))
-      return new Error('name already exists', { cause: 500 })
+      return new Error('name already exists', {cause: 500})
 
     formFields.value[indexToUpdate].name = newName
 
@@ -159,7 +177,7 @@ export const useFormStore = defineStore('formStore', () => {
   const updateActiveFieldColumns = (newColumns: number) => {
     if (activeField.value) {
       if (!activeField.value?.columns) {
-        activeField.value.columns = { container: newColumns }
+        activeField.value.columns = {container: newColumns}
         return
       }
 
@@ -168,11 +186,11 @@ export const useFormStore = defineStore('formStore', () => {
         return
       }
 
-      activeField.value.columns[formSettings.value.columns] = { container: newColumns }
+      activeField.value.columns[formSettings.value.columns] = {container: newColumns}
 
       // If has container value save it inside default scope
       if (formSettings.value.columns !== 'default' && activeField.value.columns.container) {
-        activeField.value.columns.default = { container: activeField.value.columns.container }
+        activeField.value.columns.default = {container: activeField.value.columns.container}
         delete activeField.value.columns.container
       }
     }
@@ -180,7 +198,7 @@ export const useFormStore = defineStore('formStore', () => {
 
   const updateActiveFieldOnFormFields = () => {
     const indexToUpdate = formFields.value.findIndex(field => field.name === activeField.value.name)
-    formFields.value[indexToUpdate] = { ...activeField.value }
+    formFields.value[indexToUpdate] = {...activeField.value}
   }
 
   return {
@@ -189,6 +207,7 @@ export const useFormStore = defineStore('formStore', () => {
     formFields,
     activeField,
     getSchema,
+    getFields,
     getActiveFieldColumns,
     addField,
     updateFieldIndex,

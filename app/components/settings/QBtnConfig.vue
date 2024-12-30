@@ -156,6 +156,10 @@ function triggerSaveLogic() {
   saveLogic(elementStates, onEnteredProp)
   conditionDialog.value = false
 }
+
+function resetConditions() {
+  elementStates.logicFields = []
+}
 </script>
 
 <template>
@@ -580,7 +584,7 @@ function triggerSaveLogic() {
 
       <q-card-actions>
         <q-btn no-caps color="primary" label="Salvar" @click="triggerSaveLogic"/>
-        <q-btn no-caps flat :color="dark.isActive ? 'grey' : 'blue-grey'" label="Recomeçar"/>
+        <q-btn no-caps flat :color="dark.isActive ? 'grey' : 'blue-grey'" label="Recomeçar" @click="resetConditions"/>
         <q-space/>
 
         <q-btn v-close-popup no-caps flat :color="dark.isActive ? 'grey' : 'blue-grey'" label="Cancelar"/>

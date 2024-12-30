@@ -36,8 +36,7 @@ function onClickLabelFormName() {
     <q-scroll-area class="fit" visible>
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
         <component :is="getComponentSettings"/>
-        <div v-if="isDevelopment"
-             v-html="highlightJson(formStore.activeField, dark.isActive)"></div>
+        <div v-if="isDevelopment" v-html="highlightJson(formStore.activeField, dark.isActive)"></div>
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && !formStore.activeField">
         <q-list separator>
