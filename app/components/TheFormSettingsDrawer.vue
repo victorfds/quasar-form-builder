@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import process from 'node:process'
 import {except} from '@formkit/utils'
-import {createHighlighter} from 'shiki'
 import {isDevelopment} from "std-env"
 
 const model = defineModel<boolean>()
@@ -11,7 +9,6 @@ const {setActiveField, copyField, removeField, changePreviewWidth, togglePreview
 
 // Possible properties are: ["properties","submission","validation","layout"]
 const formClosed = JSON.parse(localStorage.getItem('form-closed') || '[]')
-const highlighter = await createHighlighter({langs: ['json'], themes: ['vitesse-dark', 'vitesse-light']})
 const SettingsQBtnConfigComponent = resolveComponent('SettingsQBtnConfig')
 const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConfig')
 
@@ -19,15 +16,7 @@ const formNameInputRef = ref<HTMLElement | null>(null)
 
 const htmlValues = computed(() => {
   const validValues = except(formStore.values, ['submit', 'slots', 'empty', 'eq'])
-  return highlighter.codeToHtml(JSON.stringify(validValues, null, 2), {
-    lang: 'json',
-    theme: dark.isActive ? 'vitesse-dark' : 'vitesse-light',
-    colorReplacements: {
-      'vitesse-dark': {
-        '#121212': '#1D1D1D',
-      },
-    },
-  })
+  return highlightJson(validValues, dark.isActive)
 })
 
 const getComponentSettings = computed(() => {
@@ -47,7 +36,8 @@ function onClickLabelFormName() {
     <q-scroll-area class="fit" visible>
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
         <component :is="getComponentSettings"/>
-        <pre v-if="isDevelopment">{{ formStore.activeField }}</pre>
+        <div v-if="isDevelopment"
+             v-html="highlightJson(formStore.activeField, dark.isActive)"></div>
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && !formStore.activeField">
         <q-list separator>
