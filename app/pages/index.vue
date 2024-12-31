@@ -2,6 +2,7 @@
 import type {FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
 import {empty, eq} from '@formkit/utils'
 import {clearErrors, FormKitSchema, reset} from '@formkit/vue'
+import type {ActiveFieldType} from "~/types"
 
 // local variables
 const highlightDropArea = ref<boolean>(false)
@@ -152,11 +153,11 @@ function onDragEnd(index: number) {
 }
 
 function onClickAtFormElement(index: number) {
-  const field = formStore.formFields.find((_, idx) => idx === index)
+  const field = formStore.formFields.find((_, idx) => idx === index) || null
 
   activeNameFields.value.active[0] = field?.name
   activeNameFields.value.active[1] = field?.name
-  setActiveField(field)
+  setActiveField(field as ActiveFieldType)
 }
 
 function onMouseOverAtFormElement(field: FormKitSchemaNode) {

@@ -1,13 +1,5 @@
 import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
-import {empty, eq, clone} from '@formkit/utils'
-import type {ColumnsType, FormViewportType} from '~/types'
-
-interface FormSettingsType {
-  formName?: string
-  preview: { width?: string | number | null, isFullWidth: boolean }
-  previewMode: 'editing' | 'previewing'
-  columns: FormViewportType
-}
+import type {ActiveFieldType, FormSettingsType, FormViewportType} from '~/types'
 
 export const useFormStore = defineStore('formStore', () => {
   const formSettings = ref<FormSettingsType>({
@@ -17,7 +9,7 @@ export const useFormStore = defineStore('formStore', () => {
     columns: 'default'
   })
   const formFields = ref<FormKitSchemaDefinition[]>([])
-  const activeField = ref<FormKitSchemaNode & { columns: ColumnsType } | null>(null)
+  const activeField = ref<ActiveFieldType>(null)
   const values = reactive({})
 
   const {notify} = useQuasar()
@@ -32,14 +24,15 @@ export const useFormStore = defineStore('formStore', () => {
   })
 
   const getFields = computed(() => {
-    const cloned = JSON.parse(JSON.stringify(formFields.value))
-    return cloned.map(it => {
-      if (formSettings.value.previewMode === 'editing' && Object.keys(it).some(objKey => objKey.includes('if'))) {
-        const {if: [], ...rest} = it
+    const cloned: FormKitSchemaDefinition[] = JSON.parse(JSON.stringify(formFields.value))
+    return cloned.map(clone => {
+      if (formSettings.value.previewMode === 'editing' && Object.keys(clone).some(objKey => objKey.includes('if'))) {
+        // @ts-expect-error clone is an object
+        const {if: [], ...rest} = clone
         return {...rest, hasCondition: true}
       }
 
-      return it
+      return clone
     })
   })
 
@@ -108,7 +101,7 @@ export const useFormStore = defineStore('formStore', () => {
     setActiveField(newField)
   }
 
-  const setActiveField = (newField: FormKitSchemaNode | null) => {
+  const setActiveField = (newField: ActiveFieldType) => {
     activeField.value = newField
   }
 

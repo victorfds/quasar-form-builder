@@ -1,10 +1,12 @@
-import type { FormKitSchemaNode } from '@formkit/core'
+import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
 
-export function nameExists(name: string, array: Array<{ name: string } & Record<string, any>>) { return array.some(el => el.name === name) }
+export function nameExists(name: string, array: Array<FormKitSchemaDefinition>) {
+  return array.some(el => el.name === name)
+}
 
 export function generateUniqueName(
   name: string,
-  formFields: Array<FormKitSchemaNode>,
+  formFields: Array<FormKitSchemaDefinition>,
 ): string {
   const formLength = formFields.length
 
