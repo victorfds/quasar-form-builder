@@ -4,6 +4,7 @@ export interface ElementType {
   type: string
   inputType?: string
   label?: string
+  description?: string
   rules?: string[]
   autocomplete?: string
   allowIncomplete?: boolean
