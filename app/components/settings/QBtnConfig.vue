@@ -221,7 +221,7 @@ function resetConditions() {
             </label>
             <q-input id="form-description" ref="propDescriptionInputRef" v-model.trim="elementStates.description"
                      hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
-                     @update:model-value="val => onEnteredProp('description', val)"/>
+                     @update:model-value="val => onEnteredProp('hint', val)"/>
           </div>
         </q-card-section>
       </q-card>
