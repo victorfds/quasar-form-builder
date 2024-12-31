@@ -21,10 +21,6 @@ COPY . /quasar-form-builder
 # Build the application, again, use yarn or pnpm if you want
 RUN pnpm run build
 
-# Define environment variables
-ENV HOST=0.0.0.0 NODE_ENV=production
-ENV NODE_ENV=production
-
 # Expose the port the application will run on
 EXPOSE 3000
 
