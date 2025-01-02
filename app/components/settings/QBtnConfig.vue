@@ -105,8 +105,7 @@ function onBlurName(_: Event) {
 }
 
 function onEnteredProp(propName: string, propValue?: string | number | boolean | null | ColumnsType) {
-  if (!propName)
-    return
+  if (!propName) return
 
   updatePropFromActiveField(formStore.activeField, propName, propValue)
 }

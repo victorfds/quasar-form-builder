@@ -169,7 +169,7 @@ function onMouseLeaveAtFormElement() {
 }
 
 function handleCopyField(field: FormKitSchemaNode, index: number) {
-  copyField(field, index)
+  copyField(index)
   activeNameFields.value.active[0] = field?.name
   activeNameFields.value.active[1] = formFields.at(index + 1)?.name
 }
@@ -181,7 +181,7 @@ function removeField(field: FormKitSchemaNode, index: number) {
   }
 }
 
-function startResize(evt: MouseEvent, field: FormKitSchemaNode | null) {
+function startResize(evt: MouseEvent, field: ActiveFieldType) {
   setActiveField(field)
   isDragging.value = true
   startX.value = evt.clientX
@@ -190,8 +190,7 @@ function startResize(evt: MouseEvent, field: FormKitSchemaNode | null) {
 }
 
 function resize(event: MouseEvent) {
-  if (!isDragging.value)
-    return
+  if (!isDragging.value) return
 
   const wrapperElement = document.querySelector('.my-form-wrapper') as HTMLElement
   const containerWidth = wrapperElement.getBoundingClientRect().width || getUserWidthInput.value
