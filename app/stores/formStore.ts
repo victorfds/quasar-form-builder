@@ -1,5 +1,5 @@
 import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
-import type {ActiveFieldType, FormSettingsType, FormViewportType} from '~/types'
+import type {ActiveFieldType, ColumnsType, FormSettingsType, FormViewportType} from '~/types'
 
 export const useFormStore = defineStore('formStore', () => {
   const formSettings = ref<FormSettingsType>({
@@ -188,6 +188,12 @@ export const useFormStore = defineStore('formStore', () => {
     formFields.value[indexToUpdate] = {...activeField.value}
   }
 
+  const onEnteredProp = (propName: string, propValue?: string | number | boolean | null | ColumnsType
+  ) => {
+    if (!propName) return
+
+    updatePropFromActiveField(activeField.value, propName, propValue)
+  }
   return {
     values,
     formSettings,
@@ -208,5 +214,6 @@ export const useFormStore = defineStore('formStore', () => {
     changeViewport,
     updateActiveFieldColumns,
     updateActiveFieldOnFormFields,
+    onEnteredProp
   }
 })
