@@ -1,4 +1,6 @@
 import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
+import {fieldTypes} from "~/constants"
+import {ComponentsTypes} from "~/types"
 
 export function nameExists(name: string, array: Array<FormKitSchemaDefinition>) {
   return array.some(el => el.name === name)
@@ -53,4 +55,8 @@ export function contains(input: string | number | any[], value: string | number)
   return false
 }
 
+export function getTypesBasedOnFieldType(fieldType: ComponentsTypes): { label: string, value: string }[] {
+  if (!fieldType) return []
 
+  return fieldTypes[fieldType] || []
+}

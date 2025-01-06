@@ -10,6 +10,7 @@ const {changePreviewWidth, togglePreviewFullWidth} = formStore
 // Possible properties are: ["properties","submission","validation","layout"]
 const formClosed = JSON.parse(localStorage.getItem('form-closed') || '[]')
 const SettingsQBtnConfigComponent = resolveComponent('SettingsQBtnConfig')
+const SettingsQInputConfigComponent = resolveComponent('SettingsQInputConfig')
 const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConfig')
 
 const formNameInputRef = ref<HTMLElement | null>(null)
@@ -21,8 +22,8 @@ const htmlValues = computed(() => {
 })
 
 const getComponentSettings = computed(() => {
-  if (formStore.activeField?.$formkit === 'q-btn')
-    return SettingsQBtnConfigComponent
+  if (formStore.activeField?.$formkit === 'q-btn') return SettingsQBtnConfigComponent
+  if (formStore.activeField?.$formkit === 'q-input') return SettingsQInputConfigComponent
 
   return SettingsDefaultNoConfigComponent
 })

@@ -51,3 +51,5 @@ export type LogicField = {
   values: string[],
   or?: LogicField[] | null
 }
+
+export type ComponentsTypes = 'q-input' | undefined

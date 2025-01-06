@@ -1,26 +1,33 @@
 <script setup lang="ts">
-import type {ColumnsType} from "~/types"
+import type {ColumnsType, ComponentsTypes} from "~/types"
 import type {FormKitSchemaDefinition} from "@formkit/core"
+import {getTypesBasedOnFieldType} from "~/utils"
+import {fieldTypes} from "~/constants"
+
+defineProps<{ hasInputType?: boolean }>()
 
 const {dark, localStorage} = useQuasar()
 const formStore = useFormStore()
-const {updatePropFromActiveField, onEnteredProp} = formStore
+const {onEnteredProp} = formStore
 
 const elementsClosed = localStorage.getItem('elements-closed')
 
 const elementStates = reactive<{
   name?: string
+  type?: { label: string, value: string }
   nameError?: string
   label?: string
   tooltip?: string
   description?: string
 }>({
   name: formStore.activeField?.name,
+  type: fieldTypes[formStore.activeField?.$formkit]?.find(el => el.value === formStore.activeField?.inputType),
   label: formStore.activeField?.label,
   tooltip: formStore.activeField?.info,
   description: formStore.activeField?.description,
 })
 const propNameInputRef = ref<HTMLInputElement | null>(null)
+const propTypeInputRef = ref<HTMLInputElement | null>(null)
 const propLabelInputRef = ref<HTMLInputElement | null>(null)
 const propTooltipInputRef = ref<HTMLInputElement | null>(null)
 const propDescriptionInputRef = ref<HTMLInputElement | null>(null)
@@ -78,6 +85,22 @@ function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
                    :error="Boolean(elementStates.nameError)" :error-message="elementStates.nameError"
                    hide-bottom-space
                    filled class="mw-200" color="secondary" dense type="text" @blur="onBlurName"/>
+        </div>
+        <div v-if="hasInputType" class="row align-center items-center justify-between q-mt-sm">
+          <label for="form-type" @click="onClickLabel(propTypeInputRef)">
+                <span class="text-body2">
+                  Tipo de entrada
+                </span>
+          </label>
+          <q-select id="form-type" ref="propTypeInputRef"
+                    :model-value="elementStates.type"
+                    hide-bottom-space
+                    filled class="mw-200 full-width" color="cyan-8" dense
+                    :options="getTypesBasedOnFieldType(formStore.activeField?.$formkit)"
+                    @update:model-value="(val) => {
+                      onEnteredProp('inputType', val.value)
+                      elementStates.type = val
+                    }" style="max-width: 200px;"/>
         </div>
       </div>
     </q-card-section>

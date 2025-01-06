@@ -247,10 +247,6 @@ function resetConditions() {
   </q-dialog>
 </template>
 <style lang="scss" scoped>
-.mw-200 {
-  max-width: 200px;
-}
-
 .condition-wrapper {
   display: grid;
   grid-template-columns: 1fr 2fr;

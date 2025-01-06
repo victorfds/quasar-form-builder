@@ -1,7 +1,7 @@
 <template>
   <SettingsExpansionBaseWrapper :section-labels="{ options: 'Opções de botão' }">
     <template #properties>
-      <SettingsPropertiesCard/>
+      <SettingsPropertiesCard hasInputType/>
     </template>
     <template #options>
       <SettingsButtonOptionsCard/>
@@ -14,3 +14,5 @@
     </template>
   </SettingsExpansionBaseWrapper>
 </template>
+<script setup lang="ts">
+</script>
