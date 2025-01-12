@@ -1,18 +1,13 @@
 <template>
-  <SettingsExpansionBaseWrapper :section-labels="{ options: 'Opções de botão' }">
+  <SettingsExpansionBaseWrapper>
     <template #properties>
-      <SettingsPropertiesCard hasInputType/>
-    </template>
-    <template #options>
-      <SettingsButtonOptionsCard/>
+      <SettingsPropertiesCard hasInputType hasPlaceholder />
     </template>
     <template #layout>
-      <SettingsLayoutCard showFullWidth/>
+      <SettingsLayoutCard showDense />
     </template>
     <template #conditions>
-      <SettingsConditionsCard/>
+      <SettingsConditionsCard />
     </template>
   </SettingsExpansionBaseWrapper>
 </template>
-<script setup lang="ts">
-</script>
