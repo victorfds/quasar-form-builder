@@ -1,6 +1,6 @@
-import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
-import {fieldTypes} from "~/constants"
-import {ComponentsTypes} from "~/types"
+import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import { fieldTypes } from "~/constants"
+import { ComponentsTypes } from "~/types"
 
 export function nameExists(name: string, array: Array<FormKitSchemaDefinition>) {
   return array.some(el => el.name === name)
@@ -59,4 +59,23 @@ export function getTypesBasedOnFieldType(fieldType: ComponentsTypes): { label: s
   if (!fieldType) return []
 
   return fieldTypes[fieldType] || []
+}
+
+export function getLengthLimitsFromValidation(
+  validationString: string,
+  startsWith: string
+): { min?: number | string, max?: number | string, exact?: number | string } {
+  if (!validationString) return { min: '', max: '', exact: '' }
+
+  const rule = validationString.split("|").find((rule) => rule.startsWith(`${startsWith}:`))
+
+  if (rule) {
+    const [min, max] = rule.replace(`${startsWith}:`, "").split(",").map(Number)
+    if (min === max) {
+      return { min: '', max: '', exact: `${min}:${max}` }
+    }
+    return { min, max, exact: '' }
+  }
+
+  return { min: '', max: '', exact: '' }
 }

@@ -1,13 +1,16 @@
 <template>
   <SettingsExpansionBaseWrapper>
     <template #properties>
-      <SettingsPropertiesCard hasInputType hasPlaceholder />
+      <SettingsSlotsPropertiesCard hasInputType hasPlaceholder />
     </template>
     <template #layout>
-      <SettingsLayoutCard showDense />
+      <SettingsSlotsLayoutCard showDense />
     </template>
     <template #conditions>
-      <SettingsConditionsCard />
+      <SettingsSlotsConditionsCard />
+    </template>
+    <template #validation>
+      <SettingsSlotsValidationCard />
     </template>
   </SettingsExpansionBaseWrapper>
 </template>

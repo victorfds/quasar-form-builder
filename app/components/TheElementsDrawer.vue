@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
-import type {UnwrapRef} from "vue"
+import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import type { UnwrapRef } from "vue"
 
 const model = defineModel<boolean>()
-const {dark} = useQuasar()
+const { dark } = useQuasar()
 const tools = ref<{
   name: string,
   icon: string,
@@ -17,12 +17,12 @@ const tools = ref<{
     title: 'Entrada de texto',
     description: 'Texto de uma única linha',
     schema:
-        {
-          $formkit: 'q-input',
-          name: 'text',
-          label: 'Texto',
-          inputType: 'text',
-        },
+    {
+      $formkit: 'q-input',
+      name: 'text',
+      label: 'Texto',
+      inputType: 'text',
+    },
   },
   {
     name: 'number',
@@ -30,13 +30,13 @@ const tools = ref<{
     title: 'Entrada numérica',
     description: 'Digite apenas de números',
     schema:
-        {
-          $formkit: 'q-input',
-          name: 'number',
-          label: 'Número',
-          inputType: 'number',
-          validation: 'number',
-        },
+    {
+      $formkit: 'q-input',
+      name: 'number',
+      label: 'Número',
+      inputType: 'number',
+      validation: 'number',
+    },
   },
   {
     name: 'email',
@@ -44,13 +44,13 @@ const tools = ref<{
     title: 'Endereço de email',
     description: 'Entrada de texto que espera um email',
     schema:
-        {
-          $formkit: 'q-input',
-          name: 'email',
-          label: 'Email',
-          inputType: 'email',
-          validation: 'email',
-        },
+    {
+      $formkit: 'q-input',
+      name: 'email',
+      label: 'Email',
+      inputType: 'email',
+      validation: 'email',
+    },
   },
   {
     name: 'phone',
@@ -58,14 +58,14 @@ const tools = ref<{
     title: 'Número de telefone',
     description: 'Número de telefone com máscara',
     schema:
-        {
-          '$formkit': 'q-input',
-          'name': 'phone',
-          'label': 'Telefone',
-          'mask': '(##) #####-####',
-          'unmasked-value': true,
-          'inputType': 'text',
-        },
+    {
+      '$formkit': 'q-input',
+      'name': 'phone',
+      'label': 'Telefone',
+      'mask': '(##) #####-####',
+      'unmasked-value': true,
+      'inputType': 'text',
+    },
   },
 
   {
@@ -74,12 +74,12 @@ const tools = ref<{
     title: 'Área de texto',
     description: 'Única linha ou multilinhas',
     schema:
-        {
-          $formkit: 'q-input',
-          name: 'textarea',
-          label: 'Área de texto',
-          inputType: 'textarea',
-        },
+    {
+      $formkit: 'q-input',
+      name: 'textarea',
+      label: 'Área de texto',
+      inputType: 'textarea',
+    },
   },
   {
     name: 'select',
@@ -90,7 +90,7 @@ const tools = ref<{
       $formkit: 'q-select',
       name: 'select',
       label: 'Selecione',
-      options: [{label: 'Opção 1', value: 'option1'}],
+      options: [{ label: 'Opção 1', value: 'option1' }],
       validation: 'required',
     },
   },
@@ -108,11 +108,11 @@ const statics = ref<{
     title: 'Botão de submissão',
     description: 'Botão que conclui o formulário',
     schema:
-        {
-          $formkit: 'q-btn',
-          name: 'submit',
-          buttonLabel: 'Finalizar',
-        },
+    {
+      $formkit: 'q-btn',
+      name: 'submit',
+      buttonLabel: 'Finalizar',
+    },
   },
 ])
 
@@ -129,36 +129,35 @@ function onDragStart(ev: DragEvent, tool: UnwrapRef<FormKitSchemaDefinition>) {
 <template>
   <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="left">
     <q-tabs v-model="tab" narrow-indicator :class="dark.isActive ? 'bg-transparent' : 'bg-blue-grey-1'" align="justify"
-            indicator-color="transparent" :active-bg-color="dark.isActive ? 'grey-9' : 'white'">
-      <q-tab name="elements" label="Elementos" no-caps/>
-      <q-tab name="tree" label="Árvore" no-caps/>
+      indicator-color="transparent" :active-bg-color="dark.isActive ? 'grey-9' : 'white'">
+      <q-tab name="elements" label="Elementos" no-caps />
+      <q-tab name="tree" label="Árvore" no-caps />
     </q-tabs>
     <q-scroll-area class="fit" visible>
       <q-tab-panels v-model="tab" animated>
         <q-tab-panel name="elements">
           <q-tabs v-model="elementsTypes" narrow-indicator dense
-                  :class="dark.isActive ? 'bg-transparent' : 'bg-blue-grey-1'" align="justify"
-                  indicator-color="transparent"
-                  :active-bg-color="dark.isActive ? 'grey-9' : 'white'">
-            <q-tab name="fields" label="Campos" no-caps/>
-            <q-tab name="statics" label="Estáticos" no-caps/>
-            <q-tab name="structures" label="Estruturas" no-caps/>
+            :class="dark.isActive ? 'bg-transparent' : 'bg-blue-grey-1'" align="justify" indicator-color="transparent"
+            :active-bg-color="dark.isActive ? 'grey-9' : 'white'">
+            <q-tab name="fields" label="Campos" no-caps />
+            <q-tab name="statics" label="Estáticos" no-caps />
+            <q-tab name="structures" label="Estruturas" no-caps />
           </q-tabs>
 
           <q-tab-panels v-model="elementsTypes" animated>
             <q-tab-panel name="fields" class="no-padding q-mt-lg">
               <div v-for="tool in tools" :key="tool.name" class="tool-item" draggable="true"
-                   @dragstart="event => onDragStart(event, tool.schema)">
+                @dragstart="event => onDragStart(event, tool.schema)">
                 <div class="row items-start no-wrap q-mb-lg">
                   <q-avatar rounded size="md" font-size="1.3rem" :color="dark.isActive ? 'grey-9' : 'blue-grey-2'"
-                            :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'" :icon="tool.icon"/>
+                    :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'" :icon="tool.icon" />
                   <div class="q-ml-sm">
                     <div class="tool-title text-weight-semibold text-subtitle2"
-                         :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
+                      :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
                       {{ tool.title }}
                     </div>
                     <div class="tool-description text-caption"
-                         :class="dark.isActive ? 'text-grey-7 ' : 'text-blue-grey-7'">
+                      :class="dark.isActive ? 'text-grey-7 ' : 'text-blue-grey-7'">
                       {{ tool.description }}
                     </div>
                   </div>
@@ -168,17 +167,17 @@ function onDragStart(ev: DragEvent, tool: UnwrapRef<FormKitSchemaDefinition>) {
 
             <q-tab-panel name="statics" class="no-padding q-mt-lg">
               <div v-for="tool in statics" :key="tool.name" class="tool-item" draggable="true"
-                   @dragstart="event => onDragStart(event,tool.schema)">
+                @dragstart="event => onDragStart(event, tool.schema)">
                 <div class="row items-start no-wrap q-mb-lg">
                   <q-avatar rounded size="md" font-size="1.3rem" :color="dark.isActive ? 'grey-9' : 'blue-grey-2'"
-                            :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'" :icon="tool.icon"/>
+                    :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'" :icon="tool.icon" />
                   <div class="q-ml-sm">
                     <div class="tool-title text-weight-semibold text-subtitle2"
-                         :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
+                      :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
                       {{ tool.title }}
                     </div>
                     <div class="tool-description text-caption"
-                         :class="dark.isActive ? 'text-grey-7 ' : 'text-blue-grey-7'">
+                      :class="dark.isActive ? 'text-grey-7 ' : 'text-blue-grey-7'">
                       {{ tool.description }}
                     </div>
                   </div>

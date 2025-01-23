@@ -119,6 +119,34 @@ export const useFormStore = defineStore('formStore', () => {
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
+  const insertValidationRule = (
+    validationString: string,
+    newRule: string
+  ): string => {
+    const rules = validationString ? validationString.split("|") : []
+    const ruleName = newRule.split(":")[0]
+
+    const updatedRules = rules.map((rule) =>
+      rule.startsWith(ruleName + ":") ? newRule : rule
+    )
+
+    if (!updatedRules.includes(newRule)) {
+      updatedRules.push(newRule)
+    }
+
+    return updatedRules.join("|")
+  }
+
+  const removeValidationRule = (
+    validationString: string,
+    ruleToRemove: string
+  ): string => {
+    const rules = validationString ? validationString.split("|") : []
+
+    const updatedRules = rules.filter((rule) => !rule.includes(ruleToRemove))
+    return updatedRules.join("|")
+  }
+
   const updatePropFromActiveField = async (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: any) => {
     if (!propName || !fieldElement) return
 
@@ -126,6 +154,11 @@ export const useFormStore = defineStore('formStore', () => {
     if (indexToUpdate === -1) return
 
     if (!activeField.value) return
+
+    if (propName === 'validation' && newPropValue) {
+      const validationElement = newPropValue.startsWith('-') ? removeValidationRule(fieldElement?.validation, newPropValue.substring(1)) : insertValidationRule(fieldElement?.validation, newPropValue)
+      newPropValue = validationElement
+    }
 
     activeField.value[propName] = newPropValue
     formFields.value[indexToUpdate][propName] = newPropValue

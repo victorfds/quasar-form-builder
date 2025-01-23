@@ -73,6 +73,19 @@ function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
   }
   return []
 }
+
+function onTypeUpdateModelValue(val: any) {
+  onEnteredProp('inputType', val.value)
+
+  onEnteredProp('validation', '')
+  if (val.value !== 'text') {
+    setTimeout(() => {
+      onEnteredProp('validation', val.value)
+    }, 500)
+  }
+
+  elementStates.type = val
+}
 </script>
 <template>
   <q-card flat>
@@ -96,11 +109,8 @@ function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
           </label>
           <q-select id="form-type" ref="propTypeInputRef" :model-value="elementStates.type" hide-bottom-space filled
             class="mw-200 full-width" color="cyan-8" dense
-            :options="getTypesBasedOnFieldType(formStore.activeField?.$formkit)" @update:model-value="(val) => {
-              onEnteredProp('inputType', val.value)
-              onEnteredProp('validation', val.value)
-              elementStates.type = val
-            }" style="max-width: 200px;" />
+            :options="getTypesBasedOnFieldType(formStore.activeField?.$formkit)"
+            @update:model-value="onTypeUpdateModelValue" style="max-width: 200px;" />
         </div>
       </div>
     </q-card-section>

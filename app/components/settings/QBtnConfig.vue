@@ -1,16 +1,16 @@
 <template>
   <SettingsExpansionBaseWrapper :section-labels="{ options: 'Opções de botão' }">
     <template #properties>
-      <SettingsPropertiesCard hasTooltip />
+      <SettingsSlotsPropertiesCard hasTooltip />
     </template>
     <template #options>
-      <SettingsButtonOptionsCard />
+      <SettingsSlotsButtonOptionsCard />
     </template>
     <template #layout>
-      <SettingsLayoutCard showFullWidth showAlignment showSize />
+      <SettingsSlotsLayoutCard showFullWidth showAlignment showSize />
     </template>
     <template #conditions>
-      <SettingsConditionsCard />
+      <SettingsSlotsConditionsCard />
     </template>
   </SettingsExpansionBaseWrapper>
 </template>
