@@ -3,6 +3,8 @@ import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { LogicField } from '~/types'
 import { operators } from '~/constants'
 
+const props = defineProps<{ noConditionsMessage?: string, conditionsDialogSubtitle?: string, saveTo?: 'if' | 'validation' }>()
+
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
@@ -10,7 +12,7 @@ const { onEnteredProp } = formStore
 const elementStates = reactive<{
   logicFields: LogicField[]
 }>({
-  logicFields: parseLogic(formStore.activeField?.if)
+  logicFields: parseLogic(props.saveTo === 'validation' ? formStore.activeField?.validation?.if : formStore.activeField?.if)
 })
 
 const conditionDialog = ref<boolean>(false)
@@ -27,7 +29,7 @@ function toggleConditionDialog() {
   conditionDialog.value = !conditionDialog.value
   if (conditionDialog.value) {
     // If it is true parseLogic again
-    elementStates.logicFields = parseLogic(formStore.activeField?.if)
+    elementStates.logicFields = parseLogic(props.saveTo === 'validation' ? formStore.activeField?.validation?.if : formStore.activeField?.if)
   }
 }
 
@@ -42,7 +44,7 @@ function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
 }
 
 function triggerSaveLogic() {
-  saveLogic(elementStates, onEnteredProp)
+  saveLogic(elementStates, props.saveTo, onEnteredProp)
   conditionDialog.value = false
 }
 
@@ -55,12 +57,14 @@ function resetConditions() {
     <q-card-section>
       <div class="row align-center items-center justify-between q-pa-sm rounded-borders"
         :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
-        <div v-if="!formStore.activeField?.if" class="text-body2">
-          Este elemento não contém condições
+        <div v-if="saveTo === 'validation' ?
+          !formStore.activeField?.validation?.if : !formStore.activeField?.if" class="text-body2">
+          {{ noConditionsMessage || 'Este elemento não contém condições' }}
         </div>
         <div v-else class="text-body2">
           <code>
-            {{ generateHumanReadableText(parseLogic(formStore.activeField.if), operators) }}
+            {{ generateHumanReadableText(parseLogic(saveTo === 'validation' ?
+              formStore.activeField?.validation?.if : formStore.activeField?.if), operators) }}
           </code>
         </div>
         <q-btn no-caps label="Editar" color="primary" dense @click="toggleConditionDialog" />
@@ -73,6 +77,10 @@ function resetConditions() {
       <q-card-section class="row items-center" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
         <div>
           <h5 class="text-weight-semibold no-margin">Condições</h5>
+          <h6 v-if="conditionsDialogSubtitle" class="text-subtitle1 no-margin"
+            :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'">
+            {{ conditionsDialogSubtitle }}
+          </h6>
           <div class="text-body1" :class="dark.isActive ? 'text-grey-7' : 'text-blue-grey-6'">{{ elementStates.name }}
           </div>
         </div>
@@ -82,7 +90,8 @@ function resetConditions() {
       </q-card-section>
 
       <q-card-section>
-        <div v-if="!formStore.activeField?.if && !showConditionsForm"
+        <div
+          v-if="saveTo === 'validation' && !formStore.activeField?.validation?.if && !formStore.activeField?.if && !showConditionsForm"
           class="column align-center content-center justify-center text-center q-py-xl">
           <div class="text-body2 text-weight-semibold">
             Sem condições
@@ -160,7 +169,7 @@ function resetConditions() {
 
             <div class="condition-or" v-for="(fieldOr, indexOr) in elementStates.logicFields[index]?.or" :key="indexOr">
               <div class="condition-wrapper-or">
-                <q-select :options="getFieldList" v-model="fieldOr.name" option-disable="cannotSelect" filled
+                <q-select :options="getFieldList" v-model="fieldOr.name" option-disable="cannotSelect" filled emit-value
                   label="Campo" @update:model-value="() => {
                     fieldOr.values = []
                   }" />

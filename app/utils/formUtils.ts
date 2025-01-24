@@ -1,4 +1,4 @@
-import type {LogicField} from '~/types'
+import type { LogicField } from '~/types'
 
 export function transformOperatorValue(operatorValue: string): string {
   const operatorMap: Record<string, string> = {
@@ -35,7 +35,7 @@ export function reverseOperatorValue(symbol?: string): string {
 }
 
 export function processSingleCondition(condition: LogicField, orData: string[]): string {
-  const {name, operator, value, values} = condition
+  const { name, operator, value, values } = condition
 
   if (['$empty', '!$empty'].includes(operator)) {
     return `${operator}($${name})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
@@ -55,7 +55,7 @@ export function processSingleCondition(condition: LogicField, orData: string[]):
 
 export function processConditions(conditions: LogicField[]): string[] {
   return conditions.map(orCondition => {
-    const {name, operator, value, values} = orCondition
+    const { name, operator, value, values } = orCondition
 
     if (['$empty', '!$empty'].includes(operator)) {
       return `${operator}($${name})`
@@ -73,7 +73,7 @@ export function processConditions(conditions: LogicField[]): string[] {
   })
 }
 
-export function saveLogic(elementStates: { logicFields: LogicField[] }, updatePropFn: Function) {
+export function saveLogic(elementStates: { logicFields: LogicField[] }, property: 'if' | 'validation' = 'if', updatePropFn: Function) {
   if (!elementStates.logicFields.length) return
 
   // Transform conditions and nested "or" fields
@@ -97,12 +97,18 @@ export function saveLogic(elementStates: { logicFields: LogicField[] }, updatePr
     }
   })
 
+  if (property === 'validation') {
+    // Saving condition
+    updatePropFn('validation', { if: data.join(' && ') })
+    return
+  }
+
   // Saving condition
   updatePropFn('if', data.join(' && '))
 }
 
 export function parseLogic(logicString?: string): LogicField[] {
-  if (!logicString) return [{name: '', operator: '', value: '', values: [], or: []}]
+  if (!logicString) return [{ name: '', operator: '', value: '', values: [], or: [] }]
 
   const logicFields: LogicField[] = []
 
@@ -194,7 +200,7 @@ export function generateHumanReadableText(parsedLogic: LogicField[], operators: 
 
   // Helper to format a single condition
   const formatCondition = (condition: LogicField): string => {
-    const {name, operator, value, values} = condition
+    const { name, operator, value, values } = condition
     const label = getOperatorLabel(operator)
 
     if (values.length) {

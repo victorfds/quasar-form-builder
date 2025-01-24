@@ -27,7 +27,7 @@ const tools = ref<{
         then: 'required|number',
         else: 'number'
       },
-      disable: { if: '!$empty($number)', then: true }
+      // disable: { if: '!$empty($number)', then: true }
     },
   },
   {

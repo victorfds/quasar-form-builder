@@ -150,34 +150,66 @@ export const useFormStore = defineStore('formStore', () => {
   const updatePropFromActiveField = async (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: any) => {
     if (!propName || !fieldElement) return
 
-    const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement?.name)
-    if (indexToUpdate === -1) return
+    const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement.name)
+    if (indexToUpdate === -1 || !activeField.value) return
 
-    if (!activeField.value) return
+    const updatedPropValue = (propName === 'validation' && newPropValue)
+      ? handleValidationUpdate(fieldElement, newPropValue)
+      : newPropValue
 
-    if (propName === 'validation' && newPropValue) {
-      const validationElement = newPropValue.startsWith('-') ? removeValidationRule(fieldElement?.validation, newPropValue.substring(1)) : insertValidationRule(fieldElement?.validation, newPropValue)
-
-      if (fieldElement?.validation?.if) {
-        newPropValue = { ...fieldElement?.validation, then: validationElement, else: validationElement.replace(/(^required\||\|required$|^required$|\|required\|)/, "") }
-      } else {
-        newPropValue = validationElement
-      }
-    }
-
-    activeField.value[propName] = newPropValue
-    formFields.value[indexToUpdate][propName] = newPropValue
+    updateFieldProperties(propName, updatedPropValue, indexToUpdate)
 
     await nextTick()
 
-    if (newPropValue === false || newPropValue === '' || isEmptyObject(newPropValue)) {
-      delete activeField.value[propName]
-      delete formFields.value[indexToUpdate][propName]
+    if (shouldDeleteProperty(updatedPropValue)) {
+      deleteFieldProperties(propName, indexToUpdate)
     }
-    // TODO: cache form state values from this point
+    // TODO: cache form preview width
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
+  const handleValidationUpdate = (fieldElement: FormKitSchemaNode, newPropValue: any) =>
+    !fieldElement.validation?.if && newPropValue.if
+      ? ({
+        ...newPropValue,
+        then: fieldElement.validation,
+        else: removeRequiredRule(fieldElement.validation)
+      })
+      : updateValidationElement(fieldElement, newPropValue)
+
+  const updateValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
+    const validationElement = getValidationElement(fieldElement, newPropValue)
+    return newPropValue.if
+      ? { ...newPropValue, then: validationElement, else: removeRequiredRule(validationElement) }
+      : validationElement
+  }
+
+  const getValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) =>
+    typeof newPropValue === 'string' && newPropValue.startsWith('-')
+      ? removeValidationRule(fieldElement.validation, newPropValue.substring(1))
+      : fieldElement.validation?.then || insertValidationRule(fieldElement.validation, newPropValue)
+
+  const removeRequiredRule = (validation: any) =>
+    validation?.replace(/(^required\||\|required$|^required$|\|required\|)/, "")
+
+  const updateFieldProperties = (propName: string, newPropValue: any, indexToUpdate: number) => {
+    activeField.value = { ...activeField.value, [propName]: newPropValue }
+    formFields.value = formFields.value.map((field, index) =>
+      index === indexToUpdate ? { ...field, [propName]: newPropValue } : field
+    )
+  }
+
+  const deleteFieldProperties = (propName: string, indexToUpdate: number) => {
+    const { [propName]: _, ...restActiveField } = activeField.value
+    const { [propName]: __, ...restFormField } = formFields.value[indexToUpdate]
+    activeField.value = restActiveField
+    formFields.value = formFields.value.map((field, index) =>
+      index === indexToUpdate ? restFormField : field
+    )
+  }
+
+  const shouldDeleteProperty = (newPropValue: any) =>
+    newPropValue === false || newPropValue === '' || isEmptyObject(newPropValue)
   const changePreviewWidth = (newWidth: string | number | null) => {
     formSettings.value.preview.width = newWidth
 

@@ -17,7 +17,7 @@ const elementStates = reactive<{
   maxLength?: string | number | null
   exactLength?: string | number | null
 }>({
-  required: Boolean(formStore.activeField?.validation?.toString()?.includes('required')),
+  required: Boolean(formStore.activeField?.validation?.then?.includes?.('required')) || Boolean(formStore.activeField?.validation?.includes?.('required')),
   minLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'min')?.min,
   maxLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'max')?.max,
   exactLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'between')?.exact
@@ -27,6 +27,7 @@ const propMaxLengthInputRef = ref<HTMLInputElement | null>(null)
 const propExactLengthInputRef = ref<HTMLInputElement | null>(null)
 
 watch(() => formStore.activeField, (newVal) => {
+  elementStates.required = Boolean(newVal?.validation?.then?.includes?.('required')) || Boolean(newVal?.validation?.includes?.('required'))
   elementStates.minLength = getLengthLimitsFromValidation(newVal?.validation, usesLength.value ? 'length' : 'min')?.min
   elementStates.maxLength = getLengthLimitsFromValidation(newVal?.validation, usesLength.value ? 'length' : 'max')?.max
   elementStates.exactLength = getLengthLimitsFromValidation(newVal?.validation, usesLength.value ? 'length' : 'between')?.exact
@@ -53,6 +54,11 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
           onEnteredProp('validation', val ? 'required' : '-required')
         }" />
       </div>
+
+      <SettingsSlotsConditionsCard v-if="elementStates.required" saveTo="validation"
+        noConditionsMessage="Regra de obrigatoriedade vazia"
+        :conditionsDialogSubtitle="`${formStore.activeField?.name} / regra de obrigatoriedade`" />
+
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section>
