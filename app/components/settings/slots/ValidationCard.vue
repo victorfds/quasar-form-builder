@@ -18,14 +18,19 @@ const elementStates = reactive<{
   exactLength?: string | number | null
 }>({
   required: Boolean(formStore.activeField?.validation?.includes('required')),
-  minLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength ? 'length' : 'min')?.min,
-  maxLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength ? 'length' : 'max')?.max,
-  exactLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength ? 'length' : 'between')?.exact
+  minLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'min')?.min,
+  maxLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'max')?.max,
+  exactLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'between')?.exact
 })
 const propMinLengthInputRef = ref<HTMLInputElement | null>(null)
 const propMaxLengthInputRef = ref<HTMLInputElement | null>(null)
 const propExactLengthInputRef = ref<HTMLInputElement | null>(null)
 
+watch(() => formStore.activeField, (newVal) => {
+  elementStates.minLength = getLengthLimitsFromValidation(newVal?.validation, usesLength.value ? 'length' : 'min')?.min
+  elementStates.maxLength = getLengthLimitsFromValidation(newVal?.validation, usesLength.value ? 'length' : 'max')?.max
+  elementStates.exactLength = getLengthLimitsFromValidation(newVal?.validation, usesLength.value ? 'length' : 'between')?.exact
+}, { deep: true })
 
 function onClickLabel(refElement: HTMLInputElement | null, { select = false }: { select?: boolean } = {}) {
   refElement?.focus()

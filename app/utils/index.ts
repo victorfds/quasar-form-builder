@@ -70,7 +70,13 @@ export function getLengthLimitsFromValidation(
   const rule = validationString.split("|").find((rule) => rule.startsWith(`${startsWith}:`))
 
   if (rule) {
-    const [min, max] = rule.replace(`${startsWith}:`, "").split(",").map(Number)
+    const extracted = rule.replace(`${startsWith}:`, "")
+
+    if (startsWith !== 'length') {
+      return { [startsWith]: extracted }
+    }
+
+    const [min, max] = extracted.split(",").map(Number)
     if (min === max) {
       return { min: '', max: '', exact: `${min}:${max}` }
     }
