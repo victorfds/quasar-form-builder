@@ -120,10 +120,10 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const insertValidationRule = (
-    validationString: string,
+    validation: string | { if: string, then: string, else: string },
     newRule: string
   ): string => {
-    const rules = validationString ? validationString.split("|") : []
+    const rules = validation && typeof validation === 'string' ? validation.split("|") : typeof validation !== 'string' ? validation.then.split("|") : []
     const ruleName = newRule.split(":")[0]
 
     const updatedRules = rules.map((rule) =>
@@ -138,10 +138,10 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const removeValidationRule = (
-    validationString: string,
+    validation: string | { if: string, then: string, else: string },
     ruleToRemove: string
   ): string => {
-    const rules = validationString ? validationString.split("|") : []
+    const rules = validation && typeof validation === 'string' ? validation.split("|") : typeof validation !== 'string' ? validation.then.split("|") : []
 
     const updatedRules = rules.filter((rule) => !rule.includes(ruleToRemove))
     return updatedRules.join("|")
@@ -157,7 +157,12 @@ export const useFormStore = defineStore('formStore', () => {
 
     if (propName === 'validation' && newPropValue) {
       const validationElement = newPropValue.startsWith('-') ? removeValidationRule(fieldElement?.validation, newPropValue.substring(1)) : insertValidationRule(fieldElement?.validation, newPropValue)
-      newPropValue = validationElement
+
+      if (fieldElement?.validation?.if) {
+        newPropValue = { ...fieldElement?.validation, then: validationElement, else: validationElement.replace(/(^required\||\|required$|^required$|\|required\|)/, "") }
+      } else {
+        newPropValue = validationElement
+      }
     }
 
     activeField.value[propName] = newPropValue

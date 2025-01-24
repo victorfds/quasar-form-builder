@@ -17,7 +17,7 @@ const elementStates = reactive<{
   maxLength?: string | number | null
   exactLength?: string | number | null
 }>({
-  required: Boolean(formStore.activeField?.validation?.includes('required')),
+  required: Boolean(formStore.activeField?.validation?.toString()?.includes('required')),
   minLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'min')?.min,
   maxLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'max')?.max,
   exactLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'between')?.exact

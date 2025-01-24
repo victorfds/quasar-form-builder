@@ -62,12 +62,12 @@ export function getTypesBasedOnFieldType(fieldType: ComponentsTypes): { label: s
 }
 
 export function getLengthLimitsFromValidation(
-  validationString: string,
+  validation: string | { if: string, then: string, else: string },
   startsWith: string
 ): { min?: number | string, max?: number | string, exact?: number | string } {
-  if (!validationString) return { min: '', max: '', exact: '' }
+  if (!validation && typeof validation === 'string') return { min: '', max: '', exact: '' }
 
-  const rule = validationString.split("|").find((rule) => rule.startsWith(`${startsWith}:`))
+  const rule = typeof validation === 'string' ? validation.split("|").find((rule) => rule.startsWith(`${startsWith}:`)) : validation.then.split("|").find((rule) => rule.startsWith(`${startsWith}:`))
 
   if (rule) {
     const extracted = rule.replace(`${startsWith}:`, "")

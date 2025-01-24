@@ -22,6 +22,12 @@ const tools = ref<{
       name: 'text',
       label: 'Texto',
       inputType: 'text',
+      validation: {
+        if: '$empty($number)',
+        then: 'required|number',
+        else: 'number'
+      },
+      disable: { if: '!$empty($number)', then: true }
     },
   },
   {
