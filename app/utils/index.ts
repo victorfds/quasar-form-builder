@@ -65,23 +65,32 @@ export function getLengthLimitsFromValidation(
   validation: string | { if: string, then: string, else: string },
   startsWith: string
 ): { min?: number | string, max?: number | string, exact?: number | string } {
-  if (!validation && typeof validation === 'string') return { min: '', max: '', exact: '' }
+  if (!validation) return { min: '', max: '', exact: '' }
 
-  const rule = typeof validation === 'string' ? validation.split("|").find((rule) => rule.startsWith(`${startsWith}:`)) : validation.then.split("|").find((rule) => rule.startsWith(`${startsWith}:`))
+  // Determine the validation rule to use based on the type of validation
+  const validationRule = typeof validation === 'string'
+    ? validation
+    : validation.then
 
+  // Find the specific rule that starts with the given prefix
+  const rule = validationRule.split("|").find((rule) => rule.startsWith(`${startsWith}:`))
+
+  // If the rule is found, process it
   if (rule) {
     const extracted = rule.replace(`${startsWith}:`, "")
 
-    if (startsWith !== 'length') {
-      return { [startsWith]: extracted }
+    // For length rules, extract the min and max values
+    const [min, max] = extracted.split(",").map(Number)
+
+    // If min and max are the same, return as exact length
+    if (min === max) {
+      return { min: '', max: '', exact: min }
     }
 
-    const [min, max] = extracted.split(",").map(Number)
-    if (min === max) {
-      return { min: '', max: '', exact: `${min}:${max}` }
-    }
+    // Otherwise, return the min and max values
     return { min, max, exact: '' }
   }
 
+  // Return empty values if no matching rule is found
   return { min: '', max: '', exact: '' }
 }

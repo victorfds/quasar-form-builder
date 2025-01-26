@@ -168,26 +168,64 @@ export const useFormStore = defineStore('formStore', () => {
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
-  const handleValidationUpdate = (fieldElement: FormKitSchemaNode, newPropValue: any) =>
-    !fieldElement.validation?.if && newPropValue.if
-      ? ({
+  const handleValidationUpdate = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
+    if (!fieldElement.validation?.if && newPropValue.if) {
+      // If the current validation doesn't have 'if' and the new property has 'if'
+      return {
         ...newPropValue,
         then: fieldElement.validation,
-        else: removeRequiredRule(fieldElement.validation)
-      })
-      : updateValidationElement(fieldElement, newPropValue)
+        else: removeRequiredRule(fieldElement.validation),
+      }
+    }
+    // Otherwise, update the validation element
+    return updateValidationElement(fieldElement, newPropValue)
 
-  const updateValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
-    const validationElement = getValidationElement(fieldElement, newPropValue)
-    return newPropValue.if
-      ? { ...newPropValue, then: validationElement, else: removeRequiredRule(validationElement) }
-      : validationElement
   }
 
-  const getValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) =>
-    typeof newPropValue === 'string' && newPropValue.startsWith('-')
+  // Function to update the validation element of a form element
+  const updateValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
+    if (newPropValue?.if === '') {
+      // If the new property has an empty 'if', return the 'then' part of the validation
+      return fieldElement.validation?.then
+    }
+
+    if (newPropValue?.if) {
+      // If the new property has 'if', merge it with the current validation
+      return { ...fieldElement.validation, ...newPropValue }
+    }
+
+    // Get the appropriate validation element based on the new property and current validation
+    const validationElement = getValidationElement(
+      fieldElement,
+      newPropValue?.if ? fieldElement.validation?.then : newPropValue
+    )
+
+    if (newPropValue?.if) {
+      // If the new property has 'if', return a new validation object with 'then' and 'else'
+      return {
+        ...newPropValue,
+        then: validationElement,
+        else: removeRequiredRule(validationElement),
+      }
+    }
+    if (fieldElement.validation?.if) {
+      // If the current validation has 'if', return a new validation object with 'then' and 'else'
+      return {
+        ...fieldElement.validation,
+        then: validationElement,
+        else: removeRequiredRule(validationElement),
+      }
+    }
+    // Otherwise, return the validation element as is
+    return validationElement
+
+  }
+
+  const getValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
+    return newPropValue.startsWith('-')
       ? removeValidationRule(fieldElement.validation, newPropValue.substring(1))
-      : fieldElement.validation?.then || insertValidationRule(fieldElement.validation, newPropValue)
+      : insertValidationRule(fieldElement.validation, newPropValue)
+  }
 
   const removeRequiredRule = (validation: any) =>
     validation?.replace(/(^required\||\|required$|^required$|\|required\|)/, "")
