@@ -51,6 +51,9 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
         </label>
         <q-toggle id="form-required" :model-value="elementStates.required" color="primary" @update:model-value="val => {
           elementStates.required = val
+          if (!val) {
+            onEnteredProp('validation', { if: '' })
+          }
           onEnteredProp('validation', val ? 'required' : '-required')
         }" />
       </div>

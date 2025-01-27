@@ -134,7 +134,7 @@ export const useFormStore = defineStore('formStore', () => {
       updatedRules.push(newRule)
     }
 
-    return updatedRules.join("|")
+    return updatedRules.filter(updateRule => updateRule).join("|")
   }
 
   const removeValidationRule = (
@@ -293,7 +293,7 @@ export const useFormStore = defineStore('formStore', () => {
     formFields.value[indexToUpdate] = { ...activeField.value }
   }
 
-  const onEnteredProp = (propName: string, propValue?: string | number | boolean | null | ColumnsType
+  const onEnteredProp = (propName: string, propValue?: string | number | boolean | null | ColumnsType | { if: string }
   ) => {
     if (!propName) return
 
