@@ -79,6 +79,8 @@ export function getLengthLimitsFromValidation(
   if (rule) {
     const extracted = rule.replace(`${startsWith}:`, "")
 
+    if (startsWith !== 'length' && startsWith !== 'between') return { [startsWith]: extracted }
+
     // For length rules, extract the min and max values
     const [min, max] = extracted.split(",").map(Number)
 

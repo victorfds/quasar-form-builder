@@ -223,8 +223,8 @@ export const useFormStore = defineStore('formStore', () => {
 
   const getValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
     return newPropValue.startsWith('-')
-      ? removeValidationRule(fieldElement.validation, newPropValue.substring(1))
-      : insertValidationRule(fieldElement.validation, newPropValue)
+      ? removeValidationRule(fieldElement.validation || newPropValue, newPropValue.substring(1))
+      : insertValidationRule(fieldElement.validation || newPropValue, newPropValue)
   }
 
   const removeRequiredRule = (validation: any) =>
