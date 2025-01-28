@@ -5,12 +5,15 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
-  css: ['@/assets/scss/_custom.scss'],
+  // css: ['@/assets/scss/_custom.scss'],
   modules: [
     'nuxt-quasar-ui',
     '@pinia/nuxt',
     '@formkit/nuxt',
   ],
+  imports: {
+    dirs: ['stores', 'constants'],
+  },
   quasar: {
     plugins: [
       'BottomSheet',
