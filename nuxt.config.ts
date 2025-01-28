@@ -5,14 +5,13 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
-  // css: ['@/assets/scss/_custom.scss'],
   modules: [
     'nuxt-quasar-ui',
     '@pinia/nuxt',
     '@formkit/nuxt',
   ],
   imports: {
-    dirs: ['stores', 'constants'],
+    dirs: ['stores'],
   },
   quasar: {
     plugins: [
@@ -30,5 +29,5 @@ export default defineNuxtConfig({
     extras: { animations: 'all', fontIcons: ['material-icons', 'material-icons-outlined'] },
     config: { brand: { primary: '#FFA726' } },
     sassVariables: true,
-  },
+  }
 })
