@@ -96,5 +96,3 @@ export function getLengthLimitsFromValidation(
   // Return empty values if no matching rule is found
   return { min: '', max: '', exact: '' }
 }
-
-export { highlightJson }
