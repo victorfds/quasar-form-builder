@@ -19,7 +19,6 @@ const isDragging = ref(true)
 const startX = ref(0)
 const lastDeltaColumns = ref(0)
 
-
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const formFields: FormKitSchemaDefinition[] = formStore.formFields

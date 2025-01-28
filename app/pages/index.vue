@@ -1,4 +1,3 @@
 <template>
-    <TheBuilder />
-  </template>
-  
+  <TheBuilder />
+</template>
