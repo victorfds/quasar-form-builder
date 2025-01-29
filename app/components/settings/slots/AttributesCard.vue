@@ -3,6 +3,8 @@ const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
 
+defineProps<{ showReadonly?: boolean }>()
+
 const elementsClosed = localStorage.getItem('elements-closed')
 
 const elementStates = reactive<{
@@ -40,7 +42,7 @@ watch(() => formStore.activeField, (newVal) => {
           :conditionsDialogSubtitle="`${formStore.activeField?.name} / regra para desabilitação`" />
       </div>
 
-      <div class="row align-center items-center justify-between">
+      <div v-if="showReadonly" class="row align-center items-center justify-between">
         <label for="form-readonly">
           <span class="text-body2">
             Apenas leitura

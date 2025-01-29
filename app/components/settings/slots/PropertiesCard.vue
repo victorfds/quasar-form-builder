@@ -68,16 +68,6 @@ function onBlurName(_: Event) {
   }
 }
 
-function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
-  if (!fieldName) return []
-
-  const field = formStore.formFields.find(element => element.name === fieldName)
-  if (field?.options) {
-    return field?.options
-  }
-  return []
-}
-
 function onTypeUpdateModelValue(val: any) {
   onEnteredProp('inputType', val.value)
 

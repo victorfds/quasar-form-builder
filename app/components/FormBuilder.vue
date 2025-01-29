@@ -77,7 +77,7 @@ const getUserWidthInput: ComputedRef<number> = computed(() => {
 })
 
 const data = computed(() => {
-  /* 
+  /*
   This returned functions are essentials for FormKit's data expression
   */
   return { ...formStore.values, empty, eq, contains }

@@ -1,7 +1,10 @@
 <template>
   <SettingsExpansionBaseWrapper>
     <template #properties>
-      <SettingsSlotsPropertiesCard hasInputType hasPlaceholder />
+      <SettingsSlotsPropertiesCard />
+    </template>
+    <template #data>
+      <SettingsSlotsDataCard />
     </template>
     <template #layout>
       <SettingsSlotsLayoutCard showDense />
@@ -13,7 +16,7 @@
       <SettingsSlotsConditionsCard />
     </template>
     <template #attributes>
-      <SettingsSlotsAttributesCard showReadonly />
+      <SettingsSlotsAttributesCard />
     </template>
   </SettingsExpansionBaseWrapper>
 </template>

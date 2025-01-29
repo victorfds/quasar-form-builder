@@ -1,3 +1,3 @@
 <template>
-  <TheBuilder />
+  <FormBuilder />
 </template>

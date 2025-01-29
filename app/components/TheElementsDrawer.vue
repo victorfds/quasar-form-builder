@@ -22,7 +22,6 @@ const tools = ref<{
       name: 'text',
       label: 'Texto',
       inputType: 'text',
-      // disable: { if: '!$empty($number)', then: true }
     },
   },
   {
@@ -91,8 +90,6 @@ const tools = ref<{
       $formkit: 'q-select',
       name: 'select',
       label: 'Selecione',
-      options: [{ label: 'Opção 1', value: 'option1' }],
-      validation: 'required',
     },
   },
 ])
