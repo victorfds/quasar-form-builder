@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { dark, localStorage } = useQuasar()
 
-dark.set(false)
+// dark.set(false)
 
 if (import.meta.client) {
   const cachedTheme = localStorage.getItem('theme')
@@ -16,6 +16,6 @@ if (import.meta.client) {
 
 <template>
   <NuxtLayout>
-    <NuxtPage />
+    <TheBuilder />
   </NuxtLayout>
 </template>

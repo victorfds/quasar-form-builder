@@ -1,16 +1,18 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  ssr: true,
+  ssr: false,
   future: {
     compatibilityVersion: 4,
   },
-  css: ['@/assets/scss/_custom.scss'],
   modules: [
     'nuxt-quasar-ui',
     '@pinia/nuxt',
     '@formkit/nuxt',
   ],
+  imports: {
+    dirs: ['stores'],
+  },
   quasar: {
     plugins: [
       'BottomSheet',
@@ -27,5 +29,5 @@ export default defineNuxtConfig({
     extras: { animations: 'all', fontIcons: ['material-icons', 'material-icons-outlined'] },
     config: { brand: { primary: '#FFA726' } },
     sassVariables: true,
-  },
+  }
 })

@@ -256,6 +256,21 @@ function resetConditions() {
   </q-dialog>
 </template>
 <style lang="scss" scoped>
+:root {
+  --line-color: grey;
+  --description-separator-color: #424242;
+}
+
+.body--dark {
+  --line-color: #424242;
+  --description-separator-color: #424242;
+}
+
+.body--light {
+  --line-color: #b0bec5;
+  --description-separator-color: #90a4ae;
+}
+
 .condition-wrapper {
   display: grid;
   grid-template-columns: 1fr 2fr;

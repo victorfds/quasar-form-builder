@@ -19,7 +19,6 @@ const isDragging = ref(true)
 const startX = ref(0)
 const lastDeltaColumns = ref(0)
 
-
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const formFields: FormKitSchemaDefinition[] = formStore.formFields
@@ -225,25 +224,6 @@ function stopResize() {
 
 <template>
   <section class="full-width" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
-    <!-- :style="`height: calc(100vh - ${offset}px);`" -->
-    <!-- <FormKit v-model="formStore.values" type="form" :actions="true" @submit="onSubmit" #default="{ value }"> -->
-    <!--   <pre wrap>{{ value }}</pre> -->
-
-    <!-- <FormKit type="q-input" label="Text label" name="text1" input-type="text" validation="required:trim" -->
-    <!--   help="O que é isso?" /> -->
-    <!-- <FormKit type="q-input" label="Number label" name="number1" input-type="number" -->
-    <!--   validation="required:trim|number|min:1" /> -->
-    <!-- <FormKit type="q-input" label="Email" name="email" input-type="email" validation="required:trim|email" /> -->
-    <!-- <FormKit type="q-select" label="Select options" name="select1" -->
-    <!--   :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" -->
-    <!--   help="Select one of the two options" /> -->
-    <!-- <FormKit type="q-btn-toggle" label="Select options" name="toggle" -->
-    <!--   :options="[{ label: 'This is an option 1', value: 'option1' }, { label: 'This is an option 2', value: 'option2' }]" /> -->
-    <!-- <FormKit type="q-checkbox" label="Concordo com os termos" name="check1" /> -->
-    <!-- <FormKit type="q-editor" name="editor" label="Edite seu texto aqui" /> -->
-    <!-- <FormKit type="q-date" name="date1" /> -->
-    <!-- <FormKit type="q-datetime" name="date" /> -->
-    <!-- </FormKit> -->
     <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`"
       :thumb-style="{ width: '4px' }">
@@ -608,5 +588,89 @@ function stopResize() {
   line-height: 1;
   width: auto;
   z-index: 1;
+}
+
+.text-weight-semibold {
+  font-weight: 600;
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+.grid {
+  display: grid
+}
+
+.grid-cols-12 {
+  grid-template-columns: repeat(12, minmax(0, 1fr))
+}
+
+.row-gap-y-gutter {
+  row-gap: 1rem;
+}
+
+.column-gap-x-gutter {
+  column-gap: 1rem;
+}
+
+.span-1 {
+  grid-column: span 1;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+.span-3 {
+  grid-column: span 3;
+}
+
+.span-4 {
+  grid-column: span 4;
+}
+
+.span-5 {
+  grid-column: span 5;
+}
+
+.span-6 {
+  grid-column: span 6;
+}
+
+.span-7 {
+  grid-column: span 7;
+}
+
+.span-8 {
+  grid-column: span 8;
+}
+
+.span-9 {
+  grid-column: span 9;
+}
+
+.span-10 {
+  grid-column: span 10;
+}
+
+.span-11 {
+  grid-column: span 11;
+}
+
+.span-12 {
+  grid-column: span 12;
+}
+
+.justify-stretch {
+  justify-content: stretch;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.mw-200 {
+  max-width: 200px;
 }
 </style>

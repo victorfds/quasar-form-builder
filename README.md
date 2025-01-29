@@ -1,41 +1,53 @@
-# Nuxt 3 Minimal Starter
+# Nuxt Layer Starter
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Create Nuxt extendable layer with this GitHub template.
 
 ## Setup
 
 Make sure to install the dependencies:
 
 ```bash
-# npm
-npm install
-
-# pnpm
 pnpm install
+```
 
-# yarn
-yarn install
+## Working on your layer
 
-# bun
-bun install
+Your layer is at the root of this repository, it is exactly like a regular Nuxt project, except you can publish it on NPM.
+
+The `.playground` directory should help you on trying your layer during development.
+
+Running `pnpm dev` will prepare and boot `.playground` directory, which imports your layer itself.
+
+## Distributing your layer
+
+Your Nuxt layer is shaped exactly the same as any other Nuxt project, except you can publish it on NPM.
+
+To do so, you only have to check if `files` in `package.json` are valid, then run:
+
+```bash
+npm publish --access public
+```
+
+Once done, your users will only have to run:
+
+```bash
+npm install --save your-layer
+```
+
+Then add the dependency to their `extends` in `nuxt.config`:
+
+```ts
+defineNuxtConfig({
+  extends: 'your-layer'
+})
 ```
 
 ## Development Server
 
-Start the development server on `http://localhost:3000`:
+Start the development server on http://localhost:3000
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm run dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+pnpm dev
 ```
 
 ## Production
@@ -43,33 +55,19 @@ bun run dev
 Build the application for production:
 
 ```bash
-# npm
-npm run build
+pnpm build
+```
 
-# pnpm
-pnpm run build
+Or statically generate it with:
 
-# yarn
-yarn build
-
-# bun
-bun run build
+```bash
+pnpm generate
 ```
 
 Locally preview production build:
 
 ```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm run preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
+pnpm preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Checkout the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
