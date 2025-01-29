@@ -12,5 +12,8 @@
     <template #conditions>
       <SettingsSlotsConditionsCard />
     </template>
+    <template #attributes>
+      <SettingsSlotsAttributesCard />
+    </template>
   </SettingsExpansionBaseWrapper>
 </template>

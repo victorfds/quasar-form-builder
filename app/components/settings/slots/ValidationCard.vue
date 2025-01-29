@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import type { FormKitSchemaDefinition } from "@formkit/core"
-import { getTypesBasedOnFieldType } from "~/utils"
-import { fieldTypes } from "~/constants"
-
 const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
@@ -51,7 +47,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
         </label>
         <q-toggle id="form-required" :model-value="elementStates.required" color="primary" @update:model-value="val => {
           elementStates.required = val
-          if (!val) {
+          if (!val && formStore.activeField?.validation?.if) {
             onEnteredProp('validation', { if: '' })
           }
           onEnteredProp('validation', val ? 'required' : '-required')

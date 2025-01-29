@@ -3,7 +3,7 @@ import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { LogicField } from '~/types'
 import { operators } from '~/constants'
 
-const props = defineProps<{ noConditionsMessage?: string, conditionsDialogSubtitle?: string, saveTo?: 'if' | 'validation' }>()
+const props = defineProps<{ noConditionsMessage?: string, conditionsDialogSubtitle?: string, saveTo?: 'if' | 'validation' | 'disable' }>()
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
@@ -12,7 +12,7 @@ const { onEnteredProp } = formStore
 const elementStates = reactive<{
   logicFields: LogicField[]
 }>({
-  logicFields: parseLogic(props.saveTo === 'validation' ? formStore.activeField?.validation?.if : formStore.activeField?.if)
+  logicFields: parseLogic(props.saveTo === 'validation' ? formStore.activeField?.validation?.if : props.saveTo === 'disable' ? formStore.activeField?.disable?.if : formStore.activeField?.if)
 })
 
 const conditionDialog = ref<boolean>(false)
@@ -29,7 +29,7 @@ function toggleConditionDialog() {
   conditionDialog.value = !conditionDialog.value
   if (conditionDialog.value) {
     // If it is true parseLogic again
-    elementStates.logicFields = parseLogic(props.saveTo === 'validation' ? formStore.activeField?.validation?.if : formStore.activeField?.if)
+    elementStates.logicFields = parseLogic(props.saveTo === 'validation' ? formStore.activeField?.validation?.if : props.saveTo === 'disable' ? formStore.activeField?.disable?.if : formStore.activeField?.if)
   }
 }
 
@@ -57,14 +57,17 @@ function resetConditions() {
     <q-card-section>
       <div class="row align-center items-center justify-between q-pa-sm rounded-borders"
         :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
-        <div v-if="saveTo === 'validation' ?
-          !formStore.activeField?.validation?.if : !formStore.activeField?.if" class="text-body2">
+        <div
+          v-if="saveTo === 'validation' ?
+            !formStore.activeField?.validation?.if : saveTo === 'disable' ? !formStore.activeField?.disable?.if : !formStore.activeField?.if"
+          class="text-body2">
           {{ noConditionsMessage || 'Este elemento não contém condições' }}
         </div>
         <div v-else class="text-body2">
           <code>
             {{ generateHumanReadableText(parseLogic(saveTo === 'validation' ?
-              formStore.activeField?.validation?.if : formStore.activeField?.if), operators) }}
+              formStore.activeField?.validation?.if : saveTo === 'disable' ? formStore.activeField?.disable?.if :
+                formStore.activeField?.if), operators) }}
           </code>
         </div>
         <q-btn no-caps label="Editar" color="primary" dense @click="toggleConditionDialog" />
@@ -91,7 +94,7 @@ function resetConditions() {
 
       <q-card-section>
         <div
-          v-if="saveTo === 'validation' && !formStore.activeField?.validation?.if && !formStore.activeField?.if && !showConditionsForm"
+          v-if="saveTo !== 'if' && !formStore.activeField?.[saveTo]?.if && !formStore.activeField?.if && !showConditionsForm"
           class="column align-center content-center justify-center text-center q-py-xl">
           <div class="text-body2 text-weight-semibold">
             Sem condições

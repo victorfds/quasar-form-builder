@@ -73,7 +73,7 @@ export function processConditions(conditions: LogicField[]): string[] {
   })
 }
 
-export function saveLogic(elementStates: { logicFields: LogicField[] }, property: 'if' | 'validation' = 'if', updatePropFn: Function) {
+export function saveLogic(elementStates: { logicFields: LogicField[] }, property: 'if' | 'disable' | 'validation' = 'if', updatePropFn: Function) {
   if (!elementStates.logicFields.length) return
 
   // Transform conditions and nested "or" fields
@@ -100,6 +100,12 @@ export function saveLogic(elementStates: { logicFields: LogicField[] }, property
   if (property === 'validation') {
     // Saving condition
     updatePropFn('validation', { if: data.join(' && ') })
+    return
+  }
+
+  if (property === 'disable') {
+    // Saving condition
+    updatePropFn('disable', { if: data.join(' && '), then: true, else: false })
     return
   }
 

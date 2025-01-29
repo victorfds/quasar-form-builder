@@ -25,4 +25,4 @@ RUN pnpm run build
 EXPOSE 3000
 
 # Start the application. This is the default command for Nuxt 3
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", ".playground/.output/server/index.mjs"]

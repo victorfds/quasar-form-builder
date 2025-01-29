@@ -120,11 +120,11 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const insertValidationRule = (
-    validation: string | { if: string, then: string, else: string },
-    newRule: string
+    validation: boolean | string | { if: string, then: string, else: string },
+    newRule: string | boolean
   ): string => {
-    const rules = validation && typeof validation === 'string' ? validation.split("|") : typeof validation !== 'string' ? validation.then.split("|") : []
-    const ruleName = newRule.split(":")[0]
+    const rules = typeof validation === 'string' ? validation.split("|") : typeof validation !== 'string' && typeof validation !== 'boolean' ? validation.then.split("|") : []
+    const ruleName = typeof newRule === 'string' ? newRule.split(":")[0] : newRule
 
     const updatedRules = rules.map((rule) =>
       rule.startsWith(ruleName + ":") ? newRule : rule
@@ -141,7 +141,7 @@ export const useFormStore = defineStore('formStore', () => {
     validation: string | { if: string, then: string, else: string },
     ruleToRemove: string
   ): string => {
-    const rules = validation && typeof validation === 'string' ? validation.split("|") : typeof validation !== 'string' ? validation.then.split("|") : []
+    const rules = validation && typeof validation === 'string' ? validation.split("|") : validation && typeof validation !== 'string' ? validation.then.split("|") : []
 
     const updatedRules = rules.filter((rule) => !rule.includes(ruleToRemove))
     return updatedRules.join("|")
@@ -153,8 +153,8 @@ export const useFormStore = defineStore('formStore', () => {
     const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement.name)
     if (indexToUpdate === -1 || !activeField.value) return
 
-    const updatedPropValue = (propName === 'validation' && newPropValue)
-      ? handleValidationUpdate(fieldElement, newPropValue)
+    const updatedPropValue = ((propName === 'validation' && newPropValue) || (propName === 'disable' && Object.keys(newPropValue).length))
+      ? handleValidationUpdate(fieldElement, propName, newPropValue)
       : newPropValue
 
     updateFieldProperties(propName, updatedPropValue, indexToUpdate)
@@ -168,67 +168,85 @@ export const useFormStore = defineStore('formStore', () => {
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
   }
 
-  const handleValidationUpdate = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
-    if (!fieldElement.validation?.if && newPropValue.if) {
+  const handleValidationUpdate = (fieldElement: FormKitSchemaNode, propName: string, newPropValue: any) => {
+
+    if (!fieldElement[propName]?.if && newPropValue.if) {
       // If the current validation doesn't have 'if' and the new property has 'if'
       return {
         ...newPropValue,
-        then: fieldElement.validation,
-        else: removeRequiredRule(fieldElement.validation),
+        then: fieldElement[propName],
+        else: convertToBoolean(toggleToFalse(removeRequiredRule(newPropValue?.else || fieldElement[propName]))),
       }
     }
     // Otherwise, update the validation element
-    return updateValidationElement(fieldElement, newPropValue)
-
+    return updateValidationElement(fieldElement, propName, newPropValue)
   }
 
   // Function to update the validation element of a form element
-  const updateValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
+  const updateValidationElement = (fieldElement: FormKitSchemaNode, propName: string, newPropValue: any) => {
     if (newPropValue?.if === '') {
       // If the new property has an empty 'if', return the 'then' part of the validation
-      return fieldElement.validation?.then
+      return fieldElement[propName]?.then
     }
 
     if (newPropValue?.if) {
       // If the new property has 'if', merge it with the current validation
-      return { ...fieldElement.validation, ...newPropValue }
+      return { ...fieldElement[propName], ...newPropValue }
     }
 
     // Get the appropriate validation element based on the new property and current validation
     const validationElement = getValidationElement(
       fieldElement,
-      newPropValue?.if ? fieldElement.validation?.then : newPropValue
+      propName,
+      newPropValue
     )
+
 
     if (newPropValue?.if) {
       // If the new property has 'if', return a new validation object with 'then' and 'else'
       return {
         ...newPropValue,
         then: validationElement,
-        else: removeRequiredRule(validationElement),
+        else: convertToBoolean(toggleToFalse(removeRequiredRule(validationElement))),
       }
     }
-    if (fieldElement.validation?.if) {
+
+    if (fieldElement[propName]?.if) {
       // If the current validation has 'if', return a new validation object with 'then' and 'else'
       return {
-        ...fieldElement.validation,
+        ...fieldElement[propName],
         then: validationElement,
-        else: removeRequiredRule(validationElement),
+        else: convertToBoolean(toggleToFalse(removeRequiredRule(validationElement))),
       }
     }
+
+    // if (propName === 'disable') {
+    //   return convertToBoolean(validationElement)
+    // }
     // Otherwise, return the validation element as is
     return validationElement
-
   }
 
-  const getValidationElement = (fieldElement: FormKitSchemaNode, newPropValue: any) => {
-    return newPropValue.startsWith('-')
-      ? removeValidationRule(fieldElement.validation || newPropValue, newPropValue.substring(1))
-      : insertValidationRule(fieldElement.validation || newPropValue, newPropValue)
+  const getValidationElement = (fieldElement: FormKitSchemaNode, propName: string, newPropValue: any): string => {
+    return newPropValue && newPropValue?.startsWith?.('-')
+      ? removeValidationRule(fieldElement[propName], newPropValue.substring(1))
+      : insertValidationRule(fieldElement[propName] || '', newPropValue)
   }
 
-  const removeRequiredRule = (validation: any) =>
-    validation?.replace(/(^required\||\|required$|^required$|\|required\|)/, "")
+  const removeRequiredRule = (validation: string) => String(validation)?.match?.('required')?.length ? validation?.replace?.(/(^required\||\|required$|^required$|\|required\|)/, "") : String(validation)
+
+  const toggleToFalse = (validation: any) => {
+    if (typeof validation === 'string') return validation?.replace?.("true", "false")
+
+    return validation
+  }
+
+  const convertToBoolean = (validation: string) => {
+    if (validation?.match?.('true')?.length) return true
+    if (validation?.match?.('false')?.length) return false
+
+    return validation
+  }
 
   const updateFieldProperties = (propName: string, newPropValue: any, indexToUpdate: number) => {
     activeField.value = { ...activeField.value, [propName]: newPropValue }
