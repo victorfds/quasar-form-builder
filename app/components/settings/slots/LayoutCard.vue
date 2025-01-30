@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ColumnsType } from '~/types'
 
-defineProps<{ showFullWidth?: boolean, showAlignment?: boolean, showSize?: boolean, showDense?: boolean }>()
+defineProps<{ showFullWidth?: boolean, showAlignment?: boolean, showSize?: boolean, showDense?: boolean, setAttrs?: boolean }>()
 
 const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
@@ -90,7 +90,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
         }" />
       </div>
     </q-card-section>
-    <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
+    <q-separator v-if="showAlignment" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section v-if="showAlignment">
       <div class="row align-center items-center justify-between">
         <label for="form-button-align">
@@ -106,11 +106,15 @@ function handleCheckboxUpdate(isChecked: boolean) {
             { icon: 'format_align_right', value: 'right' },
           ]" @update:model-value="val => {
             elementStates.align = val
+            if (setAttrs) {
+              onEnteredProp('attrs', `align: ${val}`)
+              return
+            }
             onEnteredProp('align', val)
           }" />
       </div>
     </q-card-section>
-    <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
+    <q-separator v-if="showSize" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section v-if="showSize">
       <div class="row align-center items-center justify-between">
         <label for="form-button-size">
@@ -135,7 +139,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
           }" />
       </div>
     </q-card-section>
-    <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
+    <q-separator v-if="showDense" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section v-if="showDense">
       <div class="row align-center items-center justify-between">
         <label for="form-button-toggle-submit">

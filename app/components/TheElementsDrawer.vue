@@ -152,13 +152,85 @@ const statics = ref<{
     },
   },
   {
-    name: 'divider',
+    name: 'separator',
     icon: 'horizontal_rule',
     title: 'Separador',
     description: 'Linha horizontal divisória',
     schema: {
       $formkit: 'q-separator',
       name: 'separator'
+    }
+  },
+  {
+    name: 'h1',
+    icon: 'sym_o_format_h1',
+    title: 'Cabeçalho H1',
+    description: 'Elemento HTML <H1>',
+    schema: {
+      $el: 'h1',
+      name: 'h1',
+      children: 'Lorem ipsum dolor',
+      attrs: { class: 'no-margin' }
+    }
+  },
+  {
+    name: 'h2',
+    icon: 'sym_o_format_h2',
+    title: 'Cabeçalho H2',
+    description: 'Elemento HTML <H2>',
+    schema: {
+      $el: 'h2',
+      name: 'h2',
+      children: 'Lorem ipsum dolor',
+      attrs: { class: 'no-margin' }
+    }
+  },
+  {
+    name: 'h3',
+    icon: 'sym_o_format_h3',
+    title: 'Cabeçalho H3',
+    description: 'Elemento HTML <H3>',
+    schema: {
+      $el: 'h3',
+      name: 'h3',
+      children: 'Lorem ipsum dolor',
+      attrs: { class: 'no-margin' }
+    }
+  },
+  {
+    name: 'h4',
+    icon: 'sym_o_format_h4',
+    title: 'Cabeçalho H4',
+    description: 'Elemento HTML <H4>',
+    schema: {
+      $el: 'h4',
+      name: 'h4',
+      children: 'Lorem ipsum dolor',
+      attrs: { class: 'no-margin' }
+    }
+  },
+  {
+    name: 'paragraph',
+    icon: 'sym_o_format_paragraph',
+    title: 'Parágrafo',
+    description: 'Elemento HTML <p>',
+    schema: {
+      $el: 'p',
+      name: 'p',
+      children: 'Lorem ipsum dolor',
+      attrs: { class: 'no-margin' }
+    }
+  },
+  {
+    name: 'blockquote',
+    icon: 'format_quote',
+    title: 'Citação em bloco',
+    description: 'Elemento HTML <quote>',
+    schema: {
+      $el: 'blockquote',
+      name: 'blockquote',
+      children: 'Lorem ipsum dolor',
+      attrs: { class: 'text-grey' }
     }
   }
 ])

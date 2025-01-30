@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { LogicField } from '~/types'
-import { operators } from '~/constants'
+import { operators, htmlTypes } from '~/constants'
 
 const props = defineProps<{ noConditionsMessage?: string, conditionsDialogSubtitle?: string, saveTo?: 'if' | 'validation' | 'disable' }>()
 
@@ -19,8 +19,9 @@ const conditionDialog = ref<boolean>(false)
 const showConditionsForm = ref<boolean>(false)
 
 const getFieldList = computed(() => {
-  const cannotSelectList = ['q-btn', 'q-separator']
-  const list = formStore.formFields.filter(k => k.name !== formStore.activeField?.name && k.name !== 'slots').map(formField => ({ label: formField.name, value: formField.name, cannotSelect: cannotSelectList.includes(formField.$formkit) }))
+  const cannotSelectList = ['q-btn', 'q-separator'].concat(htmlTypes.map(htmlType => htmlType.value))
+  const list = formStore.formFields.filter(k => k.name !== formStore.activeField?.name && k.name !== 'slots').map(formField => ({ label: formField.name, value: formField.name, cannotSelect: cannotSelectList.includes(formField.$formkit) || cannotSelectList.includes(formField.$el) }))
+
   if (!list.length) return [{ label: 'A lista está vazia', value: null, cannotSelect: true }]
 
   return list

@@ -153,9 +153,14 @@ export const useFormStore = defineStore('formStore', () => {
     const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement.name)
     if (indexToUpdate === -1 || !activeField.value) return
 
-    const updatedPropValue = ((propName === 'validation' && newPropValue) || (propName === 'disable' && Object.keys(newPropValue).length))
+    const updatedPropValue = (propName === 'validation' && newPropValue) || (propName === 'disable' && Object.keys(newPropValue).length)
       ? handleValidationUpdate(fieldElement, propName, newPropValue)
-      : newPropValue
+      : propName === 'attrs' && newPropValue
+        ? {
+          ...fieldElement[propName],
+          ...Object.fromEntries([newPropValue.split(':').map((part) => part.trim())]),
+        }
+        : newPropValue
 
     updateFieldProperties(propName, updatedPropValue, indexToUpdate)
 
