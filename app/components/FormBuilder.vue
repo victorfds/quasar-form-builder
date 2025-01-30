@@ -257,7 +257,8 @@ function stopResize() {
           :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }">
           <q-card-section class="my-form-wrapper no-padding">
             <FormKit id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="false"
-              @submit="onSubmit">
+              @submit="onSubmit" #default="{value}">
+              <pre>{{ value }}</pre>
               <div ref="formDroppableRef"
                 class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
                 @drop.prevent="onDrop" @dragover.prevent="handleDragover">
