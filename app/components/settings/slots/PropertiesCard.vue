@@ -72,7 +72,8 @@ function onTypeUpdateModelValue(val: any) {
   onEnteredProp('inputType', val.value)
 
   onEnteredProp('validation', '')
-  if (val.value !== 'text') {
+  const toExclude = ['text', 'textarea', 'password']
+  if (!toExclude.includes(val.value)) {
     setTimeout(() => {
       onEnteredProp('validation', val.value)
     }, 500)

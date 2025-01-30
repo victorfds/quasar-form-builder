@@ -13,6 +13,7 @@ export const operators = [
   export const fieldTypes = {
     'q-input': [
       {label: 'texto', value: 'text'},
+      {label: 'área de texto', value: 'textarea'},
       {label: 'número', value: 'number'},
       {label: 'e-mail', value: 'email'},
       {label: 'senha', value: 'password'},]
