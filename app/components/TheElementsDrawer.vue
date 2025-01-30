@@ -112,6 +112,55 @@ const statics = ref<{
       buttonLabel: 'Finalizar',
     },
   },
+  {
+    name: 'button',
+    icon: 'star',
+    title: 'Botão primário',
+    description: 'Botão de cor primária',
+    schema:
+    {
+      $formkit: 'q-btn',
+      name: 'primaryButton',
+      buttonLabel: 'Botão',
+      color: 'primary'
+    },
+  },
+  {
+    name: 'button',
+    icon: 'add',
+    title: 'Botão secundário',
+    description: 'Botão de cor secundária',
+    schema:
+    {
+      $formkit: 'q-btn',
+      name: 'secondaryButton',
+      buttonLabel: 'Botão',
+      color: 'secondary'
+    },
+  },
+  {
+    name: 'button',
+    icon: 'warning',
+    title: 'Botão risco',
+    description: 'Botão de cor negativa',
+    schema:
+    {
+      $formkit: 'q-btn',
+      name: 'dangerButton',
+      buttonLabel: 'Botão',
+      color: 'negative'
+    },
+  },
+  {
+    name: 'divider',
+    icon: 'horizontal_rule',
+    title: 'Separador',
+    description: 'Linha horizontal divisória',
+    schema: {
+      $formkit: 'q-separator',
+      name: 'separator'
+    }
+  }
 ])
 
 const tab = ref('elements')

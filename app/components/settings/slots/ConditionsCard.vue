@@ -19,7 +19,8 @@ const conditionDialog = ref<boolean>(false)
 const showConditionsForm = ref<boolean>(false)
 
 const getFieldList = computed(() => {
-  const list = formStore.formFields.filter(k => k.name !== formStore.activeField?.name && k.name !== 'slots').map(formField => ({ label: formField.name, value: formField.name, cannotSelect: formField.$formkit === 'q-btn' }))
+  const cannotSelectList = ['q-btn', 'q-separator']
+  const list = formStore.formFields.filter(k => k.name !== formStore.activeField?.name && k.name !== 'slots').map(formField => ({ label: formField.name, value: formField.name, cannotSelect: cannotSelectList.includes(formField.$formkit) }))
   if (!list.length) return [{ label: 'A lista está vazia', value: null, cannotSelect: true }]
 
   return list

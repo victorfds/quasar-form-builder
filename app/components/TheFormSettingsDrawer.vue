@@ -12,6 +12,7 @@ const formClosed = JSON.parse(localStorage.getItem('form-closed') || '[]')
 const SettingsQBtnConfigComponent = resolveComponent('SettingsQBtnConfig')
 const SettingsQInputConfigComponent = resolveComponent('SettingsQInputConfig')
 const SettingsQSelectConfigComponent = resolveComponent('SettingsQSelectConfig')
+const SettingsQSeparatorConfigComponent = resolveComponent('SettingsQSeparatorConfig')
 const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConfig')
 
 const formNameInputRef = ref<HTMLElement | null>(null)
@@ -26,6 +27,7 @@ const getComponentSettings = computed(() => {
   if (formStore.activeField?.$formkit === 'q-btn') return SettingsQBtnConfigComponent
   if (formStore.activeField?.$formkit === 'q-input') return SettingsQInputConfigComponent
   if (formStore.activeField?.$formkit === 'q-select') return SettingsQSelectConfigComponent
+  if (formStore.activeField?.$formkit === 'q-separator') return SettingsQSeparatorConfigComponent
 
   return SettingsDefaultNoConfigComponent
 })

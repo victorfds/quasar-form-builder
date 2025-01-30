@@ -58,7 +58,7 @@ export const useFormStore = defineStore('formStore', () => {
       formFields.value.splice(pos, 0, field)
     }
 
-    notify({ color: 'dark', message: `${field?.name} added` })
+    notify({ color: 'dark', message: `${field?.name} adicionado` })
   }
 
   const updateFieldIndex = ({ draggedField, originalPosition, destinationIndex }: {
