@@ -16,6 +16,6 @@ if (import.meta.client) {
 
 <template>
   <NuxtLayout>
-    <FormBuilder />
+    <NuxtPage />
   </NuxtLayout>
 </template>

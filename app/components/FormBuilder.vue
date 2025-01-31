@@ -93,6 +93,7 @@ function onDragLeaveFormSectionArea() {
 }
 
 function onSubmit(data: any, node: FormKitNode) {
+  console.log(formStore.formFields)
   reset(node, data)
 }
 
@@ -256,7 +257,7 @@ function stopResize() {
           :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
           :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }">
           <q-card-section class="my-form-wrapper no-padding">
-            <FormKit id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="false"
+            <FormKit id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="true"
               @submit="onSubmit">
               <div ref="formDroppableRef"
                 class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
