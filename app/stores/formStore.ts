@@ -86,8 +86,8 @@ export const useFormStore = defineStore('formStore', () => {
     }
   }
 
-  const copyField = (index: number) => {
-    const field = formFields.value.find((_, i) => i === index)
+  const copyField = (index: number, fieldElement?: FormKitSchemaNode) => {
+    const field = fieldElement || formFields.value.find((_, i) => i === index)
     if (!field) return
     const newElemPosition = index + 1
     const newField = { ...field, name: field?.name.split('_').at(0) }
