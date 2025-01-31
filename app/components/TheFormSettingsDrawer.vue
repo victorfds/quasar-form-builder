@@ -30,7 +30,7 @@ const getComponentSettings = computed(() => {
   if (formStore.activeField?.$formkit === 'q-btn') return SettingsQBtnConfigComponent
   if (formStore.activeField?.$formkit === 'q-input') return SettingsQInputConfigComponent
   if (formStore.activeField?.$formkit === 'q-select') return SettingsQSelectConfigComponent
-  if (formStore.activeField?.$formkit === 'q-separator') return SettingsQSeparatorConfigComponent
+  if (formStore.activeField?.$el === 'hr') return SettingsQSeparatorConfigComponent
 
   if (formStore.activeField?.$el && htmlTypes.map(htmlType => htmlType.value).includes(formStore.activeField?.$el)) return SettingsHTMLConfigComponent
 

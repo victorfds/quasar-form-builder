@@ -157,7 +157,7 @@ const statics = ref<{
     title: 'Separador',
     description: 'Linha horizontal divisória',
     schema: {
-      $formkit: 'q-separator',
+      $el: 'hr',
       name: 'separator'
     }
   },
