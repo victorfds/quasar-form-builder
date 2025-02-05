@@ -10,6 +10,14 @@ export const operators = [
   { value: 'contains', label: 'contém' }
 ]
 
+export const checkboxOperators = [
+  { value: 'isTrue', label: 'é verdadeiro' },
+  { value: 'isFalse', label: 'é falso' },
+  { value: 'equals', label: 'é igual a' },
+  { value: 'notEquals', label: 'é diferente de' },
+
+]
+
 export const fieldTypes = {
   'q-input': [
     { label: 'texto', value: 'text' },

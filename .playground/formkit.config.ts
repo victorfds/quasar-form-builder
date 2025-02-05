@@ -47,11 +47,6 @@ quasarPlugin.library = (node: FormKitNode) => {
       props: ['columns', 'align'],
       component: QuasarBtn,
     }),
-    'q-separator': () => node.define({
-      type: 'input',
-      props: ['columns'],
-      component: QuasarSeparator
-    })
   }
 
   return quasarTypes[type]?.()

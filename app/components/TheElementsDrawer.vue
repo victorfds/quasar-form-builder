@@ -67,7 +67,6 @@ const tools = ref<{
       'inputType': 'text',
     },
   },
-
   {
     name: 'textarea',
     icon: 'wrap_text',
@@ -79,6 +78,18 @@ const tools = ref<{
       name: 'textarea',
       label: 'Área de texto',
       inputType: 'textarea',
+    },
+  },
+  {
+    name: 'checkbox',
+    icon: 'check_box',
+    title: 'Caixa de seleção',
+    description: 'Entrada de simples marcação',
+    schema:
+    {
+      $formkit: 'q-checkbox',
+      name: 'checkbox',
+      label: 'Caixa de seleção',
     },
   },
   {
@@ -158,7 +169,8 @@ const statics = ref<{
     description: 'Linha horizontal divisória',
     schema: {
       $el: 'hr',
-      name: 'separator'
+      name: 'separator',
+      attrs: { class: 'q-my-sm text-grey' }
     }
   },
   {

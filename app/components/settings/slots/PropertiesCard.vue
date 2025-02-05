@@ -3,7 +3,7 @@ import type { FormKitSchemaDefinition } from "@formkit/core"
 import { getTypesBasedOnFieldType } from "~/utils"
 import { fieldTypes } from "~/constants"
 
-defineProps<{ hasInputType?: boolean, hasTooltip?: boolean, hasPlaceholder?: boolean }>()
+defineProps<{ hasInputType?: boolean, hasTooltip?: boolean, hasPlaceholder?: boolean, hasDescription?: boolean }>()
 
 const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
@@ -53,8 +53,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
 
 function onBlurName(_: Event) {
   elementStates.nameError = ''
-  if (elementStates.name === formStore.activeField?.name)
-    return
+  if (elementStates.name === formStore.activeField?.name) return
 
   const response = formStore.updateNameField(formStore.activeField?.name, elementStates.name)
 
@@ -150,7 +149,7 @@ function onTypeUpdateModelValue(val: any) {
       </div>
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
-    <q-card-section>
+    <q-card-section v-if="hasDescription">
       <div class="row align-center items-center justify-between">
         <label for="form-description" @click="onClickLabel(propDescriptionInputRef)">
           <span class="text-body2">

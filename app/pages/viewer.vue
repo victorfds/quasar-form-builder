@@ -11,7 +11,7 @@ const formFields = [{
   "inputType": "text"
 },
 {
-  "$formkit": "q-separator",
+  "$el": "hr",
   "name": "separator"
 },
 {
@@ -35,5 +35,5 @@ function onSubmit(data: any) {
 </script>
 
 <template>
-  <FormViewer :formFields="formFields" :data="data" @submit="onSubmit" />
+  <FormViewer :formFields="formFields" @submit="onSubmit" />
 </template>

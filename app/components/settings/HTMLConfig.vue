@@ -1,7 +1,7 @@
 <template>
   <SettingsExpansionBaseWrapper :section-labels="{ options: 'Conteúdo' }">
     <template #properties>
-      <SettingsSlotsPropertiesCard hasTooltip />
+      <SettingsSlotsPropertiesCard hasTooltip hasDescription />
     </template>
     <template #options>
       <SettingsSlotsOptionsCard />

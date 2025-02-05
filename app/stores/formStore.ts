@@ -24,7 +24,7 @@ export const useFormStore = defineStore('formStore', () => {
   })
 
   const getFields = computed(() => {
-    const cloned: FormKitSchemaDefinition[] = JSON.parse(JSON.stringify(formFields.value))
+    const cloned: FormKitSchemaDefinition[] = formFields.value && JSON.parse(JSON.stringify(formFields.value))
     return cloned.map(clone => {
       if (formSettings.value.previewMode === 'editing' && clone && Object.keys(clone).some(objKey => objKey.includes('if'))) {
         // @ts-expect-error clone is an object
@@ -43,6 +43,10 @@ export const useFormStore = defineStore('formStore', () => {
 
     return activeField.value?.columns?.[formSettings.value.columns]?.container || 12
   })
+
+  const getFieldByName = (fieldName: string) => {
+    return formFields.value.find(formField => formField.name === fieldName)
+  }
 
   const addField = (field: FormKitSchemaNode, pos?: number | null) => {
     pos = Number(pos)
@@ -330,6 +334,7 @@ export const useFormStore = defineStore('formStore', () => {
     getSchema,
     getFields,
     getActiveFieldColumns,
+    getFieldByName,
     addField,
     updateFieldIndex,
     removeField,

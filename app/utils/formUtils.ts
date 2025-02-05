@@ -10,7 +10,9 @@ export function transformOperatorValue(operatorValue: string): string {
     greaterOrEqualsThan: '>=',
     lessThan: '<',
     lessOrEqualsThan: '<=',
-    contains: '$contains'
+    contains: '$contains',
+    isTrue: '== true',
+    isFalse: '== false',
   }
 
   return operatorMap[operatorValue] ?? ''
@@ -26,7 +28,9 @@ export function reverseOperatorValue(symbol?: string): string {
     '>=': 'greaterOrEqualsThan',
     '<': 'lessThan',
     '<=': 'lessOrEqualsThan',
-    '$contains': 'contains'
+    '$contains': 'contains',
+    '== true': 'isTrue',
+    '== false': 'isFalse'
   }
 
   if (!symbol) return ''
@@ -43,6 +47,10 @@ export function processSingleCondition(condition: LogicField, orData: string[]):
 
   if (['$contains'].includes(operator)) {
     return `${operator}($${name},${value})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+  }
+
+  if (['== true', '== false'].includes(operator)) {
+    return `$${name} ${operator}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
   }
 
   if (['==', '!='].includes(operator)) {
@@ -65,6 +73,10 @@ export function processConditions(conditions: LogicField[]): string[] {
       return `${operator}($${name},${value})`
     }
 
+    if (['== true', '== false'].includes(operator)) {
+      return `$${name} ${operator}`
+    }
+
     if (['==', '!='].includes(operator)) {
       return values.map((val: any) => `$${name} ${operator} ${val}`).join(' || ')
     }
@@ -73,7 +85,7 @@ export function processConditions(conditions: LogicField[]): string[] {
   })
 }
 
-export function saveLogic(elementStates: { logicFields: LogicField[] }, property: 'if' | 'disable' | 'validation' = 'if', updatePropFn: Function) {
+export function saveLogic(elementStates: { logicFields: LogicField[] }, property: 'if' | 'disable' | 'validation' | 'readonly' = 'if', updatePropFn: Function) {
   if (!elementStates.logicFields.length) return
 
   // Transform conditions and nested "or" fields
@@ -162,6 +174,17 @@ export function parseCondition(conditionString: string): LogicField {
     return {
       operator: operator,
       name: functionMatch[2]?.replace('$', '') || '',
+      value: '',
+      values: []
+    }
+  }
+
+  const trueOrFalseMatch = conditionString.match(/^\$(.*?)\s(==)\s(true|false)$/);
+  if (trueOrFalseMatch) {
+    const [_, name, operator, value] = trueOrFalseMatch
+    return {
+      name: name?.replace('$', '') || '',
+      operator: reverseOperatorValue(`${operator} ${value}`),
       value: '',
       values: []
     }

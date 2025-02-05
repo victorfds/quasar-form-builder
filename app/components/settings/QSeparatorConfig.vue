@@ -1,7 +1,7 @@
 <template>
   <SettingsExpansionBaseWrapper>
     <template #properties>
-      <SettingsSlotsPropertiesCard hasTooltip />
+      <SettingsSlotsPropertiesCard hasTooltip hasDescription />
     </template>
     <template #layout>
       <SettingsSlotsLayoutCard />

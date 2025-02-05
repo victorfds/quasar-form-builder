@@ -3,6 +3,8 @@ const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
 
+defineProps<{ showLength?: boolean }>()
+
 const elementsClosed = localStorage.getItem('elements-closed')
 
 const usesLength = computed(() => formStore.activeField?.inputType !== 'number')
@@ -59,8 +61,8 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
         :conditionsDialogSubtitle="`${formStore.activeField?.name} / regra de obrigatoriedade`" />
 
     </q-card-section>
-    <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
-    <q-card-section>
+    <q-separator v-if="showLength" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
+    <q-card-section v-if="showLength">
       <div>
         <div class="row align-center items-center justify-between q-mt-sm">
           <label for="form-min-length" @click="onClickLabel(propMinLengthInputRef)">

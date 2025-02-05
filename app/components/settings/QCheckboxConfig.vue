@@ -1,16 +1,16 @@
 <template>
-  <SettingsExpansionBaseWrapper>
+  <SettingsExpansionBaseWrapper :section-labels="{ options: 'Opções da caixa de seleção' }">
     <template #properties>
-      <SettingsSlotsPropertiesCard hasDescription />
+      <SettingsSlotsPropertiesCard />
     </template>
-    <template #data>
-      <SettingsSlotsDataCard />
+    <template #options>
+      <SettingsSlotsCheckboxOptionsCard />
     </template>
     <template #layout>
       <SettingsSlotsLayoutCard showDense />
     </template>
     <template #validation>
-      <SettingsSlotsValidationCard showLength />
+      <SettingsSlotsValidationCard />
     </template>
     <template #conditions>
       <SettingsSlotsConditionsCard />
