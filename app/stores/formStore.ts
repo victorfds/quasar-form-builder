@@ -83,6 +83,8 @@ export const useFormStore = defineStore('formStore', () => {
 
     if (index < 0) return
 
+    removeAllConditionsUses(field)
+
     formFields.value.splice(index, 1)
 
     if (field?.name === activeField.value?.name) {
@@ -169,7 +171,7 @@ export const useFormStore = defineStore('formStore', () => {
     await nextTick()
 
     if (shouldDeleteProperty(updatedPropValue)) {
-      deleteFieldProperties(propName, indexToUpdate)
+      deleteFieldProperty(propName, indexToUpdate)
     }
     // TODO: cache form preview width
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
@@ -227,9 +229,6 @@ export const useFormStore = defineStore('formStore', () => {
       }
     }
 
-    // if (propName === 'disable') {
-    //   return convertToBoolean(validationElement)
-    // }
     // Otherwise, return the validation element as is
     return validationElement
   }
@@ -262,7 +261,7 @@ export const useFormStore = defineStore('formStore', () => {
     )
   }
 
-  const deleteFieldProperties = (propName: string, indexToUpdate: number) => {
+  const deleteFieldProperty = (propName: string, indexToUpdate: number) => {
     const { [propName]: _, ...restActiveField } = activeField.value
     const { [propName]: __, ...restFormField } = formFields.value[indexToUpdate]
     activeField.value = restActiveField
@@ -271,8 +270,39 @@ export const useFormStore = defineStore('formStore', () => {
     )
   }
 
-  const shouldDeleteProperty = (newPropValue: any) =>
-    newPropValue === false || newPropValue === '' || isEmptyObject(newPropValue)
+  const deleteFieldPropertyByName = (prop: string, fieldName: string) => {
+    const field = formFields.value.find(f => f.name === fieldName)
+
+    if (!field) return
+
+    if (activeField.value) {
+      const { [prop]: activeProp, ...restActive } = activeField.value
+      activeField.value = activeProp?.else
+        ? { [prop]: activeProp.else, ...restActive }
+        : restActive
+    }
+
+    const { [prop]: fieldProp, ...restField } = field
+
+    formFields.value = formFields.value.map(f =>
+      f.name === fieldName
+        ? fieldProp?.else
+          ? { [prop]: fieldProp.else, ...restField }
+          : restField
+        : f
+    )
+  }
+
+  const removeAllConditionsUses = (field: FormKitSchemaNode) => {
+    const ifConditionNames = formFields.value.filter(formField => formField.if && formField.if.includes(field.name)).map(fieldForm => fieldForm.name)
+    const validationConditionNames = formFields.value.filter(formField => formField.validation && formField.validation.if && formField.validation.if.includes(field.name)).map(fieldForm => fieldForm.name)
+
+    ifConditionNames.forEach(name => deleteFieldPropertyByName('if', name))
+    validationConditionNames.forEach(name => deleteFieldPropertyByName('validation', name))
+  }
+
+  const shouldDeleteProperty = (newPropValue: any) => newPropValue === false || newPropValue === '' || isEmptyObject(newPropValue)
+
   const changePreviewWidth = (newWidth: string | number | null) => {
     formSettings.value.preview.width = newWidth
 
