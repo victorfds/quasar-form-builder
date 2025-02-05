@@ -1,10 +1,12 @@
 # Use any Node.js base image that you want (as long as it's Alpine)!
-FROM node:22-alpine
+FROM node:lts-alpine
 
 # Enable pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+
+# RUN corepack enable
+RUN npm install -g pnpm
 
 # Set the working directory to /quasar-form-builder
 WORKDIR /quasar-form-builder

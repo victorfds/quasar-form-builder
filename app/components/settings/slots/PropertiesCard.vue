@@ -52,6 +52,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
 }
 
 function onBlurName(_: Event) {
+  // TODO: do not enter space on name
   elementStates.nameError = ''
   if (elementStates.name === formStore.activeField?.name) return
 
