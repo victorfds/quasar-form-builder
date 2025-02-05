@@ -104,18 +104,16 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const updateNameField = (oldName?: string, newName?: string) => {
-    if (!oldName)
-      return
+    if (!oldName) return
 
     const indexToUpdate = formFields.value.findIndex(field => field.name === oldName)
-    if (indexToUpdate === -1)
-      return
+    if (indexToUpdate === -1) return
 
-    if (!newName)
-      return new Error('name cannot be empty', { cause: 500 })
+    if (!newName) return new Error('name cannot be empty', { cause: 500 })
 
-    if (nameExists(newName, formFields.value))
-      return new Error('name already exists', { cause: 500 })
+    if (/\s/.test(newName)) return new Error('name cannot contain spaces', { cause: 500 })
+
+    if (nameExists(newName, formFields.value)) return new Error('name already exists', { cause: 500 })
 
     formFields.value[indexToUpdate].name = newName
 

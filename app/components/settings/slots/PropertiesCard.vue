@@ -63,6 +63,11 @@ function onBlurName(_: Event) {
     return
   }
 
+  if (response?.message === 'name cannot contain spaces') {
+    elementStates.nameError = 'Nome não pode conter espaço(s)'
+    return
+  }
+
   if (response?.message === 'name already exists') {
     elementStates.nameError = 'Este nome já existe'
   }
