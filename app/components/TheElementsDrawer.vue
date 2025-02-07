@@ -121,7 +121,11 @@ const statics = ref<{
       $formkit: 'q-btn',
       name: 'submit',
       buttonLabel: 'Finalizar',
-    },
+      bind: '$submitAttrs',
+      ignore: true,
+      type: 'submit',
+      disabled: '$disabled',
+    }
   },
   {
     name: 'button',
@@ -133,7 +137,10 @@ const statics = ref<{
       $formkit: 'q-btn',
       name: 'primaryButton',
       buttonLabel: 'Botão',
-      color: 'primary'
+      color: 'primary',
+      ignore: true,
+      type: 'submit',
+      disabled: '$disabled',
     },
   },
   {
@@ -146,7 +153,10 @@ const statics = ref<{
       $formkit: 'q-btn',
       name: 'secondaryButton',
       buttonLabel: 'Botão',
-      color: 'secondary'
+      color: 'secondary',
+      ignore: true,
+      type: 'submit',
+      disabled: '$disabled',
     },
   },
   {
@@ -159,7 +169,10 @@ const statics = ref<{
       $formkit: 'q-btn',
       name: 'dangerButton',
       buttonLabel: 'Botão',
-      color: 'negative'
+      color: 'negative',
+      ignore: true,
+      type: 'submit',
+      disabled: '$disabled',
     },
   },
   {
@@ -170,7 +183,7 @@ const statics = ref<{
     schema: {
       $el: 'hr',
       name: 'separator',
-      attrs: { class: 'q-my-sm text-grey' }
+      attrs: { class: 'q-my-sm', style: 'border: none; height: 1px; color: #aaa; background-color: #aaa;' }
     }
   },
   {

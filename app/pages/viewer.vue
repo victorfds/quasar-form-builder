@@ -1,36 +1,78 @@
 <script setup lang="ts">
-const formFields = [{
-  "$el": "h4",
-  "name": "h4",
-  "children": "Digite aqui um texto"
-},
-{
-  "$formkit": "q-input",
-  "name": "text",
-  "label": "Texto",
-  "inputType": "text"
-},
-{
-  "$el": "hr",
-  "name": "separator"
-},
-{
-  "$el": "p",
-  "name": "p",
-  "children": "Lorem ipsum dolor2"
-},
-{
-  "$formkit": "q-input",
-  "name": "number",
-  "label": "Número",
-  "inputType": "number",
-  "validation": "number",
-  "if": "$empty($text)"
-},
+const formFields = [
+  {
+    "$el": "h4",
+    "name": "h4",
+    "children": "Lorem ipsum dolor",
+    "attrs": { "class": "no-margin" }
+  },
+  {
+    "$el": "hr",
+    "name": "separator",
+    "attrs": {
+      "class": "q-my-sm",
+      "style": "border: none; height: 1px; color: #aaa; background-color: #aaa;"
+    }
+  },
+  {
+    "$formkit": "q-input",
+    "name": "text",
+    "label": "Texto",
+    "inputType": "text"
+  },
+  {
+    "$formkit": "q-input",
+    "name": "number",
+    "label": "Número",
+    "inputType": "number",
+    "validation": "number"
+  },
+  {
+    "$formkit": "q-input",
+    "name": "phone",
+    "label": "Telefone",
+    "mask": "(##) #####-####",
+    "unmasked-value": true,
+    "inputType": "text"
+  },
+  {
+    "$el": "p",
+    "name": "p",
+    "children": "Lorem ipsum dolor",
+    "attrs": { "class": "no-margin" }
+  },
+  {
+    "$formkit": "q-select",
+    "name": "select",
+    "label": "Selecione",
+    "options": [
+      { "label": "Valor 1", "value": "1" },
+      { "label": "Valor 2", "value": "2" }
+    ]
+  },
+  { "$formkit": "q-checkbox", "name": "checkbox", "label": "Caixa de seleção" },
+  {
+    "$formkit": "q-btn",
+    "name": "dangerButton",
+    "buttonLabel": "Botão",
+    "color": "negative",
+    "ignore": true,
+    "type": "reset",
+    "disabled": "$disabled",
+    "align": "right"
+  },
+  {
+    "$formkit": "q-btn",
+    "name": "submit",
+    "buttonLabel": "Finalizar",
+    "bind": "$submitAttrs",
+    "ignore": true,
+    "type": "submit",
+    "disabled": "$disabled"
+  }
 ]
-
 function onSubmit(data: any) {
-  data
+  console.log(data)
 }
 </script>
 

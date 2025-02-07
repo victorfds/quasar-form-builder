@@ -83,7 +83,6 @@ const data = computed(() => {
   return { ...formStore.values, empty, eq, contains }
 })
 
-
 function onDragEnterFormSectionArea() {
   highlightDropArea.value = true
 }
@@ -93,8 +92,7 @@ function onDragLeaveFormSectionArea() {
 }
 
 function onSubmit(data: any, node: FormKitNode) {
-  console.log(formStore.formFields)
-  reset(node, data)
+  reset(node, {})
 }
 
 function onDrop(ev: DragEvent) {

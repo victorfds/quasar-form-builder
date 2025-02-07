@@ -7,7 +7,7 @@
       <SettingsSlotsCheckboxOptionsCard />
     </template>
     <template #layout>
-      <SettingsSlotsLayoutCard showDense />
+      <SettingsSlotsLayoutCard showDense showSize showAlignment />
     </template>
     <template #validation>
       <SettingsSlotsValidationCard />
