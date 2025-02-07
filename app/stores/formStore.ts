@@ -24,15 +24,14 @@ export const useFormStore = defineStore('formStore', () => {
   })
 
   const getFields = computed(() => {
-    const cloned: FormKitSchemaDefinition[] = formFields.value && JSON.parse(JSON.stringify(formFields.value))
-    return cloned.map(clone => {
-      if (formSettings.value.previewMode === 'editing' && clone && Object.keys(clone).some(objKey => objKey.includes('if'))) {
+    return formFields.value.map(formField => {
+      if (formSettings.value.previewMode === 'editing' && formField && Object.keys(formField).some(objKey => objKey.includes('if'))) {
         // @ts-expect-error clone is an object
-        const { if: [], ...rest } = clone
+        const { if: [], ...rest } = formField
         return { ...rest, hasCondition: true }
       }
 
-      return clone
+      return formField
     })
   })
 
