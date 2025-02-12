@@ -12,7 +12,8 @@ export const useFormStore = defineStore('formStore', () => {
   const activeField = ref<ActiveFieldType>(null)
   const values = reactive({})
 
-  const { notify } = useQuasar()
+  const { notify, localStorage } = useQuasar()
+  const formHistoryStore = useFormHistoryStore()
 
   const getSchema = computed(() => {
     // @ts-expect-error the following lines is envolved in differents types, but certainly they should not fail
@@ -43,6 +44,10 @@ export const useFormStore = defineStore('formStore', () => {
     return activeField.value?.columns?.[formSettings.value.columns]?.container || 12
   })
 
+  const setFormFields = (newFields: FormKitSchemaDefinition[]) => {
+    formFields.value = newFields
+  }
+
   const getFieldByName = (fieldName: string) => {
     return formFields.value.find(formField => formField.name === fieldName)
   }
@@ -62,6 +67,7 @@ export const useFormStore = defineStore('formStore', () => {
     }
 
     notify({ color: 'dark', message: `${field?.name} adicionado` })
+    formHistoryStore.addToMemory(formFields.value)
   }
 
   const updateFieldIndex = ({ draggedField, originalPosition, destinationIndex }: {
@@ -71,6 +77,7 @@ export const useFormStore = defineStore('formStore', () => {
   }) => {
     formFields.value.splice(originalPosition, 1)
     formFields.value.splice(destinationIndex, 0, draggedField!)
+    formHistoryStore.addToMemory(formFields.value)
   }
 
   const removeField = (field: FormKitSchemaNode | null, index?: number) => {
@@ -89,6 +96,8 @@ export const useFormStore = defineStore('formStore', () => {
     if (field?.name === activeField.value?.name) {
       setActiveField(null)
     }
+
+    formHistoryStore.addToMemory(formFields.value)
   }
 
   const copyField = (index: number, fieldElement?: FormKitSchemaNode) => {
@@ -120,6 +129,7 @@ export const useFormStore = defineStore('formStore', () => {
 
     // TODO: cache form state values from this point
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
+    formHistoryStore.addToMemory(formFields.value)
   }
 
   const insertValidationRule = (
@@ -174,6 +184,7 @@ export const useFormStore = defineStore('formStore', () => {
     }
     // TODO: cache form preview width
     // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
+    formHistoryStore.addToMemory(formFields.value)
   }
 
   const handleValidationUpdate = (fieldElement: FormKitSchemaNode, propName: string, newPropValue: any) => {
@@ -361,6 +372,7 @@ export const useFormStore = defineStore('formStore', () => {
     getSchema,
     getFields,
     getActiveFieldColumns,
+    setFormFields,
     getFieldByName,
     addField,
     updateFieldIndex,

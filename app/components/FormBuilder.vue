@@ -21,7 +21,7 @@ const lastDeltaColumns = ref(0)
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
-const formFields: FormKitSchemaDefinition[] = formStore.formFields
+const formHistoryStore = useFormHistoryStore()
 const { setActiveField, copyField, updateActiveFieldColumns, updateActiveFieldOnFormFields } = formStore
 
 const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
@@ -132,14 +132,14 @@ function onDragEnterInDropArea(e: DragEvent, fieldName: string, index: number) {
 
 function onDragOverDropArea(e: DragEvent) {
   if (!originalFieldIndex.value && !elementBeingDragged.value.field && !elementBeingDragged.value.index) {
-    elementBeingDragged.value.index = formFields.length
-    elementBeingDragged.value.field = formFields.at(-1)?.name
+    elementBeingDragged.value.index = formStore.formFields.length
+    elementBeingDragged.value.field = formStore.formFields.at(-1)?.name
   }
 }
 
 function onDragEnd(index: number) {
   if (originalFieldIndex.value !== null && indexPointer.value !== null && originalFieldIndex.value !== indexPointer.value) {
-    const draggedField = formFields[index]!
+    const draggedField = formStore.formFields[index]!
     formStore.updateFieldIndex({ draggedField, originalPosition: index, destinationIndex: indexPointer.value })
   }
 
@@ -169,7 +169,7 @@ function onMouseLeaveAtFormElement() {
 function handleCopyField(field: FormKitSchemaNode, index: number) {
   copyField(index)
   activeNameFields.value.active[0] = field?.name
-  activeNameFields.value.active[1] = formFields.at(index + 1)?.name
+  activeNameFields.value.active[1] = formStore.formFields.at(index + 1)?.name
 }
 
 function removeField(field: FormKitSchemaNode, index: number) {
@@ -219,6 +219,20 @@ function stopResize() {
   document.removeEventListener('mousemove', throttleResize)
   document.removeEventListener('mouseup', stopResize)
 }
+
+function handleGoBack() {
+  const lastHistory = formHistoryStore.goBack()
+  if (lastHistory) {
+    formStore.setFormFields(JSON.parse(lastHistory))
+  }
+}
+
+function handleGoForward() {
+  const forwardHistory = formHistoryStore.goForward()
+  if (forwardHistory) {
+    formStore.setFormFields(JSON.parse(forwardHistory))
+  }
+}
 </script>
 
 <template>
@@ -261,9 +275,9 @@ function stopResize() {
                 class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
                 @drop.prevent="onDrop" @dragover.prevent="handleDragover">
                 <!-- No elements display message -->
-                <div v-if="!formFields.length"
+                <div v-if="!formStore.formFields.length"
                   class="overlay-drop-here row items-center justify-center rounded-borders span-12"
-                  :class="{ 'bg-green-8': !formFields.length && highlightDropArea }"
+                  :class="{ 'bg-green-8': !formStore.formFields.length && highlightDropArea }"
                   @dragenter.prevent="onDragEnterFormSectionArea" @dragleave.prevent="onDragLeaveFormSectionArea">
                   Arraste e solte aqui os elementos
                   da coluna esquerda
@@ -369,7 +383,7 @@ function stopResize() {
       <q-tabs vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
         :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
         style="max-height: 4.5rem;">
-        <q-tab name="undo">
+        <q-tab name="undo" :disable="formHistoryStore.isBackDisabled()" @click="handleGoBack">
           <template #default>
             <q-icon name="undo" size="xs">
               <q-tooltip class="bg-grey-10" anchor="center left" self="center right" :offset="[12, 12]">
@@ -378,7 +392,7 @@ function stopResize() {
             </q-icon>
           </template>
         </q-tab>
-        <q-tab name="redo">
+        <q-tab name="redo" :disable="formHistoryStore.isForwardDisabled()" @click="handleGoForward">
           <template #default>
             <q-icon name="redo" size="xs">
               <q-tooltip class="bg-grey-10" anchor="center left" self="center right" :offset="[12, 12]">
