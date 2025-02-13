@@ -34,8 +34,8 @@ function onTypeUpdateModelValue(val: any) {
   onEnteredProp('$el', val.value)
 }
 
-function onBlurContentInput(val: string) {
-  const trimmedValue = val.trim()
+function onBlurContentInput(_: Event) {
+  const trimmedValue = elementStates.content?.trim()
   onEnteredProp('children', trimmedValue)
 }
 </script>
@@ -56,8 +56,8 @@ function onBlurContentInput(val: string) {
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section>
       <div>
-        <q-input label="Conteúdo" :model-value="elementStates.content" hide-bottom-space filled color="secondary" dense
-          type="textarea" @update:model-value="onBlurContentInput" />
+        <q-input label="Conteúdo" v-model="elementStates.content" hide-bottom-space filled color="secondary" dense
+          type="textarea" @blur="onBlurContentInput" />
       </div>
     </q-card-section>
   </q-card>
