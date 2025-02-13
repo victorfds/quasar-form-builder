@@ -99,6 +99,7 @@ function onClickLabelFormName() {
           </q-card>
         </q-list>
       </div>
+      <slot />
     </q-scroll-area>
   </q-drawer>
 </template>
