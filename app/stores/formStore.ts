@@ -2,18 +2,21 @@ import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import type { ActiveFieldType, ColumnsType, FormSettingsType, FormViewportType } from '~/types'
 
 export const useFormStore = defineStore('formStore', () => {
+  const { notify, localStorage } = useQuasar()
+  const formHistoryStore = useFormHistoryStore()
+
+  const cachedFormFields: string | null = localStorage.getItem('form-fields')
+
   const formSettings = ref<FormSettingsType>({
     formName: 'Meu Formulário',
     preview: { width: 432, isFullWidth: false },
     previewMode: 'editing',
     columns: 'default'
   })
-  const formFields = ref<FormKitSchemaDefinition[]>([])
+
+  const formFields = ref<FormKitSchemaDefinition[]>(cachedFormFields ? JSON.parse(cachedFormFields) : [])
   const activeField = ref<ActiveFieldType>(null)
   const values = reactive({})
-
-  const { notify, localStorage } = useQuasar()
-  const formHistoryStore = useFormHistoryStore()
 
   const getSchema = computed(() => {
     // @ts-expect-error the following lines is envolved in differents types, but certainly they should not fail
@@ -44,8 +47,14 @@ export const useFormStore = defineStore('formStore', () => {
     return activeField.value?.columns?.[formSettings.value.columns]?.container || 12
   })
 
+  const cacheFormFields = () => {
+    formHistoryStore.addToMemory(formFields.value)
+    localStorage.setItem('form-fields', JSON.stringify(formFields.value))
+  }
+
   const setFormFields = (newFields: FormKitSchemaDefinition[]) => {
     formFields.value = newFields
+    localStorage.setItem('form-fields', JSON.stringify(newFields))
   }
 
   const getFieldByName = (fieldName: string) => {
@@ -67,7 +76,7 @@ export const useFormStore = defineStore('formStore', () => {
     }
 
     notify({ color: 'dark', message: `${field?.name} adicionado` })
-    formHistoryStore.addToMemory(formFields.value)
+    cacheFormFields()
   }
 
   const updateFieldIndex = ({ draggedField, originalPosition, destinationIndex }: {
@@ -77,7 +86,8 @@ export const useFormStore = defineStore('formStore', () => {
   }) => {
     formFields.value.splice(originalPosition, 1)
     formFields.value.splice(destinationIndex, 0, draggedField!)
-    formHistoryStore.addToMemory(formFields.value)
+
+    cacheFormFields()
   }
 
   const removeField = (field: FormKitSchemaNode | null, index?: number) => {
@@ -97,12 +107,15 @@ export const useFormStore = defineStore('formStore', () => {
       setActiveField(null)
     }
 
-    formHistoryStore.addToMemory(formFields.value)
+    cacheFormFields()
   }
 
-  const copyField = (index: number, fieldElement?: FormKitSchemaNode) => {
+  const copyField = (index: number | null, fieldElement?: FormKitSchemaNode) => {
     const field = fieldElement || formFields.value.find((_, i) => i === index)
     if (!field) return
+    if (!index) {
+      index = formFields.value.findIndex(formField => formField.name === field.name)
+    }
     const newElemPosition = index + 1
     const newField = { ...field, name: field?.name.split('_').at(0) }
     addField(newField, newElemPosition)
@@ -127,9 +140,7 @@ export const useFormStore = defineStore('formStore', () => {
 
     formFields.value[indexToUpdate].name = newName
 
-    // TODO: cache form state values from this point
-    // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
-    formHistoryStore.addToMemory(formFields.value)
+    cacheFormFields()
   }
 
   const insertValidationRule = (
@@ -182,9 +193,7 @@ export const useFormStore = defineStore('formStore', () => {
     if (shouldDeleteProperty(updatedPropValue)) {
       deleteFieldProperty(propName, indexToUpdate)
     }
-    // TODO: cache form preview width
-    // INFO: suggestion: https://unstorage.unjs.io/guide/utils#snapshots
-    formHistoryStore.addToMemory(formFields.value)
+    cacheFormFields()
   }
 
   const handleValidationUpdate = (fieldElement: FormKitSchemaNode, propName: string, newPropValue: any) => {
@@ -356,6 +365,7 @@ export const useFormStore = defineStore('formStore', () => {
   const updateActiveFieldOnFormFields = () => {
     const indexToUpdate = formFields.value.findIndex(field => field.name === activeField.value.name)
     formFields.value[indexToUpdate] = { ...activeField.value }
+    cacheFormFields()
   }
 
   const onEnteredProp = (propName: string, propValue?: string | number | boolean | null | ColumnsType | { if: string }

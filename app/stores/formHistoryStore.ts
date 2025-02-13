@@ -2,12 +2,15 @@ export const useFormHistoryStore = defineStore('formHistoryStore', () => {
   const pointer = ref(0)
 
   const memory = useMemory()
+  const { localStorage } = useQuasar()
 
   function addToMemory(value: any) {
     const size = memory.getSize()
 
     if (size === 0) {
-      memory.setItem(size, JSON.stringify([]))
+      const cachedFormFields: string | null = localStorage.getItem('form-fields')
+
+      memory.setItem(size, cachedFormFields ? cachedFormFields : JSON.stringify([]))
       memory.setItem(size + 1, JSON.stringify(value))
       pointer.value = size + 1
       return
@@ -49,7 +52,6 @@ export const useFormHistoryStore = defineStore('formHistoryStore', () => {
   }
 
   return {
-    pointer,
     addToMemory,
     goBack,
     goForward,

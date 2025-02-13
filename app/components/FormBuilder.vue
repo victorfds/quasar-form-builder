@@ -2,7 +2,7 @@
 import type { FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import { empty, eq } from '@formkit/utils'
 import { clearErrors, FormKitSchema, reset } from '@formkit/vue'
-import type { ActiveFieldType } from "~/types"
+import type { ActiveFieldType } from '../types'
 
 // local variables
 const highlightDropArea = ref<boolean>(false)
@@ -21,7 +21,6 @@ const lastDeltaColumns = ref(0)
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
-const formHistoryStore = useFormHistoryStore()
 const { setActiveField, copyField, updateActiveFieldColumns, updateActiveFieldOnFormFields } = formStore
 
 const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
@@ -220,19 +219,6 @@ function stopResize() {
   document.removeEventListener('mouseup', stopResize)
 }
 
-function handleGoBack() {
-  const lastHistory = formHistoryStore.goBack()
-  if (lastHistory) {
-    formStore.setFormFields(JSON.parse(lastHistory))
-  }
-}
-
-function handleGoForward() {
-  const forwardHistory = formHistoryStore.goForward()
-  if (forwardHistory) {
-    formStore.setFormFields(JSON.parse(forwardHistory))
-  }
-}
 </script>
 
 <template>
@@ -240,29 +226,6 @@ function handleGoForward() {
     <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`"
       :thumb-style="{ width: '4px' }">
-      <q-tabs v-model="formStore.formSettings.previewMode" vertical dense shrink
-        class="rounded-borders fixed-left q-ml-sm q-mt-md"
-        :class="dark.isActive ? 'bg-dark text-white' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-        active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;">
-        <q-tab name="editing">
-          <template #default>
-            <q-icon name="edit" size="xs">
-              <q-tooltip class="bg-grey-10" anchor="center right" self="center left" :offset="[12, 12]">
-                Editar
-              </q-tooltip>
-            </q-icon>
-          </template>
-        </q-tab>
-        <q-tab name="previewing">
-          <template #default>
-            <q-icon name="visibility" size="xs">
-              <q-tooltip class="bg-grey-10" anchor="center right" self="center left" :offset="[12, 12]">
-                Pré-visualizar
-              </q-tooltip>
-            </q-icon>
-          </template>
-        </q-tab>
-      </q-tabs>
 
       <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
         <q-card flat class="preview-form-container q-my-md"
@@ -379,29 +342,6 @@ function handleGoForward() {
           </q-card-section>
         </q-card>
       </article>
-
-      <q-tabs vertical dense shrink class="rounded-borders fixed-right q-mr-sm q-mt-md"
-        :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-        style="max-height: 4.5rem;">
-        <q-tab name="undo" :disable="formHistoryStore.isBackDisabled()" @click="handleGoBack">
-          <template #default>
-            <q-icon name="undo" size="xs">
-              <q-tooltip class="bg-grey-10" anchor="center left" self="center right" :offset="[12, 12]">
-                Retroceder
-              </q-tooltip>
-            </q-icon>
-          </template>
-        </q-tab>
-        <q-tab name="redo" :disable="formHistoryStore.isForwardDisabled()" @click="handleGoForward">
-          <template #default>
-            <q-icon name="redo" size="xs">
-              <q-tooltip class="bg-grey-10" anchor="center left" self="center right" :offset="[12, 12]">
-                Avançar
-              </q-tooltip>
-            </q-icon>
-          </template>
-        </q-tab>
-      </q-tabs>
     </q-scroll-area>
   </section>
 </template>

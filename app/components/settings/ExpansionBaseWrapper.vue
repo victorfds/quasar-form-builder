@@ -127,7 +127,7 @@ function toggleExpandAll() {
       <q-item-section side>
         <div class="q-gutter-xs">
           <q-btn size="sm" flat dense round icon="o_content_copy" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            @click="copyField(-1, formStore.activeField)" />
+            @click="copyField(null, formStore.activeField)" />
           <q-btn size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
             @click="removeField(formStore.activeField)" />
           <q-btn size="sm" flat dense round :icon="allExpanded ? 'minimize' : 'o_expand'"
