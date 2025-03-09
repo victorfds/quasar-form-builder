@@ -7,6 +7,17 @@ const formFields = [
     "attrs": { "class": "no-margin" }
   },
   {
+    "$el": "h4",
+    "name": "h4",
+    "children": "It's not good at thing",
+    "attrs": {
+      "class": "no-margin"
+    },
+    "label": "um texto",
+    "info": "texto auxiliar",
+    "description": "minha pergunta composta"
+  },
+  {
     "$el": "hr",
     "name": "separator",
     "attrs": {
@@ -71,11 +82,16 @@ const formFields = [
     "disabled": "$disabled"
   }
 ]
+
+function onUpdateValues(data: any) {
+  console.log(data)
+}
+
 function onSubmit(data: any) {
   console.log(data)
 }
 </script>
 
 <template>
-  <FormViewer :formFields="formFields" @submit="onSubmit" />
+  <FormViewer :formFields="formFields" @submit="onSubmit" @on:update-values="onUpdateValues" />
 </template>

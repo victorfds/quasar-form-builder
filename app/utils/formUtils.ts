@@ -1,4 +1,4 @@
-import type { LogicField } from '~/types'
+import type { LogicField } from '../types'
 
 export function transformOperatorValue(operatorValue: string): string {
   const operatorMap: Record<string, string> = {

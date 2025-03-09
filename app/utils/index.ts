@@ -1,6 +1,6 @@
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
-import { fieldTypes } from "~/constants"
-import { ComponentsTypes } from "~/types"
+import type { FormKitSchemaDefinition } from '@formkit/core'
+import type { ComponentsTypes } from '../types'
+import { fieldTypes } from '../constants'
 
 export function nameExists(name: string, array: Array<FormKitSchemaDefinition>) {
   return array.some(el => el.name === name)

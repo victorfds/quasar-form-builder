@@ -257,7 +257,13 @@ function stopResize() {
                 ]" @mouseover.prevent="onMouseOverAtFormElement(field)"
                   @mouseleave.prevent="onMouseLeaveAtFormElement">
 
-                  <FormKitSchema :schema="field" :data="data" />
+                  <WithLabelAndDescription v-if="field.$el" :label="field.label" :info="field.info"
+                    :description="field.description">
+                    <FormKitSchema :schema="field" :data="data" />
+                  </WithLabelAndDescription>
+
+                  <FormKitSchema v-else :schema="field" :data="data" />
+
                   <!-- Overlay preview -->
                   <div class="overlay-preview-element cursor-pointer" :class="{
                     __latest: !elementBeingDragged.field && !elementBeingDragged.index && activeNameFields.active.at(-1) === field?.name,

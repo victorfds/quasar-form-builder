@@ -1,34 +1,46 @@
 <script setup lang="ts">
-import { empty, eq } from '@formkit/utils'
-import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
+import { empty, eq } from "@formkit/utils"
+import type { FormKitNode, FormKitSchemaDefinition } from "@formkit/core"
 
 defineProps<{ formFields: FormKitSchemaDefinition[] }>()
-const emit = defineEmits(['submit'])
+const emit = defineEmits(["submit", "on:update-values"])
 const values = reactive({})
 
 const data = computed(() => ({ ...values, empty, eq, contains }))
 
+function updateValues(newValues: any) {
+  Object.assign(values, newValues)
+  emit("on:update-values", newValues)
+}
+
 function onSubmit(data: any, node: FormKitNode) {
-  emit('submit', data)
+  emit("submit", data)
   node.submit()
 }
 </script>
 
 <template>
   <article>
-    <FormKit type="form" v-model="values" :actions="false" @submit="onSubmit">
+    <FormKit type="form" :model-value="values" @update:model-value="updateValues" :actions="false" @submit="onSubmit">
       <div class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter">
-
         <div v-for="field in formFields" :key="field.name" class="form-field" :class="[
-          field.columns ? `span-${formStore.formSettings.columns === 'default' ? field.columns?.container || field.columns?.default?.container || 12 : field.columns?.[formStore.formSettings.columns]?.container || 12}` : 'span-12',
-          field.align && {
-            right: 'flex justify-end',
-            center: 'flex justify-center',
-            left: 'flex justify-start',
-          }[field.align] || '',
+          field.columns
+            ? `span-${formStore.formSettings.columns === 'default' ? field.columns?.container || field.columns?.default?.container || 12 : field.columns?.[formStore.formSettings.columns]?.container || 12}`
+            : 'span-12',
+          (field.align &&
+            {
+              right: 'flex justify-end',
+              center: 'flex justify-center',
+              left: 'flex justify-start',
+            }[field.align]) ||
+          '',
         ]">
+          <WithLabelAndDescription v-if="field.$el" :label="field.label" :info="field.info"
+            :description="field.description">
+            <FormKitSchema :schema="field" :data="data" />
+          </WithLabelAndDescription>
 
-          <FormKitSchema :schema="field" :data="data" />
+          <FormKitSchema v-else :schema="field" :data="data" />
         </div>
       </div>
     </FormKit>
@@ -45,11 +57,11 @@ function onSubmit(data: any, node: FormKitNode) {
 }
 
 .grid {
-  display: grid
+  display: grid;
 }
 
 .grid-cols-12 {
-  grid-template-columns: repeat(12, minmax(0, 1fr))
+  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .row-gap-y-gutter {
@@ -60,51 +72,9 @@ function onSubmit(data: any, node: FormKitNode) {
   column-gap: 1rem;
 }
 
-.span-1 {
-  grid-column: span 1;
-}
-
-.span-2 {
-  grid-column: span 2;
-}
-
-.span-3 {
-  grid-column: span 3;
-}
-
-.span-4 {
-  grid-column: span 4;
-}
-
-.span-5 {
-  grid-column: span 5;
-}
-
-.span-6 {
-  grid-column: span 6;
-}
-
-.span-7 {
-  grid-column: span 7;
-}
-
-.span-8 {
-  grid-column: span 8;
-}
-
-.span-9 {
-  grid-column: span 9;
-}
-
-.span-10 {
-  grid-column: span 10;
-}
-
-.span-11 {
-  grid-column: span 11;
-}
-
-.span-12 {
-  grid-column: span 12;
+@for $i from 1 through 12 {
+  .span-#{$i} {
+    grid-column: span $i / span $i;
+  }
 }
 </style>
