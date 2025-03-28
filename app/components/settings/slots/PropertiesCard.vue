@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { FormKitSchemaDefinition } from "@formkit/core"
-import { getTypesBasedOnFieldType } from "~/utils"
-import { fieldTypes } from "~/constants"
+import { fieldTypes } from "../../../constants"
+import { getTypesBasedOnFieldType } from "../../../utils"
 
 defineProps<{ hasInputType?: boolean, hasTooltip?: boolean, hasPlaceholder?: boolean, hasDescription?: boolean }>()
 

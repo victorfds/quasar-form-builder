@@ -91,6 +91,7 @@ function onDragLeaveFormSectionArea() {
 }
 
 function onSubmit(data: any, node: FormKitNode) {
+  console.log(data)
   reset(node, {})
 }
 

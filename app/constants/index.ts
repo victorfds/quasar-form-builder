@@ -36,5 +36,3 @@ export const htmlTypes = [
   { label: 'parágrafo', value: 'p' },
   { label: 'citação em bloco', value: 'blockquote' }
 ]
-
-
