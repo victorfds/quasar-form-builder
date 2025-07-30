@@ -17,6 +17,7 @@ const SettingsQCheckboxConfigComponent = resolveComponent('SettingsQCheckboxConf
 const SettingsQSeparatorConfigComponent = resolveComponent('SettingsQSeparatorConfig')
 const SettingsHTMLConfigComponent = resolveComponent('SettingsHTMLConfig')
 const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConfig')
+const SettingsQDateConfigComponent = resolveComponent('SettingsQDateConfig')
 
 const formNameInputRef = ref<HTMLElement | null>(null)
 const useHighlight = await highlightJson()
@@ -33,6 +34,7 @@ const getComponentSettings = computed(() => {
   if (formStore.activeField?.$formkit === 'q-select') return SettingsQSelectConfigComponent
   if (formStore.activeField?.$formkit === 'q-checkbox') return SettingsQCheckboxConfigComponent
   if (formStore.activeField?.$el === 'hr') return SettingsQSeparatorConfigComponent
+  if (formStore.activeField?.$formkit === 'q-date') return SettingsQDateConfigComponent
 
   if (formStore.activeField?.$el && htmlTypes.map(htmlType => htmlType.value).includes(formStore.activeField?.$el)) return SettingsHTMLConfigComponent
 

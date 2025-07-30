@@ -25,7 +25,6 @@ const { setActiveField, copyField, updateActiveFieldColumns, updateActiveFieldOn
 
 const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
 
-// Global state
 const offset = useState('offset')
 
 // unsubscribe from listener

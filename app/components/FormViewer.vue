@@ -15,7 +15,7 @@ function updateValues(newValues: any) {
 
 function onSubmit(data: any, node: FormKitNode) {
   emit("submit", data)
-  node.submit()
+  // The node has a builtin function that can be used called node.submit()
 }
 </script>
 
