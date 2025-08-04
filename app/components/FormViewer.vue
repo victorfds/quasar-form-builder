@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { empty, eq } from "@formkit/utils"
 import type { FormKitNode, FormKitSchemaDefinition } from "@formkit/core"
+import { empty, eq } from "@formkit/utils"
 
-defineProps<{ formFields: FormKitSchemaDefinition[] }>()
+const props = defineProps<{ formFields: FormKitSchemaDefinition[], resposta?: any, readonly?: boolean }>()
 const emit = defineEmits(["submit", "on:update-values"])
-const values = reactive({})
+const values = reactive(props.resposta || {})
 
 const data = computed(() => ({ ...values, empty, eq, contains }))
 
 function updateValues(newValues: any) {
+  if (props.formFields) return
   Object.assign(values, newValues)
   emit("on:update-values", newValues)
 }
 
 function onSubmit(data: any, node: FormKitNode) {
+  if (props.readonly) return
   emit("submit", data)
   // The node has a builtin function that can be used called node.submit()
 }
@@ -40,7 +42,7 @@ function onSubmit(data: any, node: FormKitNode) {
             <FormKitSchema :schema="field" :data="data" />
           </WithLabelAndDescription>
 
-          <FormKitSchema v-else :schema="field" :data="data" />
+          <FormKitSchema v-else :schema="field" :data="data" :readonly="readonly" />
         </div>
       </div>
     </FormKit>
