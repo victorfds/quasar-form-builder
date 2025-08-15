@@ -18,6 +18,7 @@ const SettingsQSeparatorConfigComponent = resolveComponent('SettingsQSeparatorCo
 const SettingsHTMLConfigComponent = resolveComponent('SettingsHTMLConfig')
 const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConfig')
 const SettingsQDateConfigComponent = resolveComponent('SettingsQDateConfig')
+const SettingsQFileConfigComponent = resolveComponent('SettingsQFileConfig')
 
 const formNameInputRef = ref<HTMLElement | null>(null)
 const useHighlight = await highlightJson()
@@ -31,6 +32,8 @@ const getComponentSettings = computed(() => {
 
   if (formStore.activeField?.$formkit === 'q-btn') return SettingsQBtnConfigComponent
   if (formStore.activeField?.$formkit === 'q-input' && formStore.activeField?.inputType !== 'file') return SettingsQInputConfigComponent
+  if (formStore.activeField?.$formkit === 'q-input' && formStore.activeField?.inputType === 'file' && !formStore.activeField?.multiple) return SettingsQFileConfigComponent
+  if (formStore.activeField?.$formkit === 'q-input' && formStore.activeField?.inputType === 'file' && formStore.activeField?.multiple) return SettingsQFileConfigComponent
   if (formStore.activeField?.$formkit === 'q-select') return SettingsQSelectConfigComponent
   if (formStore.activeField?.$formkit === 'q-checkbox') return SettingsQCheckboxConfigComponent
   if (formStore.activeField?.$el === 'hr') return SettingsQSeparatorConfigComponent

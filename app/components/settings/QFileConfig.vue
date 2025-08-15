@@ -1,16 +1,16 @@
 <template>
-  <SettingsExpansionBaseWrapper :sectionLabels="{ data: 'Opções de data' }">
+  <SettingsExpansionBaseWrapper>
     <template #properties>
       <SettingsSlotsPropertiesCard hasPlaceholder hasDescription />
     </template>
     <template #layout>
       <SettingsSlotsLayoutCard showDense />
     </template>
-    <template #data>
-      <SettingsSlotsDateOptionsCard />
-    </template>
     <template #validation>
       <SettingsSlotsValidationCard />
+    </template>
+    <template #data>
+      <SettingsSlotsFileOptionsCard />
     </template>
     <template #conditions>
       <SettingsSlotsConditionsCard />
@@ -20,3 +20,5 @@
     </template>
   </SettingsExpansionBaseWrapper>
 </template>
+
+
