@@ -111,6 +111,28 @@ const tools = ref<
     },
   },
   {
+    name: "date_multiple",
+    icon: "event",
+    title: "Datas múltiplas",
+    description: "Seleção de várias datas",
+    schema: {
+      $formkit: "q-date-multiple",
+      name: "multipleDates",
+      label: "Datas",
+    },
+  },
+  {
+    name: "date_range",
+    icon: "date_range",
+    title: "Intervalo de datas",
+    description: "Seleção de intervalo de datas",
+    schema: {
+      $formkit: "q-date-range",
+      name: "dateRange",
+      label: "Intervalo de datas",
+    },
+  },
+  {
     name: "file_upload",
     icon: "insert_drive_file",
     title: "Enviar arquivo",

@@ -2,22 +2,12 @@
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QInputProps } from 'quasar'
 
-
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QInputProps } }>()
 
 const { dark } = useQuasar()
 const { hasError, getMessages } = useValidationMessages(props.context?.node)
 
 const mask = computed(() => (props.context?.attrs as any)?.mask || 'DD/MM/YYYY')
-const displayValue = computed(() => {
-  const v: any = props.context?.value
-  if (Array.isArray(v)) return v.filter(Boolean).join(', ')
-  return v ? String(v) :  ''
-})
-const dateModel = computed(() => {
-  const v: any = props.context?.value
-  return Array.isArray(v) ? v.filter(Boolean) : []
-})
 
 function toComparableNumber(dateStr?: string | null, maskStr?: string | null): number | null {
   if (!dateStr) return null
@@ -58,6 +48,25 @@ function optionsFn(date: string): boolean {
   return true
 }
 
+const displayValue = computed(() => {
+  const v: any = props.context?.value
+  if (v && typeof v === 'object' && 'from' in v && 'to' in v) {
+    const from = String((v as any).from || '')
+    const to = String((v as any).to || '')
+    return [from, to].filter(Boolean).join(' - ')
+  }
+  return v ? String(v) :  ''
+})
+
+const dateModel = computed(() => {
+  const v: any = props.context?.value
+  if (v && typeof v === 'object' && ('from' in v || 'to' in v)) {
+    const from = (v as any).from || ''
+    const to = (v as any).to || ''
+    if (from || to) return { from, to }
+  }
+  return null
+})
 </script>
 
 <template>
@@ -68,9 +77,9 @@ function optionsFn(date: string): boolean {
     <template #append>
       <q-icon name="event" class="cursor-pointer" :color="dark.isActive ? 'grey-5' : 'blue-grey-5'">
         <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-          <q-date :model-value="dateModel" :mask="mask" today-btn :options="optionsFn"
+          <q-date :model-value="dateModel" :mask="mask" range today-btn :options="optionsFn"
             :emit-immediately="context.attrs.emitImmediately" @update:model-value="(val) => context?.node.input(val)"
-            :readonly="context.attrs.readonly" multiple>
+            :readonly="context.attrs.readonly">
             <div class="row items-center justify-end">
               <q-btn v-close-popup label="Fechar" color="primary" flat />
             </div>

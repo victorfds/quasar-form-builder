@@ -4,10 +4,15 @@ import type { QInputProps } from 'quasar'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QInputProps } }>()
 
+const { dark } = useQuasar()
 const { hasError, getMessages } = useValidationMessages(props.context?.node)
 
 const mask = computed(() => (props.context?.attrs as any)?.mask || 'DD/MM/YYYY')
-const displayValue = computed(() => String(props.context?.value || ''))
+const displayValue = computed(() => String(props.context?.value  || ''))
+const dateModel = computed(() => {
+  const v: any = props.context?.value
+  return typeof v === 'string' && v.length ? v : null
+})
 
 function toComparableNumber(dateStr?: string | null, maskStr?: string | null): number | null {
   if (!dateStr) return null
@@ -50,13 +55,14 @@ function optionsFn(date: string): boolean {
 </script>
 
 <template>
-  <q-input filled :model-value="displayValue" :error-message="getMessages"
+  <q-input filled :model-value="displayValue" :error-message="getMessages" color="cyan-8"
     :error="hasError" :label="context.label" :hint="context.attrs.description" :dense="context.attrs.dense"
-    readonly inputmode="none" :rules="[(val) => !!val || true]" hide-bottom-space>
-    <template #append>
-      <q-icon name="event" class="cursor-pointer">
+    inputmode="none" :rules="[(val) => !!val || true]" hide-bottom-space :placeholder="context.attrs.placeholder"
+    @keydown.stop.prevent @keypress.stop.prevent @beforeinput.stop.prevent @paste.stop.prevent @drop.stop.prevent @cut.stop.prevent>
+    <template  #append >
+      <q-icon name="event" class="cursor-pointer" :color="dark.isActive ? 'grey-5' : 'blue-grey-5'">
         <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-          <q-date :model-value="context.value" :mask="mask" today-btn :options="optionsFn"
+          <q-date :model-value="dateModel" :mask="mask" today-btn :options="optionsFn"
             :emit-immediately="context.attrs.emitImmediately" @update:model-value="(val) => context?.node.input(val)"
             :readonly="context.attrs.readonly">
             <div class="row items-center justify-end">

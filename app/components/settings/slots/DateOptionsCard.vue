@@ -9,8 +9,6 @@ const elementStates = reactive({
   min: formStore.activeField?.min || '',
   max: formStore.activeField?.max || '',
   mask: formStore.activeField?.mask || DEFAULT_DATE_MASK,
-  range: Boolean(formStore.activeField?.range) || false,
-  multiple: Boolean(formStore.activeField?.multiple) || false,
   emitImmediately: Boolean(formStore.activeField?.emitImmediately) || false,
   defaultYearMonth: formStore.activeField?.defaultYearMonth || '',
   disabledDates: (formStore.activeField?.disabledDates as string[] | undefined) || [],
@@ -21,53 +19,7 @@ const maxRef = ref<HTMLInputElement | null>(null)
 const maskRef = ref<HTMLInputElement | null>(null)
 const defaultYearMonthRef = ref<HTMLInputElement | null>(null)
 
-const inputMask = computed(() => {
-  const mask = isValidMask(elementStates.mask) ? elementStates.mask : DEFAULT_DATE_MASK
-  return mask.replace(/[A-Za-z]+/g, (match: string) => '#'.repeat(match.length))
-})
-
-const dateValidationRules = computed(() => {
-  const currentMask = elementStates.mask || DEFAULT_DATE_MASK
-
-  const parts = currentMask.match(/([A-Za-z]+)/g) || []
-  const hasDay = parts.includes('DD')
-  const hasMonth = parts.includes('MM')
-  const hasYear = parts.includes('YYYY')
-
-  const rules = []
-
-  if (hasDay) {
-    rules.push((val: string) => {
-      if (!val) return true
-      const dayPart = val.split(/[\/\-]/)[parts.indexOf('DD')]
-      if (!dayPart) return true
-      const day = parseInt(dayPart)
-      return (day >= 1 && day <= 31) || 'Dia deve estar entre 1 e 31'
-    })
-  }
-
-  if (hasMonth) {
-    rules.push((val: string) => {
-      if (!val) return true
-      const monthPart = val.split(/[\/\-]/)[parts.indexOf('MM')]
-      if (!monthPart) return true
-      const month = parseInt(monthPart)
-      return (month >= 1 && month <= 12) || 'Mês deve estar entre 1 e 12'
-    })
-  }
-
-  if (hasYear) {
-    rules.push((val: string) => {
-      if (!val) return true
-      const yearPart = val.split(/[\/\-]/)[parts.indexOf('YYYY')]
-      if (!yearPart) return true
-      const year = parseInt(yearPart)
-      return (year >= 1900 && year <= 2100) || 'Ano deve estar entre 1900 e 2100'
-    })
-  }
-
-  return rules
-})
+const disabledDatesDisplay = computed(() => (elementStates.disabledDates || []).join(', '))
 
 const maskValidationRules = computed(() => [
   (val: string) => {
@@ -97,8 +49,6 @@ watch(() => formStore.activeField, (val) => {
   elementStates.min = val?.min || ''
   elementStates.max = val?.max || ''
   elementStates.mask = val?.mask || ''
-  elementStates.range = Boolean(val?.range) || false
-  elementStates.multiple = Boolean(val?.multiple) || false
   elementStates.emitImmediately = Boolean(val?.emitImmediately) || false
   elementStates.defaultYearMonth = val?.defaultYearMonth || ''
   elementStates.disabledDates = (val?.disabledDates as string[] | undefined) || []
@@ -115,9 +65,7 @@ watch(() => formStore.activeField, (val) => {
               <span class="text-body2">Data mínima</span>
             </label>
             <q-input id="min-date" ref="minRef" :model-value="elementStates.min" hide-bottom-space filled class="mw-200"
-              color="cyan-8" dense :placeholder="elementStates.mask || DEFAULT_DATE_MASK" :mask="inputMask"
-              :rules="dateValidationRules"
-              @update:model-value="val => { elementStates.min = val; onEnteredProp('min', val) }">
+              color="cyan-8" dense :placeholder="elementStates.mask || DEFAULT_DATE_MASK" readonly>
               <template #append>
                 <q-icon name="event" class="cursor-pointer">
                   <q-popup-proxy transition-show="scale" transition-hide="scale">
@@ -135,9 +83,7 @@ watch(() => formStore.activeField, (val) => {
               <span class="text-body2">Data máxima</span>
             </label>
             <q-input id="max-date" ref="maxRef" :model-value="elementStates.max" hide-bottom-space filled class="mw-200"
-              color="cyan-8" dense :placeholder="elementStates.mask || DEFAULT_DATE_MASK" :mask="inputMask"
-              :rules="dateValidationRules"
-              @update:model-value="val => { elementStates.max = val; onEnteredProp('max', val) }">
+              color="cyan-8" dense :placeholder="elementStates.mask || DEFAULT_DATE_MASK" readonly>
               <template #append>
                 <q-icon name="event" class="cursor-pointer">
                   <q-popup-proxy transition-show="scale" transition-hide="scale">
@@ -162,14 +108,6 @@ watch(() => formStore.activeField, (val) => {
 
         <div class="row align-center items-center justify-between">
           <label @click="() => { }">
-            <span class="text-body2">Intervalo</span>
-          </label>
-          <q-toggle :model-value="elementStates.range" color="primary"
-            @update:model-value="val => { elementStates.range = val; onEnteredProp('range', val) }" />
-        </div>
-
-        <div class="row align-center items-center justify-between">
-          <label @click="() => { }">
             <span class="text-body2">Emitir imediatamente</span>
           </label>
           <q-toggle :model-value="elementStates.emitImmediately" color="primary"
@@ -187,20 +125,25 @@ watch(() => formStore.activeField, (val) => {
 
         <div class="column">
           <div class="row align-center items-center justify-between">
-            <label>
+            <label for="disabled-dates">
               <span class="text-body2">Datas desabilitadas</span>
             </label>
-            <q-icon name="event" class="cursor-pointer" size="sm" :color="dark.isActive ? 'grey-5' : 'blue-grey-5'">
-              <q-popup-proxy transition-show="scale" transition-hide="scale">
-                <q-date :mask="elementStates.mask || DEFAULT_DATE_MASK" :multiple="true"
-                  :model-value="elementStates.disabledDates"
-                  @update:model-value="val => { elementStates.disabledDates = val as string[]; onEnteredProp('disabledDates', val) }">
-                  <div class="row items-center justify-end">
-                    <q-btn v-close-popup flat color="primary" label="Fechar" />
-                  </div>
-                </q-date>
-              </q-popup-proxy>
-            </q-icon>
+            <q-input id="disabled-dates" :model-value="disabledDatesDisplay" hide-bottom-space filled class="mw-200"
+              color="cyan-8" dense readonly placeholder="Selecionar datas">
+              <template #append>
+                <q-icon name="event" class="cursor-pointer">
+                  <q-popup-proxy transition-show="scale" transition-hide="scale">
+                    <q-date :mask="elementStates.mask || DEFAULT_DATE_MASK" :multiple="true"
+                      :model-value="elementStates.disabledDates"
+                      @update:model-value="val => { elementStates.disabledDates = val as string[]; onEnteredProp('disabledDates', val) }">
+                      <div class="row items-center justify-end">
+                        <q-btn v-close-popup flat color="primary" label="Fechar" />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
           </div>
 
           <div class="row q-mt-sm">

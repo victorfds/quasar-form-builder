@@ -37,7 +37,7 @@ const getComponentSettings = computed(() => {
   if (formStore.activeField?.$formkit === 'q-select') return SettingsQSelectConfigComponent
   if (formStore.activeField?.$formkit === 'q-checkbox') return SettingsQCheckboxConfigComponent
   if (formStore.activeField?.$el === 'hr') return SettingsQSeparatorConfigComponent
-  if (formStore.activeField?.$formkit === 'q-date') return SettingsQDateConfigComponent
+  if (['q-date','q-date-multiple','q-date-range'].includes(formStore.activeField?.$formkit as string)) return SettingsQDateConfigComponent
 
   if (formStore.activeField?.$el && htmlTypes.map(htmlType => htmlType.value).includes(formStore.activeField?.$el)) return SettingsHTMLConfigComponent
 
