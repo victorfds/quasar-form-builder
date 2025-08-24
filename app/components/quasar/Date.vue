@@ -2,105 +2,57 @@
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QInputProps } from 'quasar'
 
-type RangeValidationParams = {
-  inputValue: string | null | undefined
-  clamp: boolean
-  rawMin?: string
-  rawMax?: string
-}
-
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QInputProps } }>()
 
-const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(props.context?.node)
+const { hasError, getMessages } = useValidationMessages(props.context?.node)
 
 const mask = computed(() => (props.context?.attrs as any)?.mask || 'DD/MM/YYYY')
-const formatedMask = computed(() => {
-  return mask.value.replace(/[A-Za-z]+/g, (match: string) => '#'.repeat(match.length))
-})
+const displayValue = computed(() => String(props.context?.value || ''))
 
-function toComparableNumber(dateStr?: string | null): number | null {
+function toComparableNumber(dateStr?: string | null, maskStr?: string | null): number | null {
   if (!dateStr) return null
-  // Supports: YYYY/MM/DD, YYYY-MM-DD
-  //           DD/MM/YYYY, DD-MM-YYYY
-  let y = 0, m = 0, d = 0
   const s = String(dateStr)
-  const isYmd = /^\d{4}[\/-]\d{2}[\/-]\d{2}$/.test(s)
-  if (isYmd) {
-    const [yy, mm, dd] = s.replace(/-/g, '/').split('/')
-    y = Number(yy)
-    m = Number(mm)
-    d = Number(dd)
+  if (maskStr) {
+    const tokens = String(maskStr).toUpperCase().replace(/-/g, '/').split('/')
+    const vals = s.replace(/-/g, '/').split('/')
+    if (tokens.length !== 3 || vals.length !== 3) return null
+    const yi = tokens.indexOf('YYYY')
+    const mi = tokens.indexOf('MM')
+    const di = tokens.indexOf('DD')
+    if (yi < 0 || mi < 0 || di < 0) return null
+    const y = Number(vals[yi])
+    const m = Number(vals[mi])
+    const d = Number(vals[di])
+    if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return null
+    return y * 10000 + m * 100 + d
   }
-  const isDmy = /^\d{2}[\/-]\d{2}[\/-]\d{4}$/.test(s)
-  if (!isYmd && isDmy) {
-    const [dd, mm, yy] = s.replace(/-/g, '/').split('/')
-    y = Number(yy)
-    m = Number(mm)
-    d = Number(dd)
+  const parts = s.replace(/-/g, '/').split('/')
+  if (parts.length === 3) {
+    const y = Number(parts[0])
+    const m = Number(parts[1])
+    const d = Number(parts[2])
+    if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return null
+    return y * 10000 + m * 100 + d
   }
-  if (!isYmd && !isDmy) return null
-  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return null
-  return y * 10000 + m * 100 + d
+  return null
 }
 
-const minDateNum = computed(() => toComparableNumber((props.context?.attrs as any)?.min))
-const maxDateNum = computed(() => toComparableNumber((props.context?.attrs as any)?.max))
+const minDateNum = computed(() => toComparableNumber((props.context?.attrs as any)?.min, mask.value))
+const maxDateNum = computed(() => toComparableNumber((props.context?.attrs as any)?.max, mask.value))
 
 function optionsFn(date: string): boolean {
-  const current = toComparableNumber(date)
+  const current = toComparableNumber(date, 'YYYY/MM/DD')
   if (current == null) return true
   if (minDateNum.value != null && current < minDateNum.value) return false
   if (maxDateNum.value != null && current > maxDateNum.value) return false
   return true
 }
-
-const rangeError = ref('')
-
-function validateAndMaybeClamp({ inputValue, clamp, rawMin, rawMax }: RangeValidationParams) {
-  rangeError.value = ''
-  const current = toComparableNumber(inputValue || '')
-  if (current == null) return
-
-  const effectiveRawMin = rawMin ?? ((props.context?.attrs as any)?.min as string | undefined)
-  const effectiveRawMax = rawMax ?? ((props.context?.attrs as any)?.max as string | undefined)
-
-  if (minDateNum.value != null && current < minDateNum.value) {
-    if (!(clamp && effectiveRawMin)) {
-      rangeError.value = 'Data menor que a mínima permitida'
-      return
-    }
-    props.context?.node.input(effectiveRawMin)
-    rangeError.value = ''
-    return
-  }
-
-  if (maxDateNum.value != null && current > maxDateNum.value) {
-    if (!(clamp && effectiveRawMax)) {
-      rangeError.value = 'Data maior que a máxima permitida'
-      return
-    }
-    props.context?.node.input(effectiveRawMax)
-    rangeError.value = ''
-    return
-  }
-}
-
-function handleInputUpdate(val: any) {
-  props.context?.node.input(val)
-  validateAndMaybeClamp({ inputValue: val, clamp: false })
-}
-
-function handleBlur() {
-  checkForErrorMessages()
-  validateAndMaybeClamp({ inputValue: props.context?.value as any, clamp: true })
-}
 </script>
 
 <template>
-  <q-input filled :model-value="context.value" :error-message="rangeError || getMessages"
-    :error="hasError || Boolean(rangeError)" :label="context.label" :hint="context.attrs.description" :dense="context.attrs.dense"
-    @update:model-value="handleInputUpdate" @blur="handleBlur" :mask="formatedMask" :rules="[(val) => !!val || true]"
-    hide-bottom-space>
+  <q-input filled :model-value="displayValue" :error-message="getMessages"
+    :error="hasError" :label="context.label" :hint="context.attrs.description" :dense="context.attrs.dense"
+    readonly inputmode="none" :rules="[(val) => !!val || true]" hide-bottom-space>
     <template #append>
       <q-icon name="event" class="cursor-pointer">
         <q-popup-proxy cover transition-show="scale" transition-hide="scale">
