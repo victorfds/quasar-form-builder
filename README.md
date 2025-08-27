@@ -71,3 +71,8 @@ pnpm preview
 ```
 
 Checkout the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## Form Builder Overlay
+
+- The Builder overlay UI is a reusable component: `app/components/builder/FieldOverlay.vue`.
+- It centralizes selection, hover, copy, remove, drop indicators, and resizing for fields.
