@@ -45,11 +45,25 @@ function toComparableNumber(dateStr?: string | null, maskStr?: string | null): n
 const minDateNum = computed(() => toComparableNumber((props.context?.attrs as any)?.min, mask.value))
 const maxDateNum = computed(() => toComparableNumber((props.context?.attrs as any)?.max, mask.value))
 
+const disabledDatesSet = computed(() => {
+  const raw = (props.context?.attrs as any)?.disabledDates as unknown
+  const arr = Array.isArray(raw)
+    ? raw as string[]
+    : (typeof raw === 'string' ? String(raw).split(',').map(s => s.trim()).filter(Boolean) : [])
+  const set = new Set<number>()
+  for (const d of arr) {
+    const n = toComparableNumber(d, mask.value)
+    if (n != null) set.add(n)
+  }
+  return set
+})
+
 function optionsFn(date: string): boolean {
   const current = toComparableNumber(date, 'YYYY/MM/DD')
   if (current == null) return true
   if (minDateNum.value != null && current < minDateNum.value) return false
   if (maxDateNum.value != null && current > maxDateNum.value) return false
+  if (disabledDatesSet.value.size && current != null && disabledDatesSet.value.has(current)) return false
   return true
 }
 </script>
