@@ -25,6 +25,10 @@ export function useValidationMessages(node: FormKitNode) {
     if (name === 'message-added') {
       if (type === 'validation') {
         messages.value.push(value)
+        // Only show error after touch/blur or submit-invalid marks nodes as touched
+        if ((node as any)?.store?.touched?.value) {
+          hasError.value = true
+        }
       }
     }
     if (name === 'message-removed') {
@@ -40,6 +44,9 @@ export function useValidationMessages(node: FormKitNode) {
         const msgIdx = messages.value.findIndex(m => m === value)
         if (msgIdx === -1) {
           messages.value.push(value)
+        }
+        if ((node as any)?.store?.touched?.value) {
+          hasError.value = true
         }
       }
     }

@@ -8,12 +8,17 @@ const defaultDate = `${new Date().toLocaleDateString()}`
 
 const { dark } = useQuasar()
 const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(props.context?.node)
+const errorActive = computed(() =>
+  hasError.value
+  || (props.context?.state?.submitted && props.context?.state?.valid === false)
+  || (props.context?.state?.touched && props.context?.state?.valid === false)
+)
 </script>
 
 <template>
   <q-input
     filled :model-value="context.value || defaultDate" v-bind="context.attrs" :error-message="getMessages" color="cyan-8"
-    :error="hasError" :hint="context.help" inputmode="none" @update:model-value="(val) => context?.node.input(val)"
+    :error="errorActive" :hint="context.help" inputmode="none" @update:model-value="(val) => context?.node.input(val)"
     @blur="checkForErrorMessages"
     @keydown.stop.prevent @keypress.stop.prevent @beforeinput.stop.prevent @paste.stop.prevent @drop.stop.prevent @cut.stop.prevent
   >

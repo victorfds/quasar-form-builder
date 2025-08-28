@@ -5,7 +5,12 @@ import type { QInputProps } from 'quasar'
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QInputProps } }>()
 
 const { dark } = useQuasar()
-const { hasError, getMessages } = useValidationMessages(props.context?.node)
+const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(props.context?.node)
+const errorActive = computed(() =>
+  hasError.value
+  || (props.context?.state?.submitted && props.context?.state?.valid === false)
+  || (props.context?.state?.touched && props.context?.state?.valid === false)
+)
 
 const mask = computed(() => (props.context?.attrs as any)?.mask || 'DD/MM/YYYY')
 const displayValue = computed(() => String(props.context?.value  || ''))
@@ -70,8 +75,9 @@ function optionsFn(date: string): boolean {
 
 <template>
   <q-input filled :model-value="displayValue" :error-message="getMessages" color="cyan-8"
-    :error="hasError" :label="context.label" :hint="context.attrs.description" :dense="context.attrs.dense"
+    :error="errorActive" :label="context.label" :hint="context.attrs.description" :dense="context.attrs.dense"
     inputmode="none" :rules="[(val) => !!val || true]" hide-bottom-space :placeholder="context.attrs.placeholder"
+    @blur="checkForErrorMessages"
     @keydown.stop.prevent @keypress.stop.prevent @beforeinput.stop.prevent @paste.stop.prevent @drop.stop.prevent @cut.stop.prevent>
     <template  #append >
       <q-icon name="event" class="cursor-pointer" :color="dark.isActive ? 'grey-5' : 'blue-grey-5'">

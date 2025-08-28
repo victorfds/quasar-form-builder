@@ -35,6 +35,24 @@ function onSubmit(data: any, node: FormKitNode) {
   // The node has a builtin function that can be used called node.submit()
 }
 
+function onSubmitInvalid(node: FormKitNode) {
+  // Mark all inputs as touched so FormKit shows validation messages
+  node.walk((n) => {
+    // Only mark real input nodes (skip the form node itself)
+    if (n.type !== 'input') return
+    n.store.set({
+      visible: true,
+      type: 'error',
+      key: 'required',
+      blocking: true,
+      meta: {
+        touched: true
+      }
+    })
+  })
+}
+
+
 function saveDraft() {
   emit('onSaveDraft', values)
 }
@@ -47,7 +65,12 @@ defineExpose({ saveDraft, values })
 
 <template>
   <article>
-    <FormKit type="form" :model-value="values" @update:model-value="updateValues" :actions="false" @submit="onSubmit">
+    <FormKit type="form" :model-value="values"
+             @update:model-value="updateValues"
+             :actions="false"
+             validation-visibility="submit"
+             @submit="onSubmit"
+             @submit-invalid="onSubmitInvalid">
       <div class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter">
         <div v-for="(field, index) in renderFields" :key="field.name || index" class="form-field" :class="[
           field.columns ? `span-${getContainerSpan(field)}` : 'span-12',
@@ -58,7 +81,7 @@ defineExpose({ saveDraft, values })
             <FormKitSchema :schema="field" :data="data" />
           </WithLabelAndDescription>
 
-          <FormKitSchema v-else :schema="field" :data="data" :readonly="readonly" />
+          <FormKitSchema v-else :schema="field" :data="data" :readonly="props.readonly" />
         </div>
       </div>
     </FormKit>
@@ -94,5 +117,16 @@ defineExpose({ saveDraft, values })
   .span-#{$i} {
     grid-column: span $i / span $i;
   }
+}
+
+/* When inputs are invalid (after being touched or submit), make the control more evident */
+.formkit-outer[data-invalid="true"] .q-field__control {
+  box-shadow: 0 0 0 1px #e53935 inset;
+}
+
+/* Show asterisk only when invalid is visible (blurred or after submit) */
+.formkit-outer[data-invalid="true"] .q-field__label::after {
+  content: ' *';
+  color: #e53935;
 }
 </style>
