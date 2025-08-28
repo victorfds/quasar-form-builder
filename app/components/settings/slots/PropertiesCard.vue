@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { fieldTypes } from "../../../constants"
-import { getTypesBasedOnFieldType } from "../../../utils"
+import { fieldTypes } from "~/constants"
 
 defineProps<{ hasInputType?: boolean, hasTooltip?: boolean, hasPlaceholder?: boolean, hasDescription?: boolean }>()
 

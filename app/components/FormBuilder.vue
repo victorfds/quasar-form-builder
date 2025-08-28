@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
 import { clearErrors, reset } from '@formkit/vue'
-
-import type { ColumnsType } from '../types'
-import FieldOverlay from './builder/FieldOverlay.vue'
+import { empty, eq } from '@formkit/utils'
+import type { ColumnsType } from '~/types'
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string
@@ -94,7 +93,7 @@ watch(() => formStore.formSettings.previewMode, () => {
   clearErrors('myForm', true)
 })
 
-const { data } = useFormKitData(formStore.values)
+const data = computed(() => ({ ...formStore.values,  empty, eq, contains  }))
 
 function onSubmit(data: any, node: FormKitNode) {
   console.log(data)
@@ -144,7 +143,7 @@ const builderFields = computed(() => formStore.getFields as unknown as ViewerFie
 
                   <FormKitSchema v-else :schema="field" :data="data" />
 
-                  <FieldOverlay
+                  <BuilderFieldOverlay
                     :field="field"
                     :index="index"
                     :state="{

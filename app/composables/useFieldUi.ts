@@ -1,4 +1,4 @@
-import type { ColumnsType } from '../types'
+import type { ColumnsType } from '~/types'
 
 export type BuilderField = {
   name?: string
@@ -33,5 +33,4 @@ export function useFieldUi() {
 
   return { getSpanClass, getAlignClass }
 }
-
 

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition } from "@formkit/core"
-import type { ColumnsType } from "../types"
-import { useFormKitData } from "../composables/useFormKitData"
-import { useFieldLayout } from "../composables/useFieldLayout"
+import { empty, eq } from '@formkit/utils'
+import type { ColumnsType } from "~/types"
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string
@@ -18,10 +17,9 @@ const props = defineProps<{ formFields: FormKitSchemaDefinition[], resposta?: an
 const emit = defineEmits<{
   (e: 'submit', data: any): void
   (e: 'on:update-values', data: any): void
-  (e: 'onSaveDraft', values: any): void
 }>()
 const values = reactive(props.resposta || {})
-const { data } = useFormKitData(values)
+const data = computed(() => ({ ...values,  empty, eq, contains  }))
 
 function updateValues(newValues: any) {
   if (props.readonly) return
@@ -52,15 +50,8 @@ function onSubmitInvalid(node: FormKitNode) {
   })
 }
 
-
-function saveDraft() {
-  emit('onSaveDraft', values)
-}
-
 const renderFields = computed(() => (props.formFields || []) as unknown as ViewerField[])
 const { getContainerSpan, getAlignClass } = useFieldLayout()
-
-defineExpose({ saveDraft, values })
 </script>
 
 <template>

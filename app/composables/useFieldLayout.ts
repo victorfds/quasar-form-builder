@@ -1,4 +1,4 @@
-import type { ColumnsType } from '../types'
+import type { ColumnsType } from '~/types'
 
 type HasColumns = { columns?: ColumnsType & Record<string, any> }
 type HasAlign = { align?: 'left' | 'center' | 'right' }
@@ -26,5 +26,4 @@ export function useFieldLayout() {
 
   return { getContainerSpan, getAlignClass }
 }
-
 
