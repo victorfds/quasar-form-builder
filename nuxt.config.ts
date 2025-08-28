@@ -2,9 +2,6 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false,
-  future: {
-    compatibilityVersion: 4,
-  },
   modules: [
     'nuxt-quasar-ui',
     '@pinia/nuxt',
