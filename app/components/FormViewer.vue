@@ -19,7 +19,17 @@ const emit = defineEmits<{
   (e: 'on:update-values', data: any): void
 }>()
 const values = reactive(props.resposta || {})
-const data = computed(() => ({ ...values,  empty, eq, contains  }))
+const data = computed(() => ({
+  ...values, 
+  empty,
+  eq,
+  contains,
+  isToday,
+  isTomorrow,
+  isYesterday,
+  isDayAfterTomorrow,
+  isDayBeforeYesterday,
+}))
 
 function updateValues(newValues: any) {
   if (props.readonly) return
@@ -56,12 +66,8 @@ const { getContainerSpan, getAlignClass } = useFieldLayout()
 
 <template>
   <article>
-    <FormKit type="form" :model-value="values"
-             @update:model-value="updateValues"
-             :actions="false"
-             validation-visibility="submit"
-             @submit="onSubmit"
-             @submit-invalid="onSubmitInvalid">
+    <FormKit type="form" :model-value="values" @update:model-value="updateValues" :actions="false"
+      validation-visibility="submit" @submit="onSubmit" @submit-invalid="onSubmitInvalid">
       <div class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter">
         <div v-for="(field, index) in renderFields" :key="field.name || index" class="form-field" :class="[
           field.columns ? `span-${getContainerSpan(field)}` : 'span-12',

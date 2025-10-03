@@ -11,6 +11,12 @@ export function transformOperatorValue(operatorValue: string): string {
     lessThan: '<',
     lessOrEqualsThan: '<=',
     contains: '$contains',
+    // Date-specific operators (function-like)
+    isToday: '$isToday',
+    isTomorrow: '$isTomorrow',
+    isYesterday: '$isYesterday',
+    isDayAfterTomorrow: '$isDayAfterTomorrow',
+    isDayBeforeYesterday: '$isDayBeforeYesterday',
     isTrue: '== true',
     isFalse: '== false',
   }
@@ -29,6 +35,12 @@ export function reverseOperatorValue(symbol?: string): string {
     '<': 'lessThan',
     '<=': 'lessOrEqualsThan',
     '$contains': 'contains',
+    // Date-specific operators (function-like)
+    '$isToday': 'isToday',
+    '$isTomorrow': 'isTomorrow',
+    '$isYesterday': 'isYesterday',
+    '$isDayAfterTomorrow': 'isDayAfterTomorrow',
+    '$isDayBeforeYesterday': 'isDayBeforeYesterday',
     '== true': 'isTrue',
     '== false': 'isFalse'
   }
@@ -47,6 +59,11 @@ export function processSingleCondition(condition: LogicField, orData: string[]):
 
   if (['$contains'].includes(operator)) {
     return `${operator}($${name},${value})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+  }
+
+  // Handle generic function-like operators (e.g., $isToday, $isTomorrow, etc.)
+  if (operator.startsWith('$')) {
+    return `${operator}($${name})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
   }
 
   if (['== true', '== false'].includes(operator)) {
@@ -71,6 +88,11 @@ export function processConditions(conditions: LogicField[]): string[] {
 
     if (['$contains'].includes(operator)) {
       return `${operator}($${name},${value})`
+    }
+
+    // Generic function-like operator
+    if (operator.startsWith('$')) {
+      return `${operator}($${name})`
     }
 
     if (['== true', '== false'].includes(operator)) {
@@ -154,8 +176,8 @@ export function parseLogic(logicString?: string): LogicField[] {
 }
 
 export function parseCondition(conditionString: string): LogicField {
-  // Match operators like $empty(name), !$empty(name), $contains(name, value)
-  const functionMatch = conditionString.match(/^(!?\$empty|\$contains)\((.*?)\)$/)
+  // Match function-like operators: $empty(name), !$empty(name), $contains(name,value), $isToday(name), ...
+  const functionMatch = conditionString.match(/^(!?\$[a-zA-Z][\w]*)\((.*?)\)$/)
   if (functionMatch) {
     const operator = reverseOperatorValue(functionMatch[1])
 
@@ -171,6 +193,7 @@ export function parseCondition(conditionString: string): LogicField {
       }
     }
 
+    // Generic 1-argument function operators (date ops, $empty, etc.)
     return {
       operator: operator,
       name: functionMatch[2]?.replace('$', '') || '',

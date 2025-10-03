@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { LogicField } from '~/types'
-import { operators, htmlTypes } from '~/constants'
-import { checkboxOperators } from '~/constants'
+import { operators, htmlTypes, checkboxOperators, dateOperators } from '~/constants'
 
 const props = defineProps<{ noConditionsMessage?: string, conditionsDialogSubtitle?: string, saveTo?: 'if' | 'validation' | 'disable' | 'readonly' }>()
 
@@ -10,10 +9,8 @@ const { dark } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp, getFieldByName } = formStore
 
-const elementStates = reactive<{
-  logicFields: LogicField[]
-}>({
-  logicFields: parseLogic(props.saveTo === 'validation' ? formStore.activeField?.validation?.if : props.saveTo === 'disable' ? formStore.activeField?.disable?.if : formStore.activeField?.if)
+const elementStates = reactive<{ logicFields: LogicField[] }>({
+  logicFields: parseLogic(getSavedLogicString()),
 })
 
 const conditionDialog = ref<boolean>(false)
@@ -31,8 +28,8 @@ const getFieldList = computed(() => {
 function toggleConditionDialog() {
   conditionDialog.value = !conditionDialog.value
   if (conditionDialog.value) {
-    // If it is true parseLogic again
-    elementStates.logicFields = parseLogic(props.saveTo === 'validation' ? formStore.activeField?.validation?.if : props.saveTo === 'disable' ? formStore.activeField?.disable?.if : formStore.activeField?.if)
+    // Re-parse saved logic when opening
+    elementStates.logicFields = parseLogic(getSavedLogicString())
   }
 }
 
@@ -61,10 +58,74 @@ function getOperators(field: LogicField) {
   if (!originalField) return []
 
   if (originalField?.$formkit && originalField.$formkit === 'q-checkbox') return checkboxOperators
+  if (['q-date', 'q-date-multiple', 'q-date-range', 'q-datetime'].includes(originalField?.$formkit as string)) return dateOperators
 
   if (field.name) return operators
 
   return []
+}
+
+// Helpers to simplify template logic
+const DATE_OP_VALUES = new Set(dateOperators.map(o => o.value))
+
+function needsValue(operator?: string): boolean {
+  if (!operator) return false
+  if (operator === 'isTrue' || operator === 'isFalse') return false
+  if (operator === 'empty' || operator === 'notEmpty') return false
+  if (DATE_OP_VALUES.has(operator)) return false
+  return true
+}
+
+// Higher-level helpers to simplify template conditions
+function getSavedLogicString(): string {
+  const active: any = formStore.activeField
+  if (!active) return ''
+  if (props.saveTo === 'validation') return active?.validation?.if || ''
+  if (props.saveTo === 'disable') return active?.disable?.if || ''
+  return active?.if || ''
+}
+
+function hasSavedLogic(): boolean {
+  return Boolean(getSavedLogicString())
+}
+
+function shouldShowNoConditionsSummary(): boolean {
+  return !hasSavedLogic()
+}
+
+function isEqualsOrNotEquals(op?: string): boolean {
+  return op === 'equals' || op === 'notEquals'
+}
+
+function hasOptionsFor(fieldName?: string): boolean {
+  return !!(fieldName && (getOptionsBasedOnField(fieldName) as any)?.length)
+}
+
+function showOptionsSelect(field: LogicField): boolean {
+  return Boolean(field.name && needsValue(field.operator) && isEqualsOrNotEquals(field.operator) && hasOptionsFor(field.name))
+}
+
+function showTagsInput(field: LogicField): boolean {
+  return Boolean(field.name && needsValue(field.operator) && isEqualsOrNotEquals(field.operator) && !hasOptionsFor(field.name))
+}
+
+function showValueInput(field: LogicField): boolean {
+  return Boolean(field.name && needsValue(field.operator) && !isEqualsOrNotEquals(field.operator))
+}
+
+function columnClass(field: LogicField): string {
+  return field.name && needsValue(field.operator) ? 'two-columns' : 'one-column'
+}
+
+function shouldShowDialogEmptyState(): boolean {
+  if (props.saveTo === 'if') return false
+  const active: any = formStore.activeField
+  const hasGlobalIf = Boolean(active?.if)
+  return !hasSavedLogic() && !hasGlobalIf && !showConditionsForm.value
+}
+
+function hasSubtitle(): boolean {
+  return Boolean(props.conditionsDialogSubtitle)
 }
 </script>
 <template>
@@ -72,17 +133,12 @@ function getOperators(field: LogicField) {
     <q-card-section>
       <div class="row align-center items-center justify-between q-pa-sm rounded-borders"
         :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
-        <div
-          v-if="saveTo === 'validation' ?
-            !formStore.activeField?.validation?.if : saveTo === 'disable' ? !formStore.activeField?.disable?.if : !formStore.activeField?.if"
-          class="text-body2">
+        <div v-if="shouldShowNoConditionsSummary()" class="text-body2">
           {{ noConditionsMessage || 'Este elemento não contém condições' }}
         </div>
         <div v-else class="text-body2">
           <code>
-            {{ generateHumanReadableText(parseLogic(saveTo === 'validation' ?
-              formStore.activeField?.validation?.if : saveTo === 'disable' ? formStore.activeField?.disable?.if :
-                formStore.activeField?.if), [...operators, ...checkboxOperators]) }}
+            {{ generateHumanReadableText(parseLogic(getSavedLogicString()), [...operators, ...checkboxOperators, ...dateOperators]) }}
           </code>
         </div>
         <q-btn no-caps label="Editar" color="primary" dense @click="toggleConditionDialog" />
@@ -95,7 +151,7 @@ function getOperators(field: LogicField) {
       <q-card-section class="row items-center" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
         <div>
           <h5 class="text-weight-semibold no-margin">Condições</h5>
-          <h6 v-if="conditionsDialogSubtitle" class="text-subtitle1 no-margin"
+          <h6 v-if="hasSubtitle()" class="text-subtitle1 no-margin"
             :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'">
             {{ conditionsDialogSubtitle }}
           </h6>
@@ -108,9 +164,7 @@ function getOperators(field: LogicField) {
       </q-card-section>
 
       <q-card-section>
-        <div
-          v-if="saveTo !== 'if' && !formStore.activeField?.[saveTo]?.if && !formStore.activeField?.if && !showConditionsForm"
-          class="column align-center content-center justify-center text-center q-py-xl">
+        <div v-if="shouldShowDialogEmptyState()" class="column align-center content-center justify-center text-center q-py-xl">
           <div class="text-body2 text-weight-semibold">
             Sem condições
           </div>
@@ -128,8 +182,7 @@ function getOperators(field: LogicField) {
                   field.values = []
                 }" />
 
-              <div
-                :class="field.name && field.operator && !field.operator?.includes('isTrue') && !field.operator?.includes('isFalse') && !field.operator?.includes('empty') && !field.operator?.includes('notEmpty') ? 'two-columns' : 'one-column'">
+              <div :class="columnClass(field)">
                 <q-select :options="getOperators(field)" v-model="field.operator" filled emit-value map-options>
                   <template v-slot:no-option>
                     <q-item>
@@ -140,8 +193,7 @@ function getOperators(field: LogicField) {
                   </template>
                 </q-select>
 
-                <q-select
-                  v-if="field.name && field.operator && (field.operator === 'equals' || field.operator === 'notEquals') && getOptionsBasedOnField(field.name)?.length"
+                <q-select v-if="showOptionsSelect(field)"
                   :options="getOptionsBasedOnField(field.name)" multiple v-model="field.values" filled label="valor"
                   map-options emit-value>
                   <template v-slot:no-option>
@@ -152,8 +204,7 @@ function getOperators(field: LogicField) {
                     </q-item>
                   </template>
                 </q-select>
-                <q-input
-                  v-if="field.name && field.operator && !field.operator?.includes('isTrue') && !field.operator?.includes('isFalse') && !field.operator?.includes('empty') && !field.operator?.includes('notEmpty') && !getOptionsBasedOnField(field.name)?.length && (field.operator === 'equals' || field.operator === 'notEquals')"
+                <q-input v-if="showTagsInput(field)"
                   v-model="field.value" filled @keyup.enter="function addTag() {
                     const value = field.value.trim()
                     if (value && !field.values.includes(value)) {
@@ -179,9 +230,7 @@ function getOperators(field: LogicField) {
                   </template>
                 </q-input>
 
-                <q-input
-                  v-if="field.name && field.operator && !field.operator?.includes('isTrue') && !field.operator?.includes('isFalse') && !field.operator?.includes('empty') && !field.operator?.includes('notEmpty') && field.operator !== 'equals' && field.operator !== 'notEquals'"
-                  v-model="field.value" filled />
+                <q-input v-if="showValueInput(field)" v-model="field.value" filled />
               </div>
             </div>
 
@@ -192,9 +241,8 @@ function getOperators(field: LogicField) {
                     fieldOr.values = []
                   }" />
 
-                <div
-                  :class="fieldOr.name && fieldOr.operator && !fieldOr.operator?.includes('isTrue') && !fieldOr.operator?.includes('isFalse') && !fieldOr.operator?.includes('empty') && !fieldOr.operator?.includes('notEmpty') ? 'two-columns' : 'one-column'">
-                  <q-select :options="getOperators(field)" v-model="fieldOr.operator" filled emit-value map-options>
+                <div :class="columnClass(fieldOr)">
+                  <q-select :options="getOperators(fieldOr)" v-model="fieldOr.operator" filled emit-value map-options>
                     <template v-slot:no-option>
                       <q-item>
                         <q-item-section class="text-grey">
@@ -204,8 +252,7 @@ function getOperators(field: LogicField) {
                     </template>
                   </q-select>
 
-                  <q-select
-                    v-if="fieldOr.name && fieldOr.operator && (fieldOr.operator === 'equals' || fieldOr.operator === 'notEquals') && getOptionsBasedOnField(field.name)?.length"
+                  <q-select v-if="showOptionsSelect(fieldOr)"
                     :options="getOptionsBasedOnField(fieldOr.name)" multiple v-model="fieldOr.values" filled
                     label="valor" map-options emit-value>
                     <template v-slot:no-option>
@@ -216,9 +263,7 @@ function getOperators(field: LogicField) {
                       </q-item>
                     </template>
                   </q-select>
-                  <q-input
-                    v-if="fieldOr.name && fieldOr.operator && !fieldOr.operator?.includes('isTrue') && !fieldOr.operator?.includes('isFalse') && !fieldOr.operator?.includes('empty') && !fieldOr.operator?.includes('notEmpty') && !getOptionsBasedOnField(fieldOr.name)?.length && (fieldOr.operator === 'equals' || fieldOr.operator === 'notEquals')"
-                    v-model="fieldOr.value" filled @keyup.enter="function addTag() {
+                  <q-input v-if="showTagsInput(fieldOr)" v-model="fieldOr.value" filled @keyup.enter="function addTag() {
                       const value = fieldOr.value.trim()
                       if (value && !fieldOr.values.includes(value)) {
                         fieldOr.values.push(value)
@@ -243,16 +288,16 @@ function getOperators(field: LogicField) {
                     </template>
                   </q-input>
 
-                  <q-input
-                    v-if="fieldOr.name && fieldOr.operator && !fieldOr.operator?.includes('isTrue') && !fieldOr.operator?.includes('isFalse') && !fieldOr.operator?.includes('empty') && !fieldOr.operator?.includes('notEmpty') && fieldOr.operator !== 'equals' && fieldOr.operator !== 'notEquals'"
-                    v-model="fieldOr.value" filled />
+                  <q-input v-if="showValueInput(fieldOr)" v-model="fieldOr.value" filled />
                 </div>
               </div>
 
 
             </div>
-            <q-btn color="primary" label="Ou" no-caps class="q-mt-md"
-              @click="elementStates.logicFields[index]?.or?.push({ name: '', operator: '', value: '', values: [], or: null })" />
+            <q-btn color="primary" label="Ou" no-caps class="q-mt-md" @click="() => {
+              elementStates.logicFields[index].or = elementStates.logicFields[index].or || []
+              elementStates.logicFields[index].or!.push({ name: '', operator: '', value: '', values: [], or: [] })
+            }" />
 
           </div>
           <q-btn color="primary" label="E" class="q-mt-md"

@@ -18,6 +18,16 @@ export const checkboxOperators = [
 
 ]
 
+export const dateOperators = [
+  { value: 'empty', label: 'está vazio' },
+  { value: 'notEmpty', label: 'não está vazio' },
+  { value: 'isToday', label: 'é hoje' },
+  { value: 'isTomorrow', label: 'é amanhã' },
+  { value: 'isYesterday', label: 'é ontem' },
+  { value: 'isDayAfterTomorrow', label: 'é depois de amanhã' },
+  { value: 'isDayBeforeYesterday', label: 'é anteontem' },
+]
+
 export const fieldTypes = {
   'q-input': [
     { label: 'texto', value: 'text' },

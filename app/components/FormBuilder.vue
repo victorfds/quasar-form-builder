@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
-import { clearErrors, reset } from '@formkit/vue'
 import { empty, eq } from '@formkit/utils'
+import { clearErrors, reset } from '@formkit/vue'
 import type { ColumnsType } from '~/types'
 
 type ViewerField = FormKitSchemaDefinition & {
@@ -93,7 +93,17 @@ watch(() => formStore.formSettings.previewMode, () => {
   clearErrors('myForm', true)
 })
 
-const data = computed(() => ({ ...formStore.values,  empty, eq, contains  }))
+const data = computed(() => ({
+  ...formStore.values,
+  empty,
+  eq,
+  contains,
+  isToday,
+  isTomorrow,
+  isYesterday,
+  isDayAfterTomorrow,
+  isDayBeforeYesterday,
+}))
 
 function onSubmit(data: any, node: FormKitNode) {
   console.log(data)
