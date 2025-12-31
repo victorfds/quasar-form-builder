@@ -60,9 +60,12 @@ export function useFormBuilderDnd(formStore: any) {
   }
 
   function onDragEnterInDropArea(_e: DragEvent, fieldName: string | undefined, index: number) {
+    const isSameIndex = dragInIndicator.value.index === index
     dragInIndicator.value.index = index
-    dragInIndicator.value.name = fieldName
     indexPointer.value = index
+    if (!isSameIndex || !dragInIndicator.value.name) {
+      dragInIndicator.value.name = fieldName
+    }
   }
 
   function onDragOverDropArea(_e: DragEvent) {
@@ -189,5 +192,4 @@ export function useFormBuilderDnd(formStore: any) {
     stopResize,
   }
 }
-
 
