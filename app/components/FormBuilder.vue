@@ -58,19 +58,11 @@ const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
 const offset = useState('offset')
 
 // unsubscribe from listeners
-let stopListening: (() => void) | undefined
-let stopActiveFieldListener: (() => void) | undefined
+let stopFormAreaClick: (() => void) | undefined
 
 function clearActiveField() {
   activeNameFields.value.active = []
   formStore.setActiveField(null)
-}
-
-function isClickInsideIgnoredArea(ev: MouseEvent) {
-  return ev.composedPath().some((node) => {
-    if (!(node instanceof HTMLElement)) return false
-    return Boolean(node.dataset.drawer || node.dataset.keepActive)
-  })
 }
 
 function isClickInsideActiveField(ev: MouseEvent, activeName?: string | null) {
@@ -81,8 +73,7 @@ function isClickInsideActiveField(ev: MouseEvent, activeName?: string | null) {
   })
 }
 
-function handleDocumentClick(ev: MouseEvent) {
-  if (isClickInsideIgnoredArea(ev)) return
+function handleFormAreaClick(ev: MouseEvent) {
   const activeName = formStore.activeField?.name
   if (!activeName) return
   if (isClickInsideActiveField(ev, activeName)) return
@@ -95,11 +86,7 @@ onBeforeUnmount(() => {
 })
 
 onMounted(() => {
-  stopListening = useClickOutside(document, formDroppableRef, (ev) => {
-    if (isClickInsideIgnoredArea(ev)) return
-    clearActiveField()
-  })
-  stopActiveFieldListener = useEventListener(document, 'click', handleDocumentClick, { capture: true })
+  stopFormAreaClick = useEventListener(previewFormSectionRef, 'click', handleFormAreaClick, { capture: true })
 
   useEventOutside(previewFormSectionRef, formDroppableRef, 'dragover', () => {
     indexPointer.value = null
@@ -108,10 +95,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (stopListening)
-    stopListening()
-  if (stopActiveFieldListener)
-    stopActiveFieldListener()
+  if (stopFormAreaClick)
+    stopFormAreaClick()
 })
 
 watch(() => formStore.activeField, (newVal) => {
