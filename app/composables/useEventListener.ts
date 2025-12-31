@@ -20,26 +20,27 @@
  * });
  * ```
  */
+type EventTargetRef = Ref<EventTarget | null> | EventTarget | null
+
 export function useEventListener<
-  T extends Ref<HTMLElement | null>,
-  E extends keyof HTMLElementEventMap,
-  Fn extends (e: HTMLElementEventMap[E]) => void,
+  E extends keyof GlobalEventHandlersEventMap,
+  Fn extends (e: GlobalEventHandlersEventMap[E]) => void,
 >(
-  target: T,
+  target: EventTargetRef,
   eventType: E,
   handler: Fn,
   options?: boolean | AddEventListenerOptions,
 ): () => void {
   const element = unref(target)
 
-  const eventHandler = (e: HTMLElementEventMap[E]) => {
+  const eventHandler = (e: GlobalEventHandlersEventMap[E]) => {
     handler(e)
   }
 
-  element?.addEventListener(eventType, eventHandler, options)
+  element?.addEventListener(eventType, eventHandler as EventListener, options)
 
   const stop = () => {
-    element?.removeEventListener(eventType, eventHandler, options)
+    element?.removeEventListener(eventType, eventHandler as EventListener, options)
   }
 
   return stop

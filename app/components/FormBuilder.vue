@@ -16,6 +16,7 @@ type ViewerField = FormKitSchemaDefinition & {
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
+const fieldUi = useFieldUi()
 
 const {
   // refs
@@ -56,8 +57,37 @@ const {
 const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
 const offset = useState('offset')
 
-// unsubscribe from listener
-let stopListening: () => void
+// unsubscribe from listeners
+let stopListening: (() => void) | undefined
+let stopActiveFieldListener: (() => void) | undefined
+
+function clearActiveField() {
+  activeNameFields.value.active = []
+  formStore.setActiveField(null)
+}
+
+function isClickInsideIgnoredArea(ev: MouseEvent) {
+  return ev.composedPath().some((node) => {
+    if (!(node instanceof HTMLElement)) return false
+    return Boolean(node.dataset.drawer || node.dataset.keepActive)
+  })
+}
+
+function isClickInsideActiveField(ev: MouseEvent, activeName?: string | null) {
+  if (!activeName) return false
+  return ev.composedPath().some((node) => {
+    if (!(node instanceof HTMLElement)) return false
+    return node.dataset?.fieldName === activeName
+  })
+}
+
+function handleDocumentClick(ev: MouseEvent) {
+  if (isClickInsideIgnoredArea(ev)) return
+  const activeName = formStore.activeField?.name
+  if (!activeName) return
+  if (isClickInsideActiveField(ev, activeName)) return
+  clearActiveField()
+}
 
 onBeforeUnmount(() => {
   document.removeEventListener('mousemove', throttleResize)
@@ -65,10 +95,11 @@ onBeforeUnmount(() => {
 })
 
 onMounted(() => {
-  stopListening = useClickOutside(previewFormSectionRef, formDroppableRef, () => {
-    activeNameFields.value.active = []
-    formStore.setActiveField(null)
+  stopListening = useClickOutside(document, formDroppableRef, (ev) => {
+    if (isClickInsideIgnoredArea(ev)) return
+    clearActiveField()
   })
+  stopActiveFieldListener = useEventListener(document, 'click', handleDocumentClick, { capture: true })
 
   useEventOutside(previewFormSectionRef, formDroppableRef, 'dragover', () => {
     indexPointer.value = null
@@ -79,6 +110,8 @@ onMounted(() => {
 onUnmounted(() => {
   if (stopListening)
     stopListening()
+  if (stopActiveFieldListener)
+    stopActiveFieldListener()
 })
 
 watch(() => formStore.activeField, (newVal) => {
@@ -110,7 +143,20 @@ function onSubmit(data: any, node: FormKitNode) {
   reset(node, {})
 }
 
+const isPreviewEditing = computed(() => formStore.formSettings.previewMode === 'editing')
 const builderFields = computed(() => formStore.getFields as unknown as ViewerField[])
+
+function hasCondition(field: ViewerField) {
+  return Object.keys(field).some(key => key.includes('hasCondition'))
+}
+
+function getFieldClasses(field: ViewerField) {
+  return [
+    fieldUi.getSpanClass(field as any, formStore.formSettings.columns),
+    fieldUi.getAlignClass(field as any),
+    hasCondition(field) && isPreviewEditing.value ? 'opacity-50' : '',
+  ]
+}
 
 </script>
 
@@ -127,23 +173,19 @@ const builderFields = computed(() => formStore.getFields as unknown as ViewerFie
           <q-card-section class="my-form-wrapper no-padding">
             <FormKit id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="false"
               @submit="onSubmit">
-              <div ref="formDroppableRef"
-                class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
-                @drop.prevent="onDrop" @dragover.prevent="handleDragover">
-                <!-- No elements display message -->
-                <div v-if="!formStore.formFields.length"
-                  class="overlay-drop-here row items-center justify-center rounded-borders span-12"
-                  :class="{ 'bg-green-8': !formStore.formFields.length && highlightDropArea }"
-                  @dragenter.prevent="onDragEnterFormSectionArea" @dragleave.prevent="onDragLeaveFormSectionArea">
-                  Arraste e solte aqui os elementos
-                  da coluna esquerda
-                </div>
-
-                <div v-for="(field, index) in builderFields" :key="field?.name || index" class="form-field" :class="[
-                  useFieldUi().getSpanClass(field as any, formStore.formSettings.columns),
-                  useFieldUi().getAlignClass(field as any),
-                  (Object.keys(field).some(objKey => objKey.includes('hasCondition')) && formStore.formSettings.previewMode === 'editing') ? 'opacity-50' : ''
-                ]" @mouseover.prevent="onMouseOverAtFormElement(field)"
+              <FormCanvas
+                v-model:root-ref="formDroppableRef"
+                droppable
+                :empty="!formStore.formFields.length"
+                :highlight-empty="highlightDropArea"
+                @drop="onDrop"
+                @dragover="handleDragover"
+                @dragenter="onDragEnterFormSectionArea"
+                @dragleave="onDragLeaveFormSectionArea"
+              >
+                <div v-for="(field, index) in builderFields" :key="field?.name || index" class="form-field"
+                  :data-field-name="field?.name"
+                  :class="getFieldClasses(field)" @mouseover.prevent="onMouseOverAtFormElement(field)"
                   @mouseleave.prevent="onMouseLeaveAtFormElement">
 
                   <WithLabelAndDescription v-if="field.$el" :label="field.label" :info="field.info"
@@ -163,7 +205,7 @@ const builderFields = computed(() => formStore.getFields as unknown as ViewerFie
                       isUserDraggingOver,
                       dragInIndicator: dragInIndicator as any,
                     }"
-                    :preview-mode-editing="formStore.formSettings.previewMode === 'editing'"
+                    :preview-mode-editing="isPreviewEditing"
                     @click="onClickAtFormElement"
                     @dragstart="({ field: f, index: i }) => onDragStartField(f, i)"
                     @dragend="onDragEnd"
@@ -175,7 +217,7 @@ const builderFields = computed(() => formStore.getFields as unknown as ViewerFie
                     @resize:start="({ ev, field: f }) => startResize(ev, f)"
                   />
                 </div>
-              </div>
+              </FormCanvas>
             </FormKit>
           </q-card-section>
         </q-card>
@@ -185,120 +227,11 @@ const builderFields = computed(() => formStore.getFields as unknown as ViewerFie
 </template>
 
 <style lang="scss">
-:root {
-  --overlay-accent-color: #2980b9;
-  --overlay-accent-color-rgba: rgba(41, 128, 185, .2);
-}
-
 .preview-form-container {
   margin-left: 4rem;
   margin-right: 4rem;
   min-height: 100px;
   padding: 3.125rem;
   width: 100%;
-}
-
-.form-canvas {
-  height: fit-content;
-}
-
-.form-field {
-  position: relative;
-  pointer-events: auto;
-}
-
-.overlay-drop-here {
-  position: relative;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  left: 0;
-  height: 328px;
-}
-
-/* Overlay-specific styles moved to FieldOverlay.vue */
-
-.text-weight-semibold {
-  font-weight: 600;
-}
-
-.break-all {
-  word-break: break-all;
-}
-
-.grid {
-  display: grid
-}
-
-.grid-cols-12 {
-  grid-template-columns: repeat(12, minmax(0, 1fr))
-}
-
-.row-gap-y-gutter {
-  row-gap: 1rem;
-}
-
-.column-gap-x-gutter {
-  column-gap: 1rem;
-}
-
-.span-1 {
-  grid-column: span 1;
-}
-
-.span-2 {
-  grid-column: span 2;
-}
-
-.span-3 {
-  grid-column: span 3;
-}
-
-.span-4 {
-  grid-column: span 4;
-}
-
-.span-5 {
-  grid-column: span 5;
-}
-
-.span-6 {
-  grid-column: span 6;
-}
-
-.span-7 {
-  grid-column: span 7;
-}
-
-.span-8 {
-  grid-column: span 8;
-}
-
-.span-9 {
-  grid-column: span 9;
-}
-
-.span-10 {
-  grid-column: span 10;
-}
-
-.span-11 {
-  grid-column: span 11;
-}
-
-.span-12 {
-  grid-column: span 12;
-}
-
-.justify-stretch {
-  justify-content: stretch;
-}
-
-.opacity-50 {
-  opacity: 0.5;
-}
-
-.mw-200 {
-  max-width: 200px;
 }
 </style>

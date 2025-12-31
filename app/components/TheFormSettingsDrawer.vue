@@ -50,7 +50,7 @@ function onClickLabelFormName() {
 </script>
 
 <template>
-  <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="right" :width="340">
+  <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="right" :width="340" data-drawer="right">
     <q-scroll-area class="fit" visible>
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
         <component :is="getComponentSettings" />

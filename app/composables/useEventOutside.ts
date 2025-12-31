@@ -24,8 +24,8 @@
 export function useEventOutside<
   T extends Ref<HTMLElement | null>,
   F extends Ref<HTMLElement | null>,
-  E extends keyof HTMLElementEventMap,
-  Fn extends (e: HTMLElementEventMap[E]) => void,
+  E extends keyof GlobalEventHandlersEventMap,
+  Fn extends (e: GlobalEventHandlersEventMap[E]) => void,
 >(
   outerElement: T,
   target: F,
@@ -35,7 +35,7 @@ export function useEventOutside<
 ): () => void {
   const targetValue = unref(target)
 
-  const eventHandler = (e: HTMLElementEventMap[E]) => {
+  const eventHandler = (e: GlobalEventHandlersEventMap[E]) => {
     const el = targetValue
     const toRe = !!(el && !e.composedPath().includes(el))
     toRe && handler(e)

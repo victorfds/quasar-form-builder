@@ -13,14 +13,20 @@ type ViewerField = FormKitSchemaDefinition & {
   description?: string
 }
 
-const props = defineProps<{ formFields: FormKitSchemaDefinition[], resposta?: any, readonly?: boolean }>()
+const props = defineProps<{ formFields: FormKitSchemaDefinition[], readonly?: boolean }>()
+const values = defineModel<any>({ default: () => ({}) })
+const modelValues = computed({
+  get: () => values.value,
+  set: (newValues) => {
+    if (props.readonly) return
+    values.value = newValues
+  },
+})
 const emit = defineEmits<{
   (e: 'submit', data: any): void
-  (e: 'on:update-values', data: any): void
 }>()
-const values = reactive(props.resposta || {})
 const data = computed(() => ({
-  ...values, 
+  ...values.value,
   empty,
   eq,
   contains,
@@ -30,12 +36,6 @@ const data = computed(() => ({
   isDayAfterTomorrow,
   isDayBeforeYesterday,
 }))
-
-function updateValues(newValues: any) {
-  if (props.readonly) return
-  Object.assign(values, newValues)
-  emit("on:update-values", values)
-}
 
 function onSubmit(data: any, node: FormKitNode) {
   if (props.readonly) return
@@ -66,9 +66,9 @@ const { getContainerSpan, getAlignClass } = useFieldLayout()
 
 <template>
   <article>
-    <FormKit type="form" :model-value="values" @update:model-value="updateValues" :actions="false"
+    <FormKit type="form" v-model="modelValues" :actions="false"
       validation-visibility="submit" @submit="onSubmit" @submit-invalid="onSubmitInvalid">
-      <div class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter">
+      <FormCanvas>
         <div v-for="(field, index) in renderFields" :key="field.name || index" class="form-field" :class="[
           field.columns ? `span-${getContainerSpan(field)}` : 'span-12',
           getAlignClass(field)
@@ -80,42 +80,11 @@ const { getContainerSpan, getAlignClass } = useFieldLayout()
 
           <FormKitSchema v-else :schema="field" :data="data" :readonly="props.readonly" />
         </div>
-      </div>
+      </FormCanvas>
     </FormKit>
   </article>
 </template>
 <style lang="scss">
-.form-canvas {
-  height: fit-content;
-}
-
-.form-field {
-  position: relative;
-  pointer-events: auto;
-}
-
-.grid {
-  display: grid;
-}
-
-.grid-cols-12 {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-}
-
-.row-gap-y-gutter {
-  row-gap: 1rem;
-}
-
-.column-gap-x-gutter {
-  column-gap: 1rem;
-}
-
-@for $i from 1 through 12 {
-  .span-#{$i} {
-    grid-column: span $i / span $i;
-  }
-}
-
 /* When inputs are invalid (after being touched or submit), make the control more evident */
 .formkit-outer[data-invalid="true"] .q-field__control {
   box-shadow: 0 0 0 1px #e53935 inset;

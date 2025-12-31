@@ -64,7 +64,7 @@ function handleGoForward() {
     <q-page-container>
       <q-page :style-fn="fnTweak">
         <slot />
-        <q-page-sticky position="top-left" :offset="[12, 12]">
+        <q-page-sticky position="top-left" :offset="[12, 12]" data-keep-active>
           <q-tabs v-model="formStore.formSettings.previewMode" vertical dense shrink class="rounded-borders"
             :class="dark.isActive ? 'bg-dark text-white' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;">
@@ -89,7 +89,7 @@ function handleGoForward() {
           </q-tabs>
         </q-page-sticky>
 
-        <q-page-sticky position="top-right" :offset="[12, 12]">
+        <q-page-sticky position="top-right" :offset="[12, 12]" data-keep-active>
           <q-tabs vertical dense shrink class="rounded-borders"
             :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             style="max-height: 4.5rem;">
@@ -114,7 +114,7 @@ function handleGoForward() {
           </q-tabs>
         </q-page-sticky>
 
-        <q-page-sticky position="bottom-left" :offset="[12, 12]">
+        <q-page-sticky position="bottom-left" :offset="[12, 12]" data-keep-active>
           <q-tabs vertical dense shrink class="rounded-borders q-mb-sm"
             :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             style="max-height: 4.5rem;">

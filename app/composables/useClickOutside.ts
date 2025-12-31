@@ -19,17 +19,23 @@
  * stopListening();
  * ```
  */
-export function useClickOutside<T extends Ref<HTMLElement | null>, F extends Ref<HTMLElement | null>, Fn extends (e: MouseEvent) => void>(outerElement: T, target: F, handler: Fn, options?: boolean | AddEventListenerOptions,
-): () => void {
-  const targetValue = unref(target)
+type EventTargetRef = Ref<EventTarget | null> | EventTarget | null
 
+export function useClickOutside<F extends Ref<HTMLElement | null>, Fn extends (e: MouseEvent) => void>(
+  outerElement: EventTargetRef,
+  target: F,
+  handler: Fn,
+  options?: boolean | AddEventListenerOptions,
+): () => void {
   const eventHandler = (e: MouseEvent) => {
-    const el = targetValue
-    const toRe = !!(el && !e.composedPath().includes(el))
-    toRe && handler(e)
+    const el = unref(target)
+    const shouldHandle = !!(el && !e.composedPath().includes(el))
+    if (shouldHandle)
+      handler(e)
   }
 
-  const stop = useEventListener(outerElement, 'click', eventHandler, options)
+  const eventTarget = unref(outerElement) ?? document
+  const stop = useEventListener(eventTarget, 'click', eventHandler, options)
 
   return stop
 }
