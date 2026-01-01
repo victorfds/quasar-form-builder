@@ -33,10 +33,8 @@ export function useEventOutside<
   handler: Fn,
   options?: boolean | AddEventListenerOptions,
 ): () => void {
-  const targetValue = unref(target)
-
   const eventHandler = (e: GlobalEventHandlersEventMap[E]) => {
-    const el = targetValue
+    const el = unref(target)
     const toRe = !!(el && !e.composedPath().includes(el))
     toRe && handler(e)
   }

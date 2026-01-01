@@ -3,6 +3,7 @@ import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
 import { empty, eq } from '@formkit/utils'
 import { clearErrors, reset } from '@formkit/vue'
 import type { ColumnsType } from '~/types'
+import { builderModeKey, formBuilderDndKey, schemaDataKey } from '~/constants/injectionKeys'
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string
@@ -17,6 +18,8 @@ type ViewerField = FormKitSchemaDefinition & {
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const fieldUi = useFieldUi()
+const hasStepper = computed(() => formStore.hasStepper)
+const stepperField = computed(() => formStore.formFields.find(field => field.$formkit === 'q-stepper'))
 
 const {
   // refs
@@ -31,6 +34,7 @@ const {
   dragInIndicator,
   isUserDraggingOver,
   isDragging,
+  isDraggingStepper,
   startX,
   lastDeltaColumns,
   // computed
@@ -53,6 +57,32 @@ const {
   throttleResize,
   stopResize,
 } = useFormBuilderDnd(formStore)
+
+provide(builderModeKey, true)
+provide(formBuilderDndKey, {
+  highlightDropArea,
+  formDroppableRef,
+  indexPointer,
+  elementBeingDragged,
+  activeNameFields,
+  dragInIndicator,
+  isUserDraggingOver,
+  isDraggingStepper,
+  onDrop,
+  handleDragover,
+  onDragEnterFormSectionArea,
+  onDragLeaveFormSectionArea,
+  onDragStartField,
+  onDragOverDropArea,
+  onDragEnd,
+  onClickAtFormElement,
+  onMouseOverAtFormElement,
+  onMouseLeaveAtFormElement,
+  handleCopyField,
+  removeField,
+  onDragEnterInDropArea,
+  startResize,
+})
 
 const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
 const offset = useState('offset')
@@ -123,6 +153,8 @@ const data = computed(() => ({
   isDayBeforeYesterday,
 }))
 
+provide(schemaDataKey, data)
+
 function onSubmit(data: any, node: FormKitNode) {
   console.log(data)
   reset(node, {})
@@ -159,6 +191,7 @@ function getFieldClasses(field: ViewerField) {
             <FormKit id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="false"
               @submit="onSubmit">
               <FormCanvas
+                v-if="!hasStepper"
                 v-model:root-ref="formDroppableRef"
                 droppable
                 :empty="!formStore.formFields.length"
@@ -189,6 +222,8 @@ function getFieldClasses(field: ViewerField) {
                       elementBeingDragged: elementBeingDragged as any,
                       isUserDraggingOver,
                       dragInIndicator: dragInIndicator as any,
+                      isDraggingStepper,
+                      hasStepper,
                     }"
                     :preview-mode-editing="isPreviewEditing"
                     @click="onClickAtFormElement"
@@ -203,6 +238,7 @@ function getFieldClasses(field: ViewerField) {
                   />
                 </div>
               </FormCanvas>
+              <FormKitSchema v-else-if="stepperField" :schema="stepperField" :data="data" />
             </FormKit>
           </q-card-section>
         </q-card>

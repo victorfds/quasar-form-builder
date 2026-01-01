@@ -8,6 +8,8 @@ type OverlayState = {
   elementBeingDragged?: { field?: FormKitSchemaDefinition, index?: number }
   isUserDraggingOver?: boolean
   dragInIndicator?: { index?: number, name?: string }
+  isDraggingStepper?: boolean
+  hasStepper?: boolean
 }
 
 const props = defineProps<{
@@ -34,7 +36,18 @@ const isActive = computed(() => !props.state.elementBeingDragged?.field && !prop
 const isDragging = computed(() => (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || ''))
 const isHover = computed(() => !isActive.value && props.state.hoverName === (props.field?.name || ''))
 const showControls = computed(() => props.previewModeEditing && (!props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index) && (isActive.value || isHover.value))
-const hideDropAreas = computed(() => (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || '') || !props.state.isUserDraggingOver)
+const hideDropAreas = computed(() => (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || '') || !props.state.isUserDraggingOver || (props.state.isDraggingStepper && props.state.hasStepper))
+const showStepperOnlyTop = computed(() => props.state.isDraggingStepper === true && props.state.hasStepper !== true)
+const showTopDropArea = computed(() => {
+  if (showStepperOnlyTop.value) {
+    return props.index === 0 && props.state.isUserDraggingOver
+  }
+  return !hideDropAreas.value
+})
+const showBottomDropArea = computed(() => {
+  if (showStepperOnlyTop.value) return false
+  return !hideDropAreas.value
+})
 
 function onDragEnterTop(ev: DragEvent) {
   const destIndex = Number(props.state.elementBeingDragged?.index) < props.index ? props.index - 1 : props.index
@@ -58,7 +71,7 @@ function onDragEnterBottom(ev: DragEvent) {
        @dragstart="emit('dragstart', { field, index })" @dragend="emit('dragend', index)" />
 
   <!-- Top drop area -->
-  <div class="preview-element-area-top" :class="{ hidden: hideDropAreas }" @dragenter.prevent="onDragEnterTop"
+  <div class="preview-element-area-top" :class="{ hidden: !showTopDropArea }" @dragenter.prevent="onDragEnterTop"
        @dragover.prevent="(e) => emit('dragover', e)">
     <div class="preview-element-label-wrapper preview-element-label-wrapper__top"
          :class="{ hidden: state.dragInIndicator?.name !== (field?.name || '') || (Number(state.elementBeingDragged?.index) > index && state.dragInIndicator?.index !== index) || (Number(state.elementBeingDragged?.index) < index && state.dragInIndicator?.index !== index - 1) }">
@@ -66,7 +79,7 @@ function onDragEnterBottom(ev: DragEvent) {
     </div>
   </div>
   <!-- Bottom drop area -->
-  <div class="preview-element-area-bottom" :class="{ hidden: hideDropAreas }" @dragenter.prevent="onDragEnterBottom"
+  <div class="preview-element-area-bottom" :class="{ hidden: !showBottomDropArea }" @dragenter.prevent="onDragEnterBottom"
        @dragover.prevent="(e) => emit('dragover', e)">
     <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
          :class="{ hidden: state.dragInIndicator?.name !== (field?.name || '') || (Number(state.elementBeingDragged?.index) > index && state.dragInIndicator?.index !== index + 1) || (Number(state.elementBeingDragged?.index) < index && state.dragInIndicator?.index !== index) }">

@@ -16,7 +16,134 @@ export const useFormStore = defineStore('formStore', () => {
 
   const formFields = ref<FormKitSchemaDefinition[]>(cachedFormFields ? JSON.parse(cachedFormFields) : [])
   const activeField = ref<ActiveFieldType>(null)
+  const activeStepName = ref('')
+  const activeStepConfigName = ref<string | null>(null)
+  const stepLabelFocusToken = ref(0)
   const values = reactive({})
+  const stepperType = 'q-stepper'
+
+  type StepDefinition = {
+    name: string
+    label?: string
+    showPrevious?: boolean
+    prevLabel?: string
+    nextLabel?: string
+    if?: string
+    children?: FormKitSchemaDefinition[]
+  }
+
+  type StepperField = FormKitSchemaDefinition & {
+    steps?: StepDefinition[]
+  }
+
+  const getStepper = () => formFields.value.find(field => field.$formkit === stepperType) as StepperField | undefined
+  const hasStepper = computed(() => Boolean(getStepper()))
+
+  const getSteps = () => getStepper()?.steps || []
+  const getStepByName = (stepName: string) => getSteps().find(step => step.name === stepName)
+
+  const getActiveStep = () => {
+    const steps = getSteps()
+    if (!steps.length) return null
+    return steps.find(step => step.name === activeStepName.value) || steps[0]
+  }
+
+  const ensureActiveStep = () => {
+    const activeStep = getActiveStep()
+    if (activeStep) activeStepName.value = activeStep.name
+  }
+
+  const ensureActiveStepConfig = () => {
+    if (!hasStepper.value) {
+      activeStepConfigName.value = null
+      return
+    }
+    const steps = getSteps()
+    if (!steps.length) {
+      activeStepConfigName.value = null
+      return
+    }
+    if (!activeStepConfigName.value || !steps.some(step => step.name === activeStepConfigName.value)) {
+      activeStepConfigName.value = activeStepName.value || steps[0].name
+    }
+  }
+
+  const activeStepConfig = computed(() => {
+    if (!activeStepConfigName.value) return null
+    return getStepByName(activeStepConfigName.value) || null
+  })
+
+  const activeFields = computed<FormKitSchemaDefinition[]>(() => {
+    if (!hasStepper.value) return formFields.value
+    const step = getActiveStep()
+    if (!step) return []
+    if (!Array.isArray(step.children)) step.children = []
+    return step.children
+  })
+
+  const allFields = computed<FormKitSchemaDefinition[]>(() => {
+    if (!hasStepper.value) return formFields.value
+    return getSteps().flatMap(step => Array.isArray(step.children) ? step.children : [])
+  })
+
+  const getFieldLocationByName = (fieldName: string) => {
+    const rootIndex = formFields.value.findIndex(field => field.name === fieldName)
+    if (rootIndex !== -1) return { scope: 'root' as const, index: rootIndex }
+
+    const steps = getSteps()
+    for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
+      const children = steps[stepIndex]?.children || []
+      const fieldIndex = children.findIndex(child => child.name === fieldName)
+      if (fieldIndex !== -1) return { scope: 'step' as const, stepIndex, fieldIndex }
+    }
+
+    return null
+  }
+
+  const updateFieldByName = (fieldName: string, updater: (field: FormKitSchemaDefinition) => FormKitSchemaDefinition) => {
+    const location = getFieldLocationByName(fieldName)
+    if (!location) return
+
+    if (location.scope === 'root') {
+      formFields.value[location.index] = updater(formFields.value[location.index]!)
+      return
+    }
+
+    const stepper = getStepper()
+    if (!stepper?.steps?.[location.stepIndex]) return
+    const children = stepper.steps[location.stepIndex].children || []
+    children[location.fieldIndex] = updater(children[location.fieldIndex]!)
+    stepper.steps[location.stepIndex].children = children
+  }
+
+  const generateStepName = () => {
+    const steps = getSteps()
+    let counter = steps.length + 1
+    let candidate = `step_${counter}`
+    while (steps.some(step => step.name === candidate)) {
+      counter += 1
+      candidate = `step_${counter}`
+    }
+    return candidate
+  }
+
+  const buildStepper = (fields: FormKitSchemaDefinition[]) => {
+    const stepName = generateStepName()
+    return {
+      $formkit: stepperType,
+      name: generateUniqueName('stepper', formFields.value),
+      steps: [
+        {
+          name: stepName,
+          label: 'Passo 1',
+          showPrevious: true,
+          prevLabel: '',
+          nextLabel: '',
+          children: fields,
+        },
+      ],
+    } as StepperField
+  }
 
   const getSchema = computed(() => {
     // @ts-expect-error the following lines is envolved in differents types, but certainly they should not fail
@@ -26,6 +153,11 @@ export const useFormStore = defineStore('formStore', () => {
       return acc
     }, {})
   })
+
+  if (hasStepper.value) {
+    ensureActiveStep()
+    ensureActiveStepConfig()
+  }
 
   const getFields = computed(() => {
     return formFields.value.map(formField => {
@@ -54,25 +186,47 @@ export const useFormStore = defineStore('formStore', () => {
 
   const setFormFields = (newFields: FormKitSchemaDefinition[]) => {
     formFields.value = newFields
+    if (hasStepper.value) {
+      ensureActiveStep()
+      ensureActiveStepConfig()
+    }
+    else {
+      activeStepConfigName.value = null
+    }
     localStorage.setItem('form-fields', JSON.stringify(newFields))
   }
 
   const getFieldByName = (fieldName: string) => {
-    return formFields.value.find(formField => formField.name === fieldName)
+    return allFields.value.find(formField => formField.name === fieldName)
   }
 
   const addField = (field: FormKitSchemaNode, pos?: number | null) => {
-    pos = Number(pos)
-    const formLength = formFields.value.length
+    if (field?.$formkit === stepperType) {
+      if (hasStepper.value) {
+        notify({ color: 'dark', message: 'Stepper já está ativo no formulário' })
+        return
+      }
 
-    field.name = generateUniqueName(field?.name, formFields.value)
+      const stepper = buildStepper(formFields.value)
+      formFields.value = [stepper]
+      activeStepName.value = stepper.steps?.[0]?.name || ''
+      activeStepConfigName.value = stepper.steps?.[0]?.name || null
+      cacheFormFields()
+      return
+    }
+
+    pos = Number(pos)
+    const fieldsList = activeFields.value
+    const formLength = fieldsList.length
+
+    field.name = generateUniqueName(field?.name, allFields.value)
 
     if (pos <= 0) {
-      formFields.value.unshift(field)
+      fieldsList.unshift(field)
     } else if (pos >= formLength) {
-      formFields.value.push(field)
+      fieldsList.push(field)
     } else {
-      formFields.value.splice(pos, 0, field)
+      fieldsList.splice(pos, 0, field)
     }
 
     notify({ color: 'dark', message: `${field?.name} adicionado` })
@@ -84,8 +238,9 @@ export const useFormStore = defineStore('formStore', () => {
     originalPosition: number,
     destinationIndex: number
   }) => {
-    formFields.value.splice(originalPosition, 1)
-    formFields.value.splice(destinationIndex, 0, draggedField!)
+    const fieldsList = activeFields.value
+    fieldsList.splice(originalPosition, 1)
+    fieldsList.splice(destinationIndex, 0, draggedField!)
 
     cacheFormFields()
   }
@@ -93,15 +248,28 @@ export const useFormStore = defineStore('formStore', () => {
   const removeField = (field: FormKitSchemaNode | null, index?: number) => {
     if (!field) return
 
-    if (!index) {
-      index = formFields.value.findIndex(ff => ff.name === field?.name)
+    const fieldsList = activeFields.value
+
+    if (index === undefined || index === null) {
+      index = fieldsList.findIndex(ff => ff.name === field?.name)
     }
 
-    if (index < 0) return
+    if (index < 0) {
+      const location = getFieldLocationByName(field?.name || '')
+      if (!location || location.scope !== 'step') return
+      const stepper = getStepper()
+      if (!stepper?.steps?.[location.stepIndex]?.children) return
+      stepper.steps[location.stepIndex].children?.splice(location.fieldIndex, 1)
+      if (field?.name === activeField.value?.name) {
+        setActiveField(null)
+      }
+      cacheFormFields()
+      return
+    }
 
     removeAllConditionsUses(field)
 
-    formFields.value.splice(index, 1)
+    fieldsList.splice(index, 1)
 
     if (field?.name === activeField.value?.name) {
       setActiveField(null)
@@ -111,10 +279,11 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const copyField = (index: number | null, fieldElement?: FormKitSchemaNode) => {
-    const field = fieldElement || formFields.value.find((_, i) => i === index)
+    const fieldsList = activeFields.value
+    const field = fieldElement || fieldsList.find((_, i) => i === index)
     if (!field) return
-    if (!index) {
-      index = formFields.value.findIndex(formField => formField.name === field.name)
+    if (!index && index !== 0) {
+      index = fieldsList.findIndex(formField => formField.name === field.name)
     }
     const newElemPosition = index + 1
     const newField = { ...field, name: field?.name.split('_').at(0) }
@@ -129,16 +298,13 @@ export const useFormStore = defineStore('formStore', () => {
   const updateNameField = (oldName?: string, newName?: string) => {
     if (!oldName) return
 
-    const indexToUpdate = formFields.value.findIndex(field => field.name === oldName)
-    if (indexToUpdate === -1) return
-
     if (!newName) return new Error('name cannot be empty', { cause: 500 })
 
     if (/\s/.test(newName)) return new Error('name cannot contain spaces', { cause: 500 })
 
-    if (nameExists(newName, formFields.value)) return new Error('name already exists', { cause: 500 })
+    if (nameExists(newName, allFields.value)) return new Error('name already exists', { cause: 500 })
 
-    formFields.value[indexToUpdate].name = newName
+    updateFieldByName(oldName, field => ({ ...field, name: newName }))
 
     cacheFormFields()
   }
@@ -174,8 +340,7 @@ export const useFormStore = defineStore('formStore', () => {
   const updatePropFromActiveField = async (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: any) => {
     if (!propName || !fieldElement) return
 
-    const indexToUpdate = formFields.value.findIndex(field => field.name === fieldElement.name)
-    if (indexToUpdate === -1 || !activeField.value) return
+    if (!activeField.value) return
 
     const updatedPropValue = (propName === 'validation' && newPropValue) || (propName === 'disable' && Object.keys(newPropValue).length)
       ? handleValidationUpdate(fieldElement, propName, newPropValue)
@@ -186,12 +351,12 @@ export const useFormStore = defineStore('formStore', () => {
         }
         : newPropValue
 
-    updateFieldProperties(propName, updatedPropValue, indexToUpdate)
+    updateFieldProperties(propName, updatedPropValue, fieldElement.name)
 
     await nextTick()
 
     if (shouldDeleteProperty(updatedPropValue)) {
-      deleteFieldProperty(propName, indexToUpdate)
+      deleteFieldProperty(propName, fieldElement.name)
     }
     cacheFormFields()
   }
@@ -273,48 +438,52 @@ export const useFormStore = defineStore('formStore', () => {
     return validation
   }
 
-  const updateFieldProperties = (propName: string, newPropValue: any, indexToUpdate: number) => {
-    activeField.value = { ...activeField.value, [propName]: newPropValue }
-    formFields.value = formFields.value.map((field, index) =>
-      index === indexToUpdate ? { ...field, [propName]: newPropValue } : field
-    )
+  const updateFieldProperties = (propName: string, newPropValue: any, fieldName: string) => {
+    if (activeField.value) {
+      activeField.value = { ...activeField.value, [propName]: newPropValue }
+    }
+    updateFieldByName(fieldName, field => ({ ...field, [propName]: newPropValue }))
   }
 
-  const deleteFieldProperty = (propName: string, indexToUpdate: number) => {
-    const { [propName]: _, ...restActiveField } = activeField.value
-    const { [propName]: __, ...restFormField } = formFields.value[indexToUpdate]
-    activeField.value = restActiveField
-    formFields.value = formFields.value.map((field, index) =>
-      index === indexToUpdate ? restFormField : field
-    )
+  const deleteFieldProperty = (propName: string, fieldName: string) => {
+    if (activeField.value?.name === fieldName) {
+      const { [propName]: _, ...restActiveField } = activeField.value
+      activeField.value = restActiveField as ActiveFieldType
+    }
+
+    updateFieldByName(fieldName, (field) => {
+      const { [propName]: __, ...restField } = field
+      return restField
+    })
   }
 
   const deleteFieldPropertyByName = (prop: string, fieldName: string) => {
-    const field = formFields.value.find(f => f.name === fieldName)
+    const field = getFieldByName(fieldName)
 
     if (!field) return
 
-    if (activeField.value) {
+    if (activeField.value?.name === fieldName) {
       const { [prop]: activeProp, ...restActive } = activeField.value
       activeField.value = activeProp?.else
-        ? { [prop]: activeProp.else, ...restActive }
+        ? ({ [prop]: activeProp.else, ...restActive } as ActiveFieldType)
         : restActive
     }
 
     const { [prop]: fieldProp, ...restField } = field
+    const updatedField = fieldProp?.else
+      ? { [prop]: fieldProp.else, ...restField }
+      : restField
 
-    formFields.value = formFields.value.map(f =>
-      f.name === fieldName
-        ? fieldProp?.else
-          ? { [prop]: fieldProp.else, ...restField }
-          : restField
-        : f
-    )
+    updateFieldByName(fieldName, () => updatedField)
   }
 
   const removeAllConditionsUses = (field: FormKitSchemaNode) => {
-    const ifConditionNames = formFields.value.filter(formField => formField.if && formField.if.includes(field.name)).map(fieldForm => fieldForm.name)
-    const validationConditionNames = formFields.value.filter(formField => formField.validation && formField.validation.if && formField.validation.if.includes(field.name)).map(fieldForm => fieldForm.name)
+    const ifConditionNames = allFields.value
+      .filter(formField => formField.if && formField.if.includes(field.name))
+      .map(fieldForm => fieldForm.name)
+    const validationConditionNames = allFields.value
+      .filter(formField => formField.validation && formField.validation.if && formField.validation.if.includes(field.name))
+      .map(fieldForm => fieldForm.name)
 
     ifConditionNames.forEach(name => deleteFieldPropertyByName('if', name))
     validationConditionNames.forEach(name => deleteFieldPropertyByName('validation', name))
@@ -340,6 +509,126 @@ export const useFormStore = defineStore('formStore', () => {
     formSettings.value.columns = viewportToChange
   }
 
+  const setActiveStep = (stepName: string) => {
+    activeStepName.value = stepName
+  }
+
+  const setActiveStepConfig = (stepName: string | null) => {
+    activeStepConfigName.value = stepName
+  }
+
+  const requestStepLabelFocus = () => {
+    stepLabelFocusToken.value += 1
+  }
+
+  const updateStep = (stepName: string, updater: (step: StepDefinition) => StepDefinition) => {
+    const stepper = getStepper()
+    if (!stepper?.steps) return
+    const index = stepper.steps.findIndex(step => step.name === stepName)
+    if (index === -1) return
+    stepper.steps[index] = updater(stepper.steps[index]!)
+    cacheFormFields()
+  }
+
+  const updateStepProp = (stepName: string, prop: keyof StepDefinition, value: any) => {
+    updateStep(stepName, step => ({ ...step, [prop]: value }))
+  }
+
+  const updateStepLabel = (stepName: string, label: string) => {
+    updateStepProp(stepName, 'label', label)
+  }
+
+  const updateStepLayout = (stepName: string, updates: Partial<Pick<StepDefinition, 'showPrevious' | 'prevLabel' | 'nextLabel'>>) => {
+    updateStep(stepName, step => ({ ...step, ...updates }))
+  }
+
+  const addStep = () => {
+    const stepper = getStepper()
+    if (!stepper) return
+
+    stepper.steps = stepper.steps || []
+    const stepName = generateStepName()
+    const newStep: StepDefinition = {
+      name: stepName,
+      label: `Passo ${stepper.steps.length + 1}`,
+      showPrevious: true,
+      prevLabel: '',
+      nextLabel: '',
+      children: [],
+    }
+
+    stepper.steps.push(newStep)
+    activeStepName.value = stepName
+    activeStepConfigName.value = stepName
+    cacheFormFields()
+  }
+
+  const duplicateStep = (stepName: string) => {
+    const stepper = getStepper()
+    if (!stepper?.steps) return
+    const index = stepper.steps.findIndex(step => step.name === stepName)
+    if (index === -1) return
+
+    const source = stepper.steps[index]
+    const clone: StepDefinition = JSON.parse(JSON.stringify(source))
+    const usedFields = [...allFields.value]
+    clone.name = generateStepName()
+    clone.children = (clone.children || []).map((child) => {
+      const baseName = child.name?.split('_').at(0) || child.name || 'field'
+      const newName = generateUniqueName(baseName, usedFields)
+      usedFields.push({ ...child, name: newName })
+      return { ...child, name: newName }
+    })
+
+    stepper.steps.splice(index + 1, 0, clone)
+    activeStepName.value = clone.name
+    activeStepConfigName.value = clone.name
+    cacheFormFields()
+  }
+
+  const removeStep = (stepName: string) => {
+    const stepper = getStepper()
+    if (!stepper?.steps || stepper.steps.length <= 1) return
+
+    const index = stepper.steps.findIndex(step => step.name === stepName)
+    if (index === -1) return
+
+    stepper.steps.splice(index, 1)
+
+    if (activeStepName.value === stepName) {
+      const nextStep = stepper.steps[index - 1] || stepper.steps[0]
+      activeStepName.value = nextStep?.name || ''
+    }
+    if (activeStepConfigName.value === stepName) {
+      const nextStep = stepper.steps[index - 1] || stepper.steps[0]
+      activeStepConfigName.value = nextStep?.name || null
+    }
+
+    cacheFormFields()
+  }
+
+  const removeStepper = () => {
+    const stepper = getStepper()
+    if (!stepper?.steps) return
+    const mergedFields = stepper.steps.flatMap(step => Array.isArray(step.children) ? step.children : [])
+    formFields.value = mergedFields
+    activeStepName.value = ''
+    activeStepConfigName.value = null
+    setActiveField(null)
+    cacheFormFields()
+  }
+
+  const renameStep = (stepName: string, label: string) => {
+    const stepper = getStepper()
+    if (!stepper?.steps) return
+    const step = stepper.steps.find(item => item.name === stepName)
+    if (!step) return
+    const trimmed = label.trim()
+    if (!trimmed) return
+    step.label = trimmed
+    cacheFormFields()
+  }
+
   const updateActiveFieldColumns = (newColumns: number) => {
     if (activeField.value) {
       if (!activeField.value?.columns) {
@@ -363,8 +652,8 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const updateActiveFieldOnFormFields = () => {
-    const indexToUpdate = formFields.value.findIndex(field => field.name === activeField.value.name)
-    formFields.value[indexToUpdate] = { ...activeField.value }
+    if (!activeField.value?.name) return
+    updateFieldByName(activeField.value.name, () => ({ ...activeField.value }))
     cacheFormFields()
   }
 
@@ -378,6 +667,13 @@ export const useFormStore = defineStore('formStore', () => {
     values,
     formSettings,
     formFields,
+    activeFields,
+    allFields,
+    activeStepName,
+    activeStepConfigName,
+    activeStepConfig,
+    stepLabelFocusToken,
+    hasStepper,
     activeField,
     getSchema,
     getFields,
@@ -389,6 +685,17 @@ export const useFormStore = defineStore('formStore', () => {
     removeField,
     copyField,
     setActiveField,
+    setActiveStep,
+    setActiveStepConfig,
+    requestStepLabelFocus,
+    addStep,
+    duplicateStep,
+    removeStep,
+    removeStepper,
+    renameStep,
+    updateStepProp,
+    updateStepLabel,
+    updateStepLayout,
     updateNameField,
     updatePropFromActiveField,
     changePreviewWidth,

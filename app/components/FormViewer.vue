@@ -2,6 +2,7 @@
 import type { FormKitNode, FormKitSchemaDefinition } from "@formkit/core"
 import { empty, eq } from '@formkit/utils'
 import type { ColumnsType } from "~/types"
+import { builderModeKey, schemaDataKey } from '~/constants/injectionKeys'
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string
@@ -36,6 +37,9 @@ const data = computed(() => ({
   isDayAfterTomorrow,
   isDayBeforeYesterday,
 }))
+
+provide(builderModeKey, false)
+provide(schemaDataKey, data)
 
 function onSubmit(data: any, node: FormKitNode) {
   if (props.readonly) return

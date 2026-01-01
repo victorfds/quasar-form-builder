@@ -3,11 +3,19 @@ import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { LogicField } from '~/types'
 import { operators, htmlTypes, checkboxOperators, dateOperators } from '~/constants'
 
-const props = defineProps<{ noConditionsMessage?: string, conditionsDialogSubtitle?: string, saveTo?: 'if' | 'validation' | 'disable' | 'readonly' }>()
+const props = defineProps<{
+  noConditionsMessage?: string
+  conditionsDialogSubtitle?: string
+  saveTo?: 'if' | 'validation' | 'disable' | 'readonly'
+  element?: Record<string, any> | null
+  updateProp?: (prop: 'if' | 'validation' | 'disable' | 'readonly', value: any) => void
+}>()
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp, getFieldByName } = formStore
+
+const activeElement = computed(() => props.element || formStore.activeField)
 
 const elementStates = reactive<{ logicFields: LogicField[] }>({
   logicFields: parseLogic(getSavedLogicString()),
@@ -18,7 +26,8 @@ const showConditionsForm = ref<boolean>(false)
 
 const getFieldList = computed(() => {
   const cannotSelectList = ['q-btn', 'hr'].concat(htmlTypes.map(htmlType => htmlType.value))
-  const list = formStore.formFields.filter(k => k.name !== formStore.activeField?.name && k.name !== 'slots').map(formField => ({ label: formField.name, value: formField.name, cannotSelect: cannotSelectList.includes(formField.$formkit) || cannotSelectList.includes(formField.$el) }))
+  const activeName = (activeElement.value as any)?.name
+  const list = formStore.allFields.filter(k => k.name !== activeName && k.name !== 'slots').map(formField => ({ label: formField.name, value: formField.name, cannotSelect: cannotSelectList.includes(formField.$formkit) || cannotSelectList.includes(formField.$el) }))
 
   if (!list.length) return [{ label: 'A lista está vazia', value: null, cannotSelect: true }]
 
@@ -36,7 +45,7 @@ function toggleConditionDialog() {
 function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
   if (!fieldName) return []
 
-  const field = formStore.formFields.find(element => element.name === fieldName)
+  const field = formStore.allFields.find(element => element.name === fieldName)
   if (field?.options) {
     return field?.options
   }
@@ -44,7 +53,8 @@ function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
 }
 
 function triggerSaveLogic() {
-  saveLogic(elementStates, props.saveTo, onEnteredProp)
+  const updateProp = props.updateProp || onEnteredProp
+  saveLogic(elementStates, props.saveTo, updateProp)
   conditionDialog.value = false
 }
 
@@ -78,7 +88,7 @@ function needsValue(operator?: string): boolean {
 
 // Higher-level helpers to simplify template conditions
 function getSavedLogicString(): string {
-  const active: any = formStore.activeField
+  const active: any = activeElement.value
   if (!active) return ''
   if (props.saveTo === 'validation') return active?.validation?.if || ''
   if (props.saveTo === 'disable') return active?.disable?.if || ''
@@ -119,7 +129,7 @@ function columnClass(field: LogicField): string {
 
 function shouldShowDialogEmptyState(): boolean {
   if (props.saveTo === 'if') return false
-  const active: any = formStore.activeField
+  const active: any = activeElement.value
   const hasGlobalIf = Boolean(active?.if)
   return !hasSavedLogic() && !hasGlobalIf && !showConditionsForm.value
 }

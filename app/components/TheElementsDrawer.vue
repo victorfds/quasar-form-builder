@@ -315,6 +315,33 @@ const statics = ref<
     },
   },
 ])
+const structures = ref<
+  {
+    name: string
+    icon: string
+    title: string
+    description: string
+    schema: FormKitSchemaDefinition
+  }[]
+>([
+  {
+    name: "stepper",
+    icon: "linear_scale",
+    title: "Passos",
+    description: "Estrutura de múltiplas etapas",
+    schema: {
+      $formkit: "q-stepper",
+      name: "stepper",
+      steps: [
+        {
+          name: "step_1",
+          label: "Passo 1",
+          children: [],
+        },
+      ],
+    },
+  },
+])
 
 const tab = ref("elements")
 const elementsTypes = ref("fields")
@@ -367,6 +394,26 @@ function onDragStart(ev: DragEvent, tool: UnwrapRef<FormKitSchemaDefinition>) {
 
             <q-tab-panel name="statics" class="no-padding q-mt-lg">
               <div v-for="tool in statics" :key="tool.name" class="tool-item" draggable="true"
+                @dragstart="(event) => onDragStart(event, tool.schema)">
+                <div class="row items-start no-wrap q-mb-lg">
+                  <q-avatar rounded size="md" font-size="1.3rem" :color="dark.isActive ? 'grey-9' : 'blue-grey-2'"
+                    :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'" :icon="tool.icon" />
+                  <div class="q-ml-sm">
+                    <div class="tool-title text-weight-semibold text-subtitle2" :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'
+                      ">
+                      {{ tool.title }}
+                    </div>
+                    <div class="tool-description text-caption" :class="dark.isActive ? 'text-grey-7 ' : 'text-blue-grey-7'
+                      ">
+                      {{ tool.description }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </q-tab-panel>
+
+            <q-tab-panel name="structures" class="no-padding q-mt-lg">
+              <div v-for="tool in structures" :key="tool.name" class="tool-item" draggable="true"
                 @dragstart="(event) => onDragStart(event, tool.schema)">
                 <div class="row items-start no-wrap q-mb-lg">
                   <q-avatar rounded size="md" font-size="1.3rem" :color="dark.isActive ? 'grey-9' : 'blue-grey-2'"

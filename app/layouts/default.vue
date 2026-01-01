@@ -4,7 +4,7 @@ const formStore = useFormStore()
 const formHistoryStore = useFormHistoryStore()
 
 const isElementsDrawerOpened = ref(false)
-const isFormSettingsDrawerOpened = ref(false)
+const isFormSettingsDrawerOpened = useState<boolean>('form-settings-drawer', () => false)
 
 // Global state
 const offsetPage = useState<number>('offset', () => 168)

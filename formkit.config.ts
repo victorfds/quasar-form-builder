@@ -1,5 +1,5 @@
 import type { FormKitNode } from '@formkit/core'
-import { QuasarBtn, QuasarBtnToggle, QuasarCheckbox, QuasarDate, QuasarDatetime, QuasarEditor, QuasarInput, QuasarSelect, QuasarMultipleDate, QuasarDateRange } from '#components'
+import { QuasarBtn, QuasarBtnToggle, QuasarCheckbox, QuasarDate, QuasarDatetime, QuasarEditor, QuasarInput, QuasarSelect, QuasarMultipleDate, QuasarDateRange, QuasarSteps } from '#components'
 import { en, pt } from '@formkit/i18n'
 import { defineFormKitConfig } from '@formkit/vue'
 
@@ -56,6 +56,11 @@ quasarPlugin.library = (node: FormKitNode) => {
       type: 'input',
       props: ['columns', 'align'],
       component: QuasarBtn,
+    }),
+    'q-stepper': () => node.define({
+      type: 'group',
+      props: ['steps'],
+      component: QuasarSteps,
     }),
   }
 

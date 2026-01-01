@@ -19,6 +19,7 @@ const SettingsHTMLConfigComponent = resolveComponent('SettingsHTMLConfig')
 const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConfig')
 const SettingsQDateConfigComponent = resolveComponent('SettingsQDateConfig')
 const SettingsQFileConfigComponent = resolveComponent('SettingsQFileConfig')
+const SettingsQStepperConfigComponent = resolveComponent('SettingsQStepperConfig')
 
 const formNameInputRef = ref<HTMLElement | null>(null)
 const useHighlight = await highlightJson()
@@ -55,6 +56,10 @@ function onClickLabelFormName() {
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
         <component :is="getComponentSettings" />
         <div v-if="isDevelopment" v-html="useHighlight(formStore.activeField, dark.isActive)"></div>
+      </div>
+      <div v-else-if="formStore.formSettings.previewMode === 'editing' && formStore.activeStepConfig">
+        <component :is="SettingsQStepperConfigComponent" />
+        <div v-if="isDevelopment" v-html="useHighlight(formStore.activeStepConfig, dark.isActive)"></div>
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && !formStore.activeField">
         <q-list separator>

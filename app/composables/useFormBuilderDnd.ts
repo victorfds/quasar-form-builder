@@ -12,10 +12,11 @@ export function useFormBuilderDnd(formStore: any) {
   const dragInIndicator = ref<{ index?: number, name?: string }>({})
   const isUserDraggingOver = ref(false)
   const isDragging = ref(true)
+  const isDraggingStepper = ref(false)
   const startX = ref(0)
   const lastDeltaColumns = ref(0)
 
-  const { setActiveField, copyField, updateActiveFieldColumns, updateActiveFieldOnFormFields } = formStore
+  const { setActiveField, setActiveStepConfig, copyField, updateActiveFieldColumns, updateActiveFieldOnFormFields } = formStore
 
   const getUserWidthInput = computed(() => {
     if (!formStore.formSettings.preview.width) return 432
@@ -29,6 +30,7 @@ export function useFormBuilderDnd(formStore: any) {
 
   function onDragLeaveFormSectionArea() {
     highlightDropArea.value = false
+    isDraggingStepper.value = false
   }
 
   function onDrop(ev: DragEvent) {
@@ -46,6 +48,7 @@ export function useFormBuilderDnd(formStore: any) {
         dragInIndicator.value = {}
         isUserDraggingOver.value = false
         highlightDropArea.value = false
+        isDraggingStepper.value = false
       }
     }
   }
@@ -55,8 +58,19 @@ export function useFormBuilderDnd(formStore: any) {
     elementBeingDragged.value = { field, index }
   }
 
-  function handleDragover(_ev: DragEvent) {
+  function handleDragover(ev: DragEvent) {
     isUserDraggingOver.value = true
+    const toolData = ev.dataTransfer?.getData('text')
+    if (!toolData) {
+      isDraggingStepper.value = false
+      return
+    }
+    try {
+      const tool = JSON.parse(toolData)
+      isDraggingStepper.value = tool?.$formkit === 'q-stepper'
+    } catch {
+      isDraggingStepper.value = false
+    }
   }
 
   function onDragEnterInDropArea(_e: DragEvent, fieldName: string | undefined, index: number) {
@@ -70,15 +84,15 @@ export function useFormBuilderDnd(formStore: any) {
 
   function onDragOverDropArea(_e: DragEvent) {
     if (!originalFieldIndex.value && !elementBeingDragged.value.field && !elementBeingDragged.value.index) {
-      elementBeingDragged.value.index = formStore.formFields.length
+      elementBeingDragged.value.index = formStore.activeFields.length
       // keep last element name for UI purposes
-      elementBeingDragged.value.field = formStore.formFields.at(-1)?.name as unknown as FormKitSchemaDefinition
+      elementBeingDragged.value.field = formStore.activeFields.at(-1)?.name as unknown as FormKitSchemaDefinition
     }
   }
 
   function onDragEnd(index: number) {
     if (originalFieldIndex.value !== null && indexPointer.value !== null && originalFieldIndex.value !== indexPointer.value) {
-      const draggedField = formStore.formFields[index]!
+      const draggedField = formStore.activeFields[index]!
       formStore.updateFieldIndex({ draggedField, originalPosition: index, destinationIndex: indexPointer.value })
     }
 
@@ -87,13 +101,15 @@ export function useFormBuilderDnd(formStore: any) {
     elementBeingDragged.value = {}
     dragInIndicator.value = {}
     isUserDraggingOver.value = false
+    isDraggingStepper.value = false
   }
 
   function onClickAtFormElement(index: number) {
-    const field = formStore.formFields.find((_: any, idx: number) => idx === index) || null
+    const field = formStore.activeFields.find((_: any, idx: number) => idx === index) || null
     activeNameFields.value.active[0] = field?.name
     activeNameFields.value.active[1] = field?.name
     setActiveField(field)
+    setActiveStepConfig(null)
   }
 
   function onMouseOverAtFormElement(field: any) {
@@ -107,7 +123,7 @@ export function useFormBuilderDnd(formStore: any) {
   function handleCopyField(field: any, index: number) {
     copyField(index)
     activeNameFields.value.active[0] = field?.name
-    activeNameFields.value.active[1] = formStore.formFields.at(index + 1)?.name
+    activeNameFields.value.active[1] = formStore.activeFields.at(index + 1)?.name
   }
 
   function removeField(field: any, index: number) {
@@ -138,6 +154,7 @@ export function useFormBuilderDnd(formStore: any) {
 
   function startResize(evt: MouseEvent, field: any) {
     setActiveField(field)
+    setActiveStepConfig(null)
     isDragging.value = true
     startX.value = evt.clientX
     document.addEventListener('mousemove', throttleResize)
@@ -169,6 +186,7 @@ export function useFormBuilderDnd(formStore: any) {
     dragInIndicator,
     isUserDraggingOver,
     isDragging,
+    isDraggingStepper,
     startX,
     lastDeltaColumns,
     // computed
@@ -192,4 +210,3 @@ export function useFormBuilderDnd(formStore: any) {
     stopResize,
   }
 }
-
