@@ -203,7 +203,7 @@ export const useFormStore = defineStore('formStore', () => {
   const addField = (field: FormKitSchemaNode, pos?: number | null) => {
     if (field?.$formkit === stepperType) {
       if (hasStepper.value) {
-        notify({ color: 'dark', message: 'Stepper já está ativo no formulário' })
+        notify({ color: 'dark', message: 'Passos já está ativo no formulário' })
         return
       }
 

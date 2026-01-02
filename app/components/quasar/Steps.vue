@@ -476,9 +476,9 @@ function removeSelectedStep() {
 <template>
   <div ref="stepperWrapperRef" class="steps-wrapper">
     <div v-if="isEditing" class="steps-header-actions">     
-      <q-btn dense flat round icon="add" class="steps-header-action steps-header-action--add" color="grey-6"
+      <q-btn round flat icon="add" size="sm" class="steps-header-action steps-header-action--add" color="grey-6"
         @click="addStep" />
-         <q-btn dense flat round icon="close" class="steps-header-action steps-header-action--remove" color="grey-6"
+         <q-btn round flat icon="close" size="sm" class="steps-header-action steps-header-action--remove" color="grey-6"
         @click="removeStepperStructure" />
     </div>
 
@@ -563,6 +563,7 @@ function removeSelectedStep() {
           />
           <q-btn
             color="primary"
+            unelevated
             :class="shouldShowPrevious(step) ? 'q-ml-sm' : ''"
             :label="getNextLabel(step)"
             :type="isLastStep(step.name) ? 'submit' : 'button'"
@@ -604,7 +605,7 @@ function removeSelectedStep() {
 
 .steps-header-actions {
   position: absolute;
-  top: 1rem;
+  top: 1.25rem;
   left: 0;
   right: 0;
   z-index: 3;
