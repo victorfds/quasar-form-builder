@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 const { context } = props
 
-const { dark } = useQuasar()
+const { dark, screen } = useQuasar()
 const formStore = useFormStore()
 const fieldUi = useFieldUi()
 const schemaData = inject(schemaDataKey, computed(() => ({})))
@@ -33,6 +33,7 @@ const steps = computed(() => (props.context?.steps || []) as StepDefinition[])
 const isEditing = computed(() => builderMode && formStore.formSettings.previewMode === 'editing')
 const isPreviewEditing = computed(() => builderMode && formStore.formSettings.previewMode === 'editing')
 const canDrag = computed(() => Boolean(isEditing.value && builderDnd))
+const isSmallScreen = computed(() => screen.lt.md)
 const stepLabels = reactive<Record<string, string>>({})
 const stepCanvasRefs = reactive<Record<string, HTMLElement | null>>({})
 const stepperWrapperRef = ref<HTMLElement | null>(null)
@@ -507,6 +508,7 @@ function removeSelectedStep() {
 
     <q-stepper
       v-model="activeStep"
+      :vertical="isSmallScreen"
       animated
       header-nav
       keep-alive
