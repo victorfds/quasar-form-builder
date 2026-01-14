@@ -37,6 +37,7 @@ const stepLabels = reactive<Record<string, string>>({})
 const stepCanvasRefs = reactive<Record<string, HTMLElement | null>>({})
 const stepperWrapperRef = ref<HTMLElement | null>(null)
 const selectedHeaderEl = ref<HTMLElement | null>(null)
+const headerOverlayWrapperRef = ref<HTMLElement | null>(null)
 const headerListenerCleanup = ref<Array<() => void>>([])
 const headerOverlayRect = ref<{ top: number; left: number; width: number; height: number } | null>(null)
 const headerResizeObserver = ref<ResizeObserver | null>(null)
@@ -259,6 +260,23 @@ function selectStep(stepName: string, { openDrawer = true }: { openDrawer?: bool
   }
 }
 
+function isClickInsideActiveStepArea(ev: MouseEvent) {
+  const activeCanvas = builderDnd?.formDroppableRef?.value || stepCanvasRefs[activeStep.value] || null
+  const overlayWrapper = headerOverlayWrapperRef.value
+  const target = ev.target as Node | null
+  if (!target) return false
+  if (activeCanvas?.contains(target)) return true
+  if (overlayWrapper?.contains(target)) return true
+  return false
+}
+
+function handleStepperClick(ev: MouseEvent) {
+  if (!isEditing.value) return
+  if (!selectedStepName.value) return
+  if (isClickInsideActiveStepArea(ev)) return
+  formStore.setActiveStepConfig(null)
+}
+
 function cleanupHeaderListeners() {
   headerListenerCleanup.value.forEach((cleanup) => cleanup())
   headerListenerCleanup.value = []
@@ -323,6 +341,8 @@ const headerOverlayStyle = computed(() => {
   }
 })
 
+let stopStepperClick: (() => void) | undefined
+
 watch(activeStep, async (newStep) => {
   if (!builderDnd?.formDroppableRef) return
   await nextTick()
@@ -339,11 +359,14 @@ watch([renderedSteps, selectedStepName, isEditing], async () => {
 
 onMounted(() => {
   if (typeof window === 'undefined') return
+  const clickTarget = builderDnd?.previewFormSectionRef || stepperWrapperRef
+  stopStepperClick = useEventListener(clickTarget, 'click', handleStepperClick, { capture: true })
   window.addEventListener('resize', updateHeaderOverlay)
 })
 
 onBeforeUnmount(() => {
   cleanupHeaderListeners()
+  stopStepperClick?.()
   headerResizeObserver.value?.disconnect()
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateHeaderOverlay)
@@ -575,6 +598,7 @@ function removeSelectedStep() {
 
     <div
       v-if="isEditing && headerOverlayRect"
+      ref="headerOverlayWrapperRef"
       class="stepper-header-overlay-wrapper"
       :style="headerOverlayStyle"
     >

@@ -61,6 +61,7 @@ const {
 provide(builderModeKey, true)
 provide(formBuilderDndKey, {
   highlightDropArea,
+  previewFormSectionRef,
   formDroppableRef,
   indexPointer,
   elementBeingDragged,
