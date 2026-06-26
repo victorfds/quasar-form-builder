@@ -59,7 +59,7 @@ const componentSchemas = [
   { group: 'statics', schema: { $el: 'p', name: 'p', children: 'Lorem ipsum dolor', attrs: { class: 'no-margin' } } },
   { group: 'statics', schema: { $el: 'img', name: 'image', attrs: { src: 'https://placehold.co/640x360', alt: 'Imagem', class: 'full-width rounded-borders' } } },
   { group: 'statics', schema: { $el: 'a', name: 'link', children: 'Link', attrs: { href: '#', target: '_blank', rel: 'noopener' } } },
-  { group: 'statics', schema: { $el: 'hr', name: 'separator', attrs: { class: 'q-my-sm', style: 'border: none; height: 1px; background-color: #aaa;' } } },
+  { group: 'statics', schema: { $formkit: 'q-separator', name: 'separator', color: 'grey-5', spaced: true } },
   { group: 'structures', schema: { $formkit: 'q-tabs', name: 'tabs', tabs: [{ name: 'tab_1', label: 'Aba 1', children: [] }, { name: 'tab_2', label: 'Aba 2', children: [] }] } },
   { group: 'structures', schema: { $formkit: 'q-stepper', name: 'stepper', steps: [{ name: 'step_1', label: 'Passo 1', children: [] }] } },
   { group: 'structures', schema: { $formkit: 'q-container', name: 'container', label: 'Container', children: [] } },
@@ -80,6 +80,14 @@ async function loadBuilder(page: Page, fields: unknown[]) {
   }, fields)
   await page.reload()
   await page.waitForFunction(() => document.body.textContent?.includes('Construtor de Formulários'))
+  await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 10000 })
+  const firstField = fields[0] as { $formkit?: string, name?: string } | undefined
+  if (firstField?.$formkit === 'q-stepper') {
+    await expect(page.locator('.q-stepper')).toBeVisible()
+  }
+  else if (firstField?.name) {
+    await expect(page.locator(`[data-field-name="${firstField.name}"]`)).toHaveCount(1)
+  }
   await expect(page.locator('body')).not.toContainText('Unknown input type')
   await expect(page.locator('body')).not.toContainText('500')
 }
@@ -130,6 +138,23 @@ async function expectSchemaMounted(page: Page, schema: typeof componentSchemas[n
   await expect(page.locator(`[data-field-name="${schema.name}"]`)).toBeVisible()
 }
 
+test('theme preference is stored in a cookie and restored before the builder hydrates', async ({ page, context }) => {
+  await context.addCookies([{ name: 'theme', value: 'dark', url: 'http://127.0.0.1:3010', sameSite: 'Lax' }])
+
+  await page.goto('/')
+  await page.waitForFunction(() => document.body.textContent?.includes('Construtor de Formulários'))
+
+  await expect(page.locator('header')).toHaveClass(/bg-grey-10/)
+  await page.locator('.q-toggle').click()
+  await expect.poll(async () => {
+    const cookies = await context.cookies()
+    return cookies.find(cookie => cookie.name === 'theme')?.value
+  }).toBe('light')
+
+  await page.reload()
+  await expect(page.locator('header')).toHaveClass(/bg-white/)
+})
+
 test.describe('builder component parity smoke', () => {
   for (const item of componentSchemas) {
     test(`${item.group}: mounts ${item.schema.name}`, async ({ page }) => {
@@ -137,6 +162,53 @@ test.describe('builder component parity smoke', () => {
       await expectSchemaMounted(page, item.schema)
     })
   }
+})
+
+test('elements drawer search filters catalog items', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForFunction(() => document.body.textContent?.includes('Construtor de Formulários'))
+
+  await page.getByPlaceholder('Buscar elementos').fill('divid')
+
+  await expect(page.getByText('Separador')).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Campos' })).toHaveCount(0)
+  await expect(page.getByRole('tab', { name: 'Estáticos' })).toHaveCount(0)
+  await expect(page.getByRole('tab', { name: 'Estruturas' })).toHaveCount(0)
+  await expect(page.getByText('Cabeçalho H1')).toHaveCount(0)
+
+  await page.getByPlaceholder('Buscar elementos').fill('sem resultado improvavel')
+  await expect(page.getByText('Nenhum elemento encontrado').first()).toBeVisible()
+})
+
+test('separator supports vertical configuration', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-separator', name: 'separator', vertical: true, color: 'primary', spaced: true },
+  ])
+
+  await expect(page.locator('[data-field-name="separator"] .q-separator--vertical')).toHaveCount(1)
+
+  await page.locator('[data-field-name="separator"] .overlay-preview-element').click()
+  await expect(page.getByText('Opções do separador')).toBeVisible()
+  await expect(page.getByText('Vertical', { exact: true })).toBeVisible()
+})
+
+test('matrix settings keep row and column values unique', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-matrix', name: 'matrix', label: 'Matriz', rows, columnsConfig },
+  ])
+
+  await page.locator('[data-field-name="matrix"] .overlay-preview-element').click()
+  await expect(page.getByText('Linhas e colunas')).toBeVisible()
+
+  const valueInputs = page.locator('[data-drawer="right"] input[placeholder="valor"]')
+  await valueInputs.nth(1).fill('row_1')
+  await valueInputs.nth(1).blur()
+  await valueInputs.nth(3).fill('column_1')
+  await valueInputs.nth(3).blur()
+
+  const fields = await readFields(page)
+  expect(fields[0].rows.map((row: { value: string }) => row.value)).toEqual(['row_1', 'row_2'])
+  expect(fields[0].columnsConfig.map((column: { value: string }) => column.value)).toEqual(['column_1', 'column_2'])
 })
 
 test('slider honors min max step and vertical orientation', async ({ page }) => {
@@ -231,7 +303,7 @@ test('container accepts existing fields dropped into its empty canvas', async ({
   ])
 
   await expect(page.locator('[data-field-name="text"] .overlay-preview-element')).toHaveCount(1)
-  await expect(page.locator('[data-field-name="container"] .structure-drop-zone')).toBeVisible()
+  await expect(page.locator('[data-field-name="container"] .structure-drop-zone')).toBeHidden()
 
   await page.evaluate(() => {
     const source = document.querySelector('[data-field-name="text"] .overlay-preview-element')
@@ -257,7 +329,7 @@ test('tabs and stepper dropped in root migrate fields into the new root structur
 
   const tabsSchema = { $formkit: 'q-tabs', name: 'tabs', tabs: [{ name: 'tab_1', label: 'Aba 1', children: [] }] }
 
-  await dropCatalogField(page, tabsSchema, '[data-field-name="first"] .preview-element-area-bottom')
+  await dropCatalogField(page, tabsSchema, '[data-field-name="first"] .preview-element-area-top')
   const fields = await readFields(page)
   expect(fields).toHaveLength(1)
   expect(fields[0].$formkit).toBe('q-tabs')
@@ -272,7 +344,7 @@ test('stepper dropped in root migrates fields into the first step', async ({ pag
 
   const stepperSchema = { $formkit: 'q-stepper', name: 'stepper', steps: [{ name: 'step_1', label: 'Passo 1', children: [] }] }
 
-  await dropCatalogField(page, stepperSchema, '[data-field-name="second"] .preview-element-area-bottom')
+  await dropCatalogField(page, stepperSchema, '[data-field-name="first"] .preview-element-area-top')
   const fields = await readFields(page)
   expect(fields).toHaveLength(1)
   expect(fields[0].$formkit).toBe('q-stepper')
@@ -318,7 +390,7 @@ test('tabs dropped at the top of root remain root-only', async ({ page }) => {
   expect(fields[0].tabs[0].children.map((field: { name: string }) => field.name)).toEqual(['first', 'second'])
 })
 
-test('tabs cannot be dropped inside structures', async ({ page }) => {
+test('tabs dropped over structures are placed at the root start instead of inside the structure', async ({ page }) => {
   await loadBuilder(page, [
     { $formkit: 'q-container', name: 'container', label: 'Container', children: [] },
   ])
@@ -331,8 +403,9 @@ test('tabs cannot be dropped inside structures', async ({ page }) => {
 
   const fields = await readFields(page)
   expect(fields).toHaveLength(1)
-  expect(fields[0].name).toBe('container')
-  expect(fields[0].children || []).toHaveLength(0)
+  expect(fields[0].$formkit).toBe('q-tabs')
+  expect(fields[0].tabs[0].children[0].name).toBe('container')
+  expect(fields[0].tabs[0].children[0].children || []).toHaveLength(0)
 })
 
 test('list structures accept existing fields dropped into their empty canvas', async ({ page }) => {
@@ -360,6 +433,64 @@ test('field wrapper honors configured columns in the builder canvas', async ({ p
 
   await expect(page.locator('[data-field-name="number"]')).toHaveCSS('grid-column-end', 'span 5')
   await expect(page.locator('[data-field-name="time"]')).toHaveCSS('grid-column-end', 'span 7')
+})
+
+test('field wrapper uses responsive column breakpoints from schema', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 800 })
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-input',
+      name: 'responsiveText',
+      label: 'Responsivo',
+      inputType: 'text',
+      columns: {
+        container: 12,
+        sm: { container: 6 },
+        lg: { container: 4 },
+      },
+    },
+  ])
+
+  await expect(page.locator('[data-field-name="responsiveText"]')).toHaveCSS('grid-column-end', 'span 4')
+
+  await page.setViewportSize({ width: 800, height: 800 })
+  await expect(page.locator('[data-field-name="responsiveText"]')).toHaveCSS('grid-column-end', 'span 6')
+
+  await page.setViewportSize({ width: 500, height: 800 })
+  await expect(page.locator('[data-field-name="responsiveText"]')).toHaveCSS('grid-column-end', 'span 12')
+})
+
+test('field wrapper honors configured columns inside structures', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-container',
+      name: 'container',
+      label: 'Container',
+      children: [
+        { $formkit: 'q-input', name: 'insideContainer', label: 'Dentro', inputType: 'text', columns: { container: 5 } },
+      ],
+    },
+    {
+      $formkit: 'q-grid',
+      name: 'grid',
+      rowsCount: 1,
+      columnsCount: 2,
+      cells: [
+        {
+          name: 'row_1__column_1',
+          label: 'Linha 1 / Coluna 1',
+          row: 'row_1',
+          column: 'column_1',
+          children: [
+            { $formkit: 'q-time', name: 'insideGrid', label: 'Hora', columns: { container: 6 } },
+          ],
+        },
+      ],
+    },
+  ])
+
+  await expect(page.locator('[data-field-name="insideContainer"]')).toHaveCSS('grid-column-end', 'span 5')
+  await expect(page.locator('[data-field-name="insideGrid"]')).toHaveCSS('grid-column-end', 'span 6')
 })
 
 test('column changes from the settings panel update the builder layout and persisted schema', async ({ page }) => {
@@ -434,6 +565,8 @@ test('structure body drop indicator is shown while dragging over a child structu
     { $formkit: 'q-container', name: 'container', label: 'Container', children: [] },
   ])
 
+  await expect(page.locator('[data-field-name="container"] .structure-drop-zone')).toBeHidden()
+
   const isVisible = await page.evaluate(async () => {
     const target = document.querySelector('[data-field-name="container"] .structure-drop-zone')
     if (!target) throw new Error('container structure drop zone not found')
@@ -453,12 +586,54 @@ test('structure body drop indicator is shown while dragging over a child structu
   expect(isVisible).toBe(true)
 })
 
+test('structure body drop indicator is cleared when the item is dropped outside the form', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-container', name: 'container', label: 'Container', children: [] },
+    { $formkit: 'q-input', name: 'text', label: 'Texto', inputType: 'text' },
+  ])
+
+  const result = await page.evaluate(async () => {
+    const source = document.querySelector('[data-field-name="text"] .overlay-preview-element')
+    const target = document.querySelector('[data-field-name="container"] .structure-drop-zone')
+    if (!source || !target) throw new Error('container drag target not found')
+    const data = new DataTransfer()
+    source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: data }))
+    target.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: data }))
+    target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: data }))
+    await new Promise(requestAnimationFrame)
+    const visibleDuringDrag = target.classList.contains('structure-drop-zone--visible')
+
+    document.body.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: data }))
+    await new Promise(requestAnimationFrame)
+
+    return {
+      visibleDuringDrag,
+      visibleAfterOutsideDrop: target.classList.contains('structure-drop-zone--visible'),
+      visibility: window.getComputedStyle(target).visibility,
+    }
+  })
+
+  expect(result.visibleDuringDrag).toBe(true)
+  expect(result.visibleAfterOutsideDrop).toBe(false)
+  expect(result.visibility).toBe('hidden')
+})
+
 test('grid structure drop zones are scoped to each column block', async ({ page }) => {
   await loadBuilder(page, [
     { $formkit: 'q-grid', name: 'twoColumns', rowsCount: 1, columnsCount: 2, cells: [] },
   ])
 
-  const metrics = await page.evaluate(() => {
+  await expect(page.locator('[data-field-name="twoColumns"] .structure-grid__cell .structure-drop-zone').first()).toBeHidden()
+
+  const metrics = await page.evaluate(async () => {
+    const target = document.querySelector('[data-field-name="twoColumns"] .structure-grid__cell .structure-drop-zone')
+    if (!target) throw new Error('grid drop zone not found')
+    const data = new DataTransfer()
+    data.setData('text', JSON.stringify({ $formkit: 'q-input', name: 'text', label: 'Texto', inputType: 'text' }))
+    target.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: data }))
+    target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: data }))
+    await new Promise(requestAnimationFrame)
+
     const cells = Array.from(document.querySelectorAll('[data-field-name="twoColumns"] .structure-grid__cell'))
     const zones = Array.from(document.querySelectorAll('[data-field-name="twoColumns"] .structure-grid__cell .structure-drop-zone'))
 
@@ -489,6 +664,405 @@ test('grid structure drop zones are scoped to each column block', async ({ page 
       fitsBottom: true,
     })
   }
+})
+
+test('grid cell fields use replacement feedback instead of side insertion lines', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-grid',
+      name: 'grid',
+      rowsCount: 1,
+      columnsCount: 2,
+      cells: [
+        {
+          name: 'row_1__column_1',
+          row: 'row_1',
+          column: 'column_1',
+          children: [
+            { $formkit: 'q-input', name: 'insideGrid', label: 'Dentro', inputType: 'text' },
+          ],
+        },
+      ],
+    },
+    { $formkit: 'q-input', name: 'outside', label: 'Fora', inputType: 'text' },
+  ])
+
+  const metrics = await page.evaluate(async () => {
+    const source = document.querySelector('[data-field-name="outside"] .overlay-preview-element')
+    const target = document.querySelector('[data-field-name="insideGrid"] .overlay-preview-element')
+    if (!source || !target) throw new Error('grid replacement target not found')
+
+    const data = new DataTransfer()
+    const targetRect = target.getBoundingClientRect()
+    source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: data }))
+    target.dispatchEvent(new DragEvent('dragover', {
+      bubbles: true,
+      cancelable: true,
+      clientX: targetRect.right - 2,
+      clientY: targetRect.top + targetRect.height / 2,
+      dataTransfer: data,
+    }))
+    await new Promise(requestAnimationFrame)
+
+    const visibleSideLines = Array.from(document.querySelectorAll('[data-field-name="insideGrid"] .preview-element-label-wrapper__left, [data-field-name="insideGrid"] .preview-element-label-wrapper__right')).filter((el) => {
+      const style = window.getComputedStyle(el)
+      return !el.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden'
+    })
+
+    return {
+      replacementVisible: target.classList.contains('__replace-target'),
+      replacementIconVisible: Boolean(document.querySelector('[data-field-name="insideGrid"] .preview-cell-replace-indicator')),
+      visibleSideLineCount: visibleSideLines.length,
+    }
+  })
+
+  expect(metrics).toEqual({
+    replacementVisible: true,
+    replacementIconVisible: true,
+    visibleSideLineCount: 0,
+  })
+})
+
+test('fields inside nested grid cells stay within the available cell width', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-grid',
+      name: 'outerGrid',
+      rowsCount: 2,
+      columnsCount: 2,
+      cells: [
+        {
+          name: 'row_1__column_1',
+          row: 'row_1',
+          column: 'column_1',
+          children: [
+            {
+              $formkit: 'q-grid',
+              name: 'innerGrid',
+              rowsCount: 2,
+              columnsCount: 2,
+              cells: [
+                {
+                  name: 'row_1__column_2',
+                  row: 'row_1',
+                  column: 'column_2',
+                  children: [
+                    { $el: 'p', name: 'p_1', children: 'Lorem ipsum dolor', attrs: { class: 'no-margin' } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    { $formkit: 'q-input', name: 'number', label: 'Número', inputType: 'number', columns: { container: 6 } },
+    { $formkit: 'q-input', name: 'url', label: 'URL', inputType: 'url', columns: { container: 6 } },
+  ])
+
+  await page.locator('[data-field-name="p_1"] .overlay-preview-element').click()
+
+  const metrics = await page.evaluate(() => {
+    const field = document.querySelector('[data-field-name="p_1"]')!
+    const overlay = field.querySelector('.overlay-preview-element')!
+    const cell = field.closest('.structure-grid__cell')!
+    const canvas = field.closest('.form-canvas')!
+    const fieldRect = field.getBoundingClientRect()
+    const overlayRect = overlay.getBoundingClientRect()
+    const cellRect = cell.getBoundingClientRect()
+    const canvasRect = canvas.getBoundingClientRect()
+    const columnGap = Number.parseFloat(window.getComputedStyle(canvas).columnGap)
+
+    return {
+      fieldHasSize: fieldRect.width > 0 && fieldRect.height > 0,
+      fieldFitsLeft: fieldRect.left >= cellRect.left - 1,
+      fieldFitsRight: fieldRect.right <= cellRect.right + 1,
+      overlayFitsLeft: overlayRect.left >= cellRect.left - 1,
+      overlayFitsRight: overlayRect.right <= cellRect.right + 1,
+      canvasFitsRight: canvasRect.right <= cellRect.right + 1,
+      totalGridGapFitsCell: columnGap * 11 < cellRect.width,
+    }
+  })
+
+  expect(metrics).toEqual({
+    fieldHasSize: true,
+    fieldFitsLeft: true,
+    fieldFitsRight: true,
+    overlayFitsLeft: true,
+    overlayFitsRight: true,
+    canvasFitsRight: true,
+    totalGridGapFitsCell: true,
+  })
+})
+
+test('catalog fields dropped on an inner grid cell are inserted into the inner grid', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-grid',
+      name: 'outerGrid',
+      rowsCount: 1,
+      columnsCount: 2,
+      cells: [
+        {
+          name: 'row_1__column_1',
+          row: 'row_1',
+          column: 'column_1',
+          children: [
+            {
+              $formkit: 'q-grid',
+              name: 'innerGrid',
+              rowsCount: 1,
+              columnsCount: 2,
+              cells: [],
+            },
+          ],
+        },
+      ],
+    },
+  ])
+
+  await dropCatalogField(
+    page,
+    { $formkit: 'q-input', name: 'innerText', label: 'Dentro', inputType: 'text' },
+    '[data-field-name="innerGrid"] .structure-grid__cell:nth-child(2) .structure-drop-zone',
+  )
+
+  const fields = await readFields(page)
+  const innerGrid = fields[0].cells[0].children[0]
+  expect(innerGrid.name).toBe('innerGrid')
+  expect(innerGrid.cells[1].children.map((field: { name: string }) => field.name)).toEqual(['innerText'])
+  await expect(page.locator('[data-field-name="innerGrid"]')).toBeVisible()
+  await expect(page.locator('[data-field-name="innerText"]')).toBeVisible()
+})
+
+test('catalog fields dropped on the inner grid overlay replace the inner grid', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-grid',
+      name: 'outerGrid',
+      rowsCount: 1,
+      columnsCount: 2,
+      cells: [
+        {
+          name: 'row_1__column_1',
+          row: 'row_1',
+          column: 'column_1',
+          children: [
+            {
+              $formkit: 'q-grid',
+              name: 'innerGrid',
+              rowsCount: 1,
+              columnsCount: 2,
+              cells: [],
+            },
+          ],
+        },
+      ],
+    },
+  ])
+
+  await dropCatalogField(
+    page,
+    { $formkit: 'q-input', name: 'replacementText', label: 'Substituto', inputType: 'text' },
+    '[data-field-name="innerGrid"] > .overlay-preview-element',
+  )
+
+  const fields = await readFields(page)
+  expect(fields[0].cells[0].children.map((field: { name: string }) => field.name)).toEqual(['replacementText'])
+  await expect(page.locator('[data-field-name="innerGrid"]')).toHaveCount(0)
+  await expect(page.locator('[data-field-name="replacementText"]')).toBeVisible()
+})
+
+test('subgrid cells reject another grid but still allow non-grid fields', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-grid',
+      name: 'outerGrid',
+      rowsCount: 1,
+      columnsCount: 2,
+      cells: [
+        {
+          name: 'row_1__column_1',
+          row: 'row_1',
+          column: 'column_1',
+          children: [
+            {
+              $formkit: 'q-grid',
+              name: 'innerGrid',
+              rowsCount: 1,
+              columnsCount: 2,
+              cells: [],
+            },
+          ],
+        },
+      ],
+    },
+  ])
+
+  await dropCatalogField(
+    page,
+    { $formkit: 'q-grid', name: 'blockedGrid', rowsCount: 1, columnsCount: 2, cells: [] },
+    '[data-field-name="innerGrid"] .structure-grid__cell:nth-child(1) .structure-drop-zone',
+  )
+
+  let fields = await readFields(page)
+  let innerGrid = fields[0].cells[0].children[0]
+  expect(innerGrid.name).toBe('innerGrid')
+  expect(innerGrid.cells.every((cell: { children?: unknown[] }) => !cell.children?.length)).toBe(true)
+  await expect(page.locator('[data-field-name="blockedGrid"]')).toHaveCount(0)
+
+  await dropCatalogField(
+    page,
+    { $formkit: 'q-input', name: 'allowedText', label: 'Permitido', inputType: 'text' },
+    '[data-field-name="innerGrid"] .structure-grid__cell:nth-child(1) .structure-drop-zone',
+  )
+
+  fields = await readFields(page)
+  innerGrid = fields[0].cells[0].children[0]
+  expect(innerGrid.cells[0].children.map((field: { name: string }) => field.name)).toEqual(['allowedText'])
+  await expect(page.locator('[data-field-name="allowedText"]')).toBeVisible()
+})
+
+test('side drop indicator text is horizontal and the line sits outside the field edge', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'first', label: 'Primeiro', inputType: 'text' },
+    { $formkit: 'q-input', name: 'second', label: 'Segundo', inputType: 'text' },
+  ])
+
+  const metrics = await page.evaluate(async () => {
+    const source = document.querySelector('[data-field-name="first"] .overlay-preview-element')
+    const target = document.querySelector('[data-field-name="second"] .overlay-preview-element')
+    if (!source || !target) throw new Error('side indicator targets not found')
+
+    const data = new DataTransfer()
+    const targetRect = target.getBoundingClientRect()
+    source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: data }))
+    target.dispatchEvent(new DragEvent('dragover', {
+      bubbles: true,
+      cancelable: true,
+      clientX: targetRect.right - 2,
+      clientY: targetRect.top + targetRect.height / 2,
+      dataTransfer: data,
+    }))
+    await new Promise(requestAnimationFrame)
+
+    const field = document.querySelector('[data-field-name="second"]')!
+    const line = field.querySelector('.preview-element-label-wrapper__right:not(.hidden)')!
+    const label = line.querySelector('.preview-element-label--side')!
+    const fieldRect = field.getBoundingClientRect()
+    const lineRect = line.getBoundingClientRect()
+    const matrix = new DOMMatrixReadOnly(window.getComputedStyle(label).transform)
+
+    return {
+      lineStartsOutside: lineRect.left >= fieldRect.right - 1,
+      lineExtendsOutside: lineRect.right > fieldRect.right,
+      hasNoRotation: Math.abs(matrix.b) < 0.001 && Math.abs(matrix.c) < 0.001,
+    }
+  })
+
+  expect(metrics).toEqual({
+    lineStartsOutside: true,
+    lineExtendsOutside: true,
+    hasNoRotation: true,
+  })
+})
+
+test('active field label and actions stay above the field edges', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'first', label: 'Primeiro', inputType: 'text' },
+  ])
+
+  await page.locator('[data-field-name="first"] .overlay-preview-element').click()
+
+  const metrics = await page.evaluate(() => {
+    const field = document.querySelector('[data-field-name="first"]')!
+    const name = field.querySelector('.preview-form-name')!
+    const copy = field.querySelector('.preview-form-copy-action')!
+    const remove = field.querySelector('.preview-form-remove-action')!
+    const fieldRect = field.getBoundingClientRect()
+    const nameRect = name.getBoundingClientRect()
+    const copyRect = copy.getBoundingClientRect()
+    const removeRect = remove.getBoundingClientRect()
+
+    return {
+      nameAtLeft: Math.abs(nameRect.left - fieldRect.left) < 1,
+      nameAboveField: nameRect.bottom <= fieldRect.top + 1,
+      removeAtRight: Math.abs(removeRect.right - fieldRect.right) < 1,
+      removeAboveField: removeRect.bottom <= fieldRect.top + 1,
+      copyBeforeRemove: copyRect.right <= removeRect.left + 1,
+    }
+  })
+
+  expect(metrics).toEqual({
+    nameAtLeft: true,
+    nameAboveField: true,
+    removeAtRight: true,
+    removeAboveField: true,
+    copyBeforeRemove: true,
+  })
+})
+
+test('grid uses editing surfaces instead of structural borders', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-grid', name: 'grid', rowsCount: 2, columnsCount: 2, cells: [] },
+  ])
+
+  const metrics = await page.evaluate(() => {
+    const grid = document.querySelector('[data-field-name="grid"] .structure-grid')!
+    const gridStyle = window.getComputedStyle(grid)
+    const cells = Array.from(document.querySelectorAll('[data-field-name="grid"] .structure-grid__cell'))
+    return {
+      hasEditingClass: grid.classList.contains('structure-grid--editing'),
+      gridHasSurface: gridStyle.backgroundColor !== 'rgba(0, 0, 0, 0)',
+      gridBorder: gridStyle.borderWidth,
+      cellBorders: cells.map((cell) => {
+        const style = window.getComputedStyle(cell)
+        return {
+          bottom: style.borderBottomWidth,
+          right: style.borderRightWidth,
+        }
+      }),
+    }
+  })
+
+  expect(metrics).toEqual({
+    hasEditingClass: true,
+    gridHasSurface: true,
+    gridBorder: '0px',
+    cellBorders: [
+      { bottom: '0px', right: '0px' },
+      { bottom: '0px', right: '0px' },
+      { bottom: '0px', right: '0px' },
+      { bottom: '0px', right: '0px' },
+    ],
+  })
+})
+
+test('non tab step structures render without borders in editing mode', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-container', name: 'container', label: 'Container', children: [] },
+    { $formkit: 'q-list-structure', name: 'list', label: 'Lista', nested: false, children: [] },
+    { $formkit: 'q-table-structure', name: 'table', rows, columnsConfig, cells: [] },
+  ])
+
+  const metrics = await page.evaluate(() => {
+    const selectors = ['.structure-container', '.structure-list', '.structure-table']
+    return selectors.map((selector) => {
+      const element = document.querySelector(selector)!
+      const style = window.getComputedStyle(element)
+      return {
+        selector,
+        hasSurface: style.backgroundColor !== 'rgba(0, 0, 0, 0)',
+        borderWidth: style.borderWidth,
+      }
+    })
+  })
+
+  expect(metrics).toEqual([
+    { selector: '.structure-container', hasSurface: true, borderWidth: '0px' },
+    { selector: '.structure-list', hasSurface: true, borderWidth: '0px' },
+    { selector: '.structure-table', hasSurface: true, borderWidth: '0px' },
+  ])
 })
 
 test('container list grid and table structures can be selected', async ({ page }) => {
@@ -561,7 +1135,7 @@ test('grid accepts existing fields inside a specific cell', async ({ page }) => 
   ])
 
   await expect(page.locator('[data-field-name="text"] .overlay-preview-element')).toHaveCount(1)
-  await expect(page.locator('[data-field-name="grid"] .structure-grid__cell .structure-drop-zone').first()).toBeVisible()
+  await expect(page.locator('[data-field-name="grid"] .structure-grid__cell .structure-drop-zone').first()).toBeHidden()
 
   await page.evaluate(() => {
     const source = document.querySelector('[data-field-name="text"] .overlay-preview-element')
@@ -579,6 +1153,104 @@ test('grid accepts existing fields inside a specific cell', async ({ page }) => 
   expect(fields[0].cells[0].children[0].name).toBe('text')
 })
 
+test('grid cells replace occupied content and hide clone controls for cell children', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-grid',
+      name: 'grid',
+      rowsCount: 1,
+      columnsCount: 2,
+      cells: [
+        {
+          name: 'row_1__column_1',
+          row: 'row_1',
+          column: 'column_1',
+          children: [
+            { $formkit: 'q-input', name: 'insideGrid', label: 'Dentro', inputType: 'text' },
+          ],
+        },
+      ],
+    },
+  ])
+
+  await page.locator('[data-field-name="insideGrid"] .overlay-preview-element').click()
+  await expect(page.locator('[data-field-name="insideGrid"] .preview-form-name')).toBeVisible()
+  await expect(page.locator('[data-field-name="insideGrid"] .preview-form-copy-action')).toHaveCount(0)
+
+  await dropCatalogField(
+    page,
+    { $formkit: 'q-input', name: 'replacement', label: 'Substituto', inputType: 'text' },
+    '[data-field-name="grid"] .structure-grid__cell .structure-drop-zone',
+  )
+
+  const fields = await readFields(page)
+  expect(fields[0].cells[0].children.map((field: { name: string }) => field.name)).toEqual(['replacement'])
+  await expect(page.locator('[data-field-name="insideGrid"]')).toHaveCount(0)
+  await expect(page.locator('[data-field-name="replacement"]')).toBeVisible()
+})
+
+test('occupied grid cells show replacement feedback instead of an extra cell drop zone', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-grid',
+      name: 'grid',
+      rowsCount: 1,
+      columnsCount: 2,
+      cells: [
+        {
+          name: 'row_1__column_1',
+          row: 'row_1',
+          column: 'column_1',
+          children: [
+            { $formkit: 'q-input', name: 'insideGrid', label: 'Dentro', inputType: 'text' },
+          ],
+        },
+      ],
+    },
+    { $formkit: 'q-input', name: 'outside', label: 'Fora', inputType: 'text' },
+  ])
+
+  const metrics = await page.evaluate(async () => {
+    const source = document.querySelector('[data-field-name="outside"] .overlay-preview-element')
+    const cell = document.querySelector('[data-field-name="insideGrid"]')?.closest('.structure-grid__cell')
+    const target = document.querySelector('[data-field-name="insideGrid"] .overlay-preview-element')
+    const canvas = cell?.querySelector('.form-canvas')
+    if (!source || !target || !cell || !canvas) throw new Error('occupied grid replacement targets not found')
+
+    const data = new DataTransfer()
+    const cellRect = cell.getBoundingClientRect()
+    source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: data }))
+    canvas.dispatchEvent(new DragEvent('dragover', {
+      bubbles: true,
+      cancelable: true,
+      clientX: cellRect.left + cellRect.width / 2,
+      clientY: cellRect.bottom - 4,
+      dataTransfer: data,
+    }))
+    await new Promise(requestAnimationFrame)
+
+    const zone = cell.querySelector('.structure-drop-zone')
+    const visibleLabels = Array.from(document.querySelectorAll('[data-field-name="insideGrid"] .preview-element-label-wrapper')).filter((el) => {
+      const style = window.getComputedStyle(el)
+      return !el.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden'
+    })
+
+    return {
+      replacementVisible: target.classList.contains('__replace-target'),
+      replacementIconVisible: Boolean(document.querySelector('[data-field-name="insideGrid"] .preview-cell-replace-indicator')),
+      cellZoneVisible: zone?.classList.contains('structure-drop-zone--visible') ?? false,
+      fieldLineCount: visibleLabels.length,
+    }
+  })
+
+  expect(metrics).toEqual({
+    replacementVisible: true,
+    replacementIconVisible: true,
+    cellZoneVisible: false,
+    fieldLineCount: 0,
+  })
+})
+
 test('table accepts existing fields inside a specific cell', async ({ page }) => {
   await loadBuilder(page, [
     { $formkit: 'q-table-structure', name: 'table', rows, columnsConfig, cells: [] },
@@ -586,7 +1258,7 @@ test('table accepts existing fields inside a specific cell', async ({ page }) =>
   ])
 
   await expect(page.locator('[data-field-name="text"] .overlay-preview-element')).toHaveCount(1)
-  await expect(page.locator('[data-field-name="table"] .structure-table__cell .structure-drop-zone').first()).toBeVisible()
+  await expect(page.locator('[data-field-name="table"] .structure-table__cell .structure-drop-zone').first()).toBeHidden()
 
   await page.evaluate(() => {
     const source = document.querySelector('[data-field-name="text"] .overlay-preview-element')
@@ -725,10 +1397,60 @@ test('horizontal drop indicator is centered in the gap between fields', async ({
   expect(metrics.lineCenter).toBeLessThan(metrics.secondTop)
 })
 
-test('root-only structures only show a guide at the first root position', async ({ page }) => {
+test('side drop indicator only appears near field side edges', async ({ page }) => {
   await loadBuilder(page, [
     { $formkit: 'q-input', name: 'first', label: 'Primeiro', inputType: 'text' },
     { $formkit: 'q-input', name: 'second', label: 'Segundo', inputType: 'text' },
+  ])
+
+  const result = await page.evaluate(async () => {
+    const source = document.querySelector('[data-field-name="first"] .overlay-preview-element')
+    const target = document.querySelector('[data-field-name="second"] .overlay-preview-element')
+    if (!source || !target) throw new Error('drop indicator targets not found')
+
+    const visibleClasses = () => Array.from(document.querySelectorAll('.preview-element-label-wrapper')).filter((el) => {
+      const style = window.getComputedStyle(el)
+      return !el.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden'
+    }).map(el => el.className)
+
+    const data = new DataTransfer()
+    const rect = target.getBoundingClientRect()
+    source.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: data }))
+    target.dispatchEvent(new DragEvent('dragover', {
+      bubbles: true,
+      cancelable: true,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+      dataTransfer: data,
+    }))
+    await new Promise(requestAnimationFrame)
+    const centerClasses = visibleClasses()
+
+    target.dispatchEvent(new DragEvent('dragover', {
+      bubbles: true,
+      cancelable: true,
+      clientX: rect.right - 2,
+      clientY: rect.top + rect.height / 2,
+      dataTransfer: data,
+    }))
+    await new Promise(requestAnimationFrame)
+    const edgeClasses = visibleClasses()
+
+    return { centerClasses, edgeClasses }
+  })
+
+  expect(result.centerClasses).toHaveLength(1)
+  expect(result.centerClasses[0]).not.toContain('preview-element-label-wrapper__left')
+  expect(result.centerClasses[0]).not.toContain('preview-element-label-wrapper__right')
+  expect(result.edgeClasses).toHaveLength(1)
+  expect(result.edgeClasses[0]).toContain('preview-element-label-wrapper__right')
+})
+
+test('root-only structures always show the guide at the first root position', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'first', label: 'Primeiro', inputType: 'text' },
+    { $formkit: 'q-input', name: 'second', label: 'Segundo', inputType: 'text' },
+    { $formkit: 'q-container', name: 'container', label: 'Container', children: [] },
   ])
 
   const result = await page.evaluate(async () => {
@@ -739,16 +1461,18 @@ test('root-only structures only show a guide at the first root position', async 
     const secondBottom = document.querySelector('[data-field-name="second"] .preview-element-area-bottom')
     const firstRight = document.querySelector('[data-field-name="first"] .preview-element-area-right')
     const firstTop = document.querySelector('[data-field-name="first"] .preview-element-area-top')
-    if (!secondBottom || !firstRight || !firstTop) throw new Error('root-only drop areas not found')
+    const structureZone = document.querySelector('[data-field-name="container"] .structure-drop-zone')
+    if (!secondBottom || !firstRight || !firstTop || !structureZone) throw new Error('root-only drop areas not found')
 
     secondBottom.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: data }))
     firstRight.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: data }))
+    structureZone.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: data }))
     await new Promise(requestAnimationFrame)
 
-    const invalidVisibleCount = Array.from(document.querySelectorAll('.preview-element-label-wrapper')).filter((el) => {
+    const visibleAfterInvalidTargets = Array.from(document.querySelectorAll('.preview-element-label-wrapper')).filter((el) => {
       const style = window.getComputedStyle(el)
       return !el.classList.contains('hidden') && style.display !== 'none' && style.visibility !== 'hidden'
-    }).length
+    })
 
     firstTop.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: data }))
     await new Promise(requestAnimationFrame)
@@ -759,15 +1483,35 @@ test('root-only structures only show a guide at the first root position', async 
     })
 
     return {
-      invalidVisibleCount,
+      invalidVisibleCount: visibleAfterInvalidTargets.length,
+      invalidClassName: visibleAfterInvalidTargets[0]?.className || '',
       validVisibleCount: validVisible.length,
       validClassName: validVisible[0]?.className || '',
     }
   })
 
-  expect(result.invalidVisibleCount).toBe(0)
+  expect(result.invalidVisibleCount).toBe(1)
+  expect(result.invalidClassName).toContain('preview-element-label-wrapper__top')
   expect(result.validVisibleCount).toBe(1)
   expect(result.validClassName).toContain('preview-element-label-wrapper__top')
+})
+
+test('root-only structures dropped at the root end are inserted at the root start', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'first', label: 'Primeiro', inputType: 'text' },
+    { $formkit: 'q-input', name: 'second', label: 'Segundo', inputType: 'text' },
+  ])
+
+  await dropCatalogField(
+    page,
+    { $formkit: 'q-stepper', name: 'stepper', steps: [{ name: 'step_1', label: 'Passo 1', children: [] }] },
+    '[data-field-name="second"] .preview-element-area-bottom',
+  )
+
+  const fields = await readFields(page)
+  expect(fields).toHaveLength(1)
+  expect(fields[0].$formkit).toBe('q-stepper')
+  expect(fields[0].steps[0].children.map((field: { name: string }) => field.name)).toEqual(['first', 'second'])
 })
 
 test('dropping a catalog field beside a full-width field creates a 6 by 6 row', async ({ page }) => {
@@ -789,7 +1533,52 @@ test('dropping a catalog field beside a full-width field creates a 6 by 6 row', 
   await expect(page.locator('[data-field-name="time"]')).toHaveCSS('grid-column-end', 'span 6')
 })
 
-test('moving an existing field to the side preserves the target width and fills the remaining columns', async ({ page }) => {
+test('fields with complementary columns render in the same visual row', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'five', label: 'Cinco', inputType: 'text', columns: { container: 5 } },
+    { $formkit: 'q-input', name: 'seven', label: 'Sete', inputType: 'text', columns: { container: 7 } },
+    { $formkit: 'q-input', name: 'fourA', label: 'Quatro A', inputType: 'text', columns: { container: 4 } },
+    { $formkit: 'q-input', name: 'fourB', label: 'Quatro B', inputType: 'text', columns: { container: 4 } },
+    { $formkit: 'q-input', name: 'fourC', label: 'Quatro C', inputType: 'text', columns: { container: 4 } },
+  ])
+
+  const metrics = await page.evaluate(() => {
+    const box = (name: string) => document.querySelector(`[data-field-name="${name}"]`)!.getBoundingClientRect()
+    const five = box('five')
+    const seven = box('seven')
+    const fourA = box('fourA')
+    const fourB = box('fourB')
+    const fourC = box('fourC')
+
+    return {
+      fiveSevenSameRow: Math.abs(five.top - seven.top) < 2 && five.right <= seven.left,
+      fourFieldsSameRow: Math.abs(fourA.top - fourB.top) < 2
+        && Math.abs(fourB.top - fourC.top) < 2
+        && fourA.right <= fourB.left
+        && fourB.right <= fourC.left,
+    }
+  })
+
+  expect(metrics.fiveSevenSameRow).toBe(true)
+  expect(metrics.fourFieldsSameRow).toBe(true)
+})
+
+test('fields wrap when their columns exceed one row', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'eight', label: 'Oito', inputType: 'text', columns: { container: 8 } },
+    { $formkit: 'q-input', name: 'six', label: 'Seis', inputType: 'text', columns: { container: 6 } },
+  ])
+
+  const wrapped = await page.evaluate(() => {
+    const eight = document.querySelector('[data-field-name="eight"]')!.getBoundingClientRect()
+    const six = document.querySelector('[data-field-name="six"]')!.getBoundingClientRect()
+    return six.top > eight.bottom
+  })
+
+  expect(wrapped).toBe(true)
+})
+
+test('moving an existing field to the side preserves the existing column spans', async ({ page }) => {
   await loadBuilder(page, [
     { $formkit: 'q-input', name: 'first', label: 'Primeiro', inputType: 'text', columns: { container: 5 } },
     { $formkit: 'q-input', name: 'second', label: 'Segundo', inputType: 'text' },
@@ -803,10 +1592,32 @@ test('moving an existing field to the side preserves the target width and fills 
 
   const fields = await readFields(page)
   expect(fields.map((field: { name: string }) => field.name)).toEqual(['second', 'first'])
-  expect(fields[0].columns.container).toBe(7)
+  expect(fields[0].columns?.container).toBeUndefined()
   expect(fields[1].columns.container).toBe(5)
-  await expect(page.locator('[data-field-name="second"]')).toHaveCSS('grid-column-end', 'span 7')
+  await expect(page.locator('[data-field-name="second"]')).toHaveCSS('grid-column-end', 'span 12')
   await expect(page.locator('[data-field-name="first"]')).toHaveCSS('grid-column-end', 'span 5')
+})
+
+test('dropping a field into an occupied row redistributes all row columns evenly', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'first', label: 'Primeiro', inputType: 'text', columns: { container: 4 } },
+    { $formkit: 'q-input', name: 'second', label: 'Segundo', inputType: 'text', columns: { container: 4 } },
+    { $formkit: 'q-input', name: 'third', label: 'Terceiro', inputType: 'text', columns: { container: 4 } },
+  ])
+
+  await dropCatalogField(
+    page,
+    { $formkit: 'q-time', name: 'time', label: 'Hora' },
+    '[data-field-name="first"] .preview-element-area-right',
+  )
+
+  const fields = await readFields(page)
+  expect(fields.map((field: { name: string }) => field.name)).toEqual(['first', 'time', 'second', 'third'])
+  expect(fields.map((field: { columns: { container: number } }) => field.columns.container)).toEqual([3, 3, 3, 3])
+
+  for (const fieldName of ['first', 'time', 'second', 'third']) {
+    await expect(page.locator(`[data-field-name="${fieldName}"]`)).toHaveCSS('grid-column-end', 'span 3')
+  }
 })
 
 test('resize updates the field width while dragging before mouseup', async ({ page }) => {
