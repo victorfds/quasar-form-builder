@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { BuilderFieldListKey, StructureCell } from '~/types'
+import { builderModeKey } from '~/constants/injectionKeys'
 
 interface MatrixOption {
   label: string
@@ -21,6 +22,10 @@ const props = defineProps<{
   }
 }>()
 
+const { dark } = useQuasar()
+const formStore = useFormStore()
+const builderMode = inject(builderModeKey, false)
+const isEditing = computed(() => Boolean(builderMode && formStore.formSettings.previewMode === 'editing'))
 const rows = computed(() => {
   const contextRows = firstFilledArray<MatrixOption>(props.context.rows, props.context.attrs.rows)
   return contextRows?.length ? contextRows : [{ label: 'Linha 1', value: 'row_1' }]
@@ -46,7 +51,15 @@ function getCellListKey(row: string, column: string): BuilderFieldListKey {
 </script>
 
 <template>
-  <q-markup-table dense flat bordered class="structure-table full-width">
+  <q-markup-table
+    dense
+    flat
+    class="structure-table full-width"
+    :class="{
+      'structure-table--editing': isEditing,
+      'structure-table--dark': dark.isActive,
+    }"
+  >
     <thead>
       <tr>
         <th />
@@ -74,18 +87,38 @@ function getCellListKey(row: string, column: string): BuilderFieldListKey {
 
 <style scoped>
 .structure-table {
-  border: 1px solid var(--line-color, #d7dde2);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
   table-layout: fixed;
 }
 
+.structure-table--editing {
+  background: rgba(225, 232, 238, .82);
+  border-radius: 6px;
+}
+
+.structure-table--editing.structure-table--dark {
+  background: rgba(255, 255, 255, .055);
+}
+
 .structure-table__cell {
+  box-sizing: border-box;
+  max-width: 100%;
   min-width: 8rem;
-  padding: 0.35rem;
+  overflow: visible;
+  padding: 0;
   vertical-align: top;
 }
 
+.structure-table--editing .structure-table__cell {
+  padding: .5rem;
+}
+
 .structure-table__cell :deep(.form-canvas) {
+  max-width: 100%;
   min-height: 4.5rem;
+  overflow: visible;
   padding-bottom: 0;
   padding-top: 0;
 }
@@ -93,5 +126,15 @@ function getCellListKey(row: string, column: string): BuilderFieldListKey {
 .structure-table__cell :deep(.overlay-drop-here) {
   height: 4.5rem;
   min-height: 4.5rem;
+}
+
+.structure-table :deep(th),
+.structure-table :deep(td) {
+  border: 0;
+}
+
+.structure-table--editing :deep(th),
+.structure-table--editing :deep(td) {
+  background: transparent;
 }
 </style>

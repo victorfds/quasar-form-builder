@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
+import { builderModeKey } from '~/constants/injectionKeys'
 
 const props = defineProps<{
   context: FormKitFrameworkContext & {
@@ -15,6 +16,10 @@ const props = defineProps<{
   }
 }>()
 
+const { dark } = useQuasar()
+const formStore = useFormStore()
+const builderMode = inject(builderModeKey, false)
+const isEditing = computed(() => Boolean(builderMode && formStore.formSettings.previewMode === 'editing'))
 const children = computed(() => firstFilledArray<FormKitSchemaDefinition>(
   props.context.structureChildren,
   props.context.attrs.structureChildren,
@@ -26,7 +31,14 @@ const isNested = computed(() => props.context.attrs.nested ?? props.context.nest
 </script>
 
 <template>
-  <q-card flat bordered class="structure-list">
+  <q-card
+    flat
+    class="structure-list"
+    :class="{
+      'structure-list--editing': isEditing,
+      'structure-list--dark': dark.isActive,
+    }"
+  >
     <q-card-section>
       <div class="text-subtitle2">
         {{ context.label || (isNested ? 'Lista aninhada' : 'Lista') }}
@@ -35,7 +47,7 @@ const isNested = computed(() => props.context.attrs.nested ?? props.context.nest
         {{ context.attrs.description }}
       </div>
     </q-card-section>
-    <q-separator />
+    <q-separator v-if="isEditing" />
     <q-card-section>
       <BuilderStructureCanvas :fields="children" :list-key="listKey" empty-text="Item repetível vazio" />
     </q-card-section>
@@ -44,8 +56,25 @@ const isNested = computed(() => props.context.attrs.nested ?? props.context.nest
 
 <style scoped>
 .structure-list {
-  border: 1px solid var(--line-color, #d7dde2) !important;
+  background: transparent;
+  border: 0 !important;
   border-radius: 6px;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: visible;
   width: 100%;
+}
+
+.structure-list--editing {
+  background: rgba(225, 232, 238, .82);
+}
+
+.structure-list--editing.structure-list--dark {
+  background: rgba(255, 255, 255, .055);
+}
+
+.structure-list :deep(.form-canvas) {
+  max-width: 100%;
+  overflow: visible;
 }
 </style>

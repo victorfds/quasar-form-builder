@@ -6,14 +6,7 @@ export default function useSteps() {
   const steps = reactive({})
   const visitedSteps = ref<string[]>([]) // track visited steps
 
-  // NEW: watch our activeStep and store visited steps
-  // to know when to show errors
-  watch(activeStep, (newStep, oldStep) => {
-    if (oldStep && !visitedSteps.value.includes(oldStep)) {
-      visitedSteps.value.push(oldStep)
-    }
-    // NEW: trigger showing validation on fields
-    // within all visited steps
+  function revealVisitedStepErrors() {
     visitedSteps.value.forEach((step) => {
       const node = getNode(step)
       node?.walk((n) => {
@@ -26,12 +19,21 @@ export default function useSteps() {
         )
       })
     })
-  })
+  }
+
+  function setActiveStep(stepName: string) {
+    const oldStep = activeStep.value
+    if (oldStep && !visitedSteps.value.includes(oldStep)) {
+      visitedSteps.value.push(oldStep)
+    }
+    activeStep.value = stepName
+    revealVisitedStepErrors()
+  }
 
   const setStep = (delta: number) => {
     const stepNames = Object.keys(steps)
     const currentIndex = stepNames.indexOf(activeStep.value)
-    activeStep.value = stepNames[currentIndex + delta]!
+    setActiveStep(stepNames[currentIndex + delta]!)
   }
 
   const stepPlugin = (node: FormKitNode) => {
@@ -60,7 +62,7 @@ export default function useSteps() {
 
       // set the active tab to the 1st tab
       if (activeStep.value === '') {
-        activeStep.value = node.name
+        setActiveStep(node.name)
       }
 
       // Stop plugin inheritance to descendant nodes
@@ -69,5 +71,5 @@ export default function useSteps() {
   }
 
   // NEW: include visitedSteps in our return
-  return { activeStep, visitedSteps, steps, stepPlugin, setStep }
+  return { activeStep, visitedSteps, steps, stepPlugin, setStep, setActiveStep }
 }

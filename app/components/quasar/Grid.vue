@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderFieldListKey, StructureCell } from '~/types'
+import { builderModeKey } from '~/constants/injectionKeys'
 
 interface GridOption {
   label: string
@@ -25,6 +26,10 @@ const props = defineProps<{
   }
 }>()
 
+const { dark } = useQuasar()
+const formStore = useFormStore()
+const builderMode = inject(builderModeKey, false)
+const isEditing = computed(() => Boolean(builderMode && formStore.formSettings.previewMode === 'editing'))
 const columnsCount = computed(() => Math.max(1, Math.min(4, Number(props.context.attrs.columnsCount || props.context.columnsCount || 2))))
 const rowsCount = computed(() => Math.max(1, Math.min(8, Number(props.context.attrs.rowsCount || props.context.rowsCount || 1))))
 const gridStyle = computed(() => ({
@@ -61,6 +66,8 @@ const gridCells = computed(() => {
         label: `${row.label} / ${column.label}`,
         row: row.value,
         column: column.value,
+        rowIndex,
+        columnIndex,
         children: existingCell?.children || (rowIndex === 0 && columnIndex === 0 ? legacyChildren : []),
       }
     }),
@@ -73,8 +80,23 @@ function getCellListKey(cellName: string): BuilderFieldListKey {
 </script>
 
 <template>
-  <div class="structure-grid" :style="gridStyle">
-    <div v-for="cell in gridCells" :key="cell.name" class="structure-grid__cell">
+  <div
+    class="structure-grid"
+    :class="{
+      'structure-grid--editing': isEditing,
+      'structure-grid--dark': dark.isActive,
+    }"
+    :style="gridStyle"
+  >
+    <div
+      v-for="cell in gridCells"
+      :key="cell.name"
+      class="structure-grid__cell"
+      :class="{
+        'structure-grid__cell--last-row': cell.rowIndex === rowsCount - 1,
+        'structure-grid__cell--last-column': cell.columnIndex === columnsCount - 1,
+      }"
+    >
       <BuilderStructureCanvas
         :fields="cell.children"
         :list-key="getCellListKey(cell.name)"
@@ -86,23 +108,46 @@ function getCellListKey(cellName: string): BuilderFieldListKey {
 
 <style scoped>
 .structure-grid {
+  border: 0;
+  box-sizing: border-box;
   display: grid;
-  border: 1px solid var(--line-color, #d7dde2);
-  border-radius: 6px;
   gap: 0;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
 }
 
+.structure-grid--editing {
+  background: rgba(225, 232, 238, .82);
+  border-radius: 6px;
+  gap: .75rem;
+  padding: .75rem;
+}
+
+.structure-grid--editing.structure-grid--dark {
+  background: rgba(255, 255, 255, .055);
+}
+
 .structure-grid__cell {
-  border-bottom: 1px solid var(--line-color, #d7dde2);
-  border-right: 1px solid var(--line-color, #d7dde2);
+  box-sizing: border-box;
   min-width: 0;
-  padding: 0.5rem;
+  overflow: visible;
+  padding: 0;
+}
+
+.structure-grid--editing > .structure-grid__cell {
+  background: rgba(255, 255, 255, .56);
+  border-radius: 6px;
+  padding: .5rem;
+}
+
+.structure-grid--editing.structure-grid--dark > .structure-grid__cell {
+  background: rgba(255, 255, 255, .055);
 }
 
 .structure-grid__cell :deep(.form-canvas) {
   min-height: 5rem;
+  max-width: 100%;
+  overflow: visible;
   padding-bottom: 0;
   padding-top: 0;
 }
@@ -115,6 +160,10 @@ function getCellListKey(cellName: string): BuilderFieldListKey {
 @media (max-width: 599px) {
   .structure-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .structure-grid__cell {
+    min-height: 5rem;
   }
 }
 </style>

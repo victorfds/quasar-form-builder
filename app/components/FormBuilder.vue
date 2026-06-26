@@ -100,9 +100,9 @@ const offset = useState('offset')
 
 // unsubscribe from listeners
 let stopFormAreaClick: (() => void) | undefined
+let stopPreviewModeChange: (() => void) | undefined
 
 function clearActiveField() {
-  activeNameFields.value.active = []
   formStore.setActiveField(null)
 }
 
@@ -121,35 +121,26 @@ function handleFormAreaClick(ev: MouseEvent) {
   clearActiveField()
 }
 
+function resetPreviewForm() {
+  reset('myForm')
+  clearErrors('myForm', true)
+}
+
 onBeforeUnmount(() => {
   document.removeEventListener('mousemove', throttleResize)
   document.removeEventListener('mouseup', stopResize)
 })
 
 onMounted(() => {
+  formStore.hydrateFromStorage()
   stopFormAreaClick = useEventListener(previewFormSectionRef, 'click', handleFormAreaClick, { capture: true })
-
-  useEventOutside(previewFormSectionRef, formDroppableRef, 'dragover', () => {
-    indexPointer.value = null
-    dragInIndicator.value = {}
-  })
+  stopPreviewModeChange = useEventListener(window, 'builder:preview-mode-change', resetPreviewForm)
 })
 
 onUnmounted(() => {
   if (stopFormAreaClick)
     stopFormAreaClick()
-})
-
-watch(() => formStore.activeField, (newVal) => {
-  if (!activeNameFields.value.active.includes(newVal?.name)) {
-    activeNameFields.value.active[0] = ''
-    activeNameFields.value.active[1] = newVal?.name
-  }
-}, { deep: true })
-
-watch(() => formStore.formSettings.previewMode, () => {
-  reset('myForm')
-  clearErrors('myForm', true)
+  stopPreviewModeChange?.()
 })
 
 const data = computed(() => ({
@@ -185,7 +176,7 @@ function getFieldClasses(field: ViewerField) {
 }
 
 function getFieldStyle(field: ViewerField) {
-  return fieldUi.getGridColumnStyle(field as any, formStore.formSettings.columns)
+  return fieldUi.getGridColumnStyle(field as any)
 }
 </script>
 
@@ -219,7 +210,7 @@ function getFieldStyle(field: ViewerField) {
                 @dragleave="onDragLeaveFormSectionArea"
               >
                 <div
-                  v-for="(field, index) in builderFields" :key="field?.name || index" class="form-field"
+                  v-for="(field, index) in builderFields" :key="field?.name || index" class="form-field form-field--responsive"
                   :data-field-name="field?.name"
                   :class="getFieldClasses(field)"
                   :style="getFieldStyle(field)"

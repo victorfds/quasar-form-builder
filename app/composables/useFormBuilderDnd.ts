@@ -16,7 +16,11 @@ export function useFormBuilderDnd(formStore: any) {
   const targetStepName = ref<string | null>(null)
   const originalListKey = ref<BuilderFieldListKey | null>(null)
   const targetListKey = ref<BuilderFieldListKey | null>(null)
-  const activeNameFields = ref<{ active: string[], hover?: string }>({ active: [] })
+  const hoverName = ref<string>('')
+  const activeNameFields = computed(() => ({
+    active: formStore.activeField?.name ? [formStore.activeField.name] : [],
+    hover: hoverName.value,
+  }))
   const dragInIndicator = ref<DragInIndicator>({})
   const isUserDraggingOver = ref(false)
   const isDragging = ref(true)
@@ -59,8 +63,56 @@ export function useFormBuilderDnd(formStore: any) {
   }
 
   function clearFieldSelection() {
-    activeNameFields.value = { active: [] }
     setActiveField(null)
+  }
+
+  function clearDropTargetState() {
+    targetListKey.value = originalListKey.value
+    indexPointer.value = null
+    dragInIndicator.value = {}
+    isUserDraggingOver.value = false
+    highlightDropArea.value = false
+    isDraggingStepper.value = false
+    isDraggingRootOnlyStructure.value = false
+  }
+
+  function hasDragState(ev?: DragEvent) {
+    const eventTypes = Array.from(ev?.dataTransfer?.types || [])
+    return Boolean(
+      elementBeingDragged.value.field
+      || originalFieldIndex.value !== null
+      || eventTypes.includes('text')
+      || eventTypes.includes('application/x-builder-field'),
+    )
+  }
+
+  function isInsideBuilderSurface(ev: Event) {
+    const target = ev.target
+    if (!(target instanceof Node)) return false
+    const builderRoot = previewFormSectionRef.value
+    if (builderRoot?.contains(target)) return true
+    if (target instanceof HTMLElement && target.closest('[data-keep-active]')) return true
+    return false
+  }
+
+  function onGlobalDragover(ev: DragEvent) {
+    if (!hasDragState(ev)) return
+    if (isInsideBuilderSurface(ev)) return
+    clearDropTargetState()
+  }
+
+  function onGlobalDrop(ev: DragEvent) {
+    if (!hasDragState(ev)) return
+    if (isInsideBuilderSurface(ev)) return
+    resetDragState()
+  }
+
+  function onGlobalDragend() {
+    resetDragState()
+  }
+
+  function onGlobalKeydown(ev: KeyboardEvent) {
+    if (ev.key === 'Escape') resetDragState()
   }
 
   function getDropListKey(listKey?: BuilderFieldListKey | null) {
@@ -69,6 +121,32 @@ export function useFormBuilderDnd(formStore: any) {
 
   function getRootStructureLabel(tool?: FormKitSchemaNode | FormKitSchemaDefinition | null) {
     return tool?.$formkit === 'q-stepper' ? 'Passos' : 'Abas'
+  }
+
+  function getRootFieldsList() {
+    return formStore.resolveFieldList?.('root') || formStore.formFields || []
+  }
+
+  function setRootOnlyDropTarget() {
+    const firstRootField = getRootFieldsList()[0]
+    targetListKey.value = 'root'
+    indexPointer.value = 0
+    dragInIndicator.value = {
+      index: 0,
+      name: firstRootField?.name,
+      placement: 'top',
+      listKey: 'root',
+    }
+  }
+
+  function placeRootOnlyStructure(tool: FormKitSchemaNode) {
+    if (formStore.hasRootOnlyStructure) {
+      confirmRootStructureReplacement(tool)
+    }
+    else {
+      formStore.replaceRootOnlyStructure(tool)
+      clearFieldSelection()
+    }
   }
 
   function confirmRootStructureReplacement(tool: FormKitSchemaNode) {
@@ -124,22 +202,6 @@ export function useFormBuilderDnd(formStore: any) {
     return formStore.addField(tool, indexPointer.value, dropListKey)
   }
 
-  function isRootOnlyStructureDropZone(listKey: BuilderFieldListKey) {
-    if (listKey === 'root') return true
-    const currentStructure = formStore.getRootOnlyStructure?.()
-
-    if (listKey.startsWith('step:')) {
-      return currentStructure?.$formkit === 'q-stepper'
-    }
-
-    if (listKey.startsWith('tab:')) {
-      const [, tabsFieldName] = listKey.split(':')
-      return currentStructure?.$formkit === 'q-tabs' && currentStructure?.name === tabsFieldName
-    }
-
-    return false
-  }
-
   function onDrop(ev: DragEvent, listKey?: BuilderFieldListKey | null) {
     const toolData = ev.dataTransfer?.getData('text')
     const internalFieldName = ev.dataTransfer?.getData('application/x-builder-field') || (elementBeingDragged.value.field as any)?.name
@@ -158,16 +220,8 @@ export function useFormBuilderDnd(formStore: any) {
       try {
         const tool: FormKitSchemaNode = JSON.parse(toolData)
         if (formStore.isRootOnlyStructure?.(tool)) {
-          if (!isRootOnlyStructureDropZone(dropListKey)) {
-            formStore.addField(tool, indexPointer.value, dropListKey)
-          }
-          else if (formStore.hasRootOnlyStructure) {
-            confirmRootStructureReplacement(tool)
-          }
-          else {
-            formStore.replaceRootOnlyStructure(tool)
-            clearFieldSelection()
-          }
+          setRootOnlyDropTarget()
+          placeRootOnlyStructure(tool)
           return
         }
         addCatalogField(tool, dropListKey)
@@ -224,15 +278,7 @@ export function useFormBuilderDnd(formStore: any) {
     const fieldsList = formStore.resolveFieldList(dropListKey) || []
 
     if (isDraggingRootOnlyStructure.value) {
-      targetListKey.value = dropListKey
-      if (dropListKey === 'root' && placement === 'top' && index === 0) {
-        indexPointer.value = 0
-        dragInIndicator.value = { index: 0, name: fieldsList[0]?.name || fieldName, placement: 'top', listKey: dropListKey }
-      }
-      else {
-        indexPointer.value = null
-        dragInIndicator.value = {}
-      }
+      setRootOnlyDropTarget()
       return
     }
 
@@ -277,6 +323,10 @@ export function useFormBuilderDnd(formStore: any) {
   }
 
   function onDragOverDropArea(_e: DragEvent, listKey?: BuilderFieldListKey | null) {
+    if (isDraggingRootOnlyStructure.value) {
+      setRootOnlyDropTarget()
+      return
+    }
     if (isInsidePlacement(dragInIndicator.value.placement)) return
     targetListKey.value = listKey || targetListKey.value || formStore.getActiveListKey
     if (originalFieldIndex.value === null && !elementBeingDragged.value.field && elementBeingDragged.value.index === undefined) {
@@ -316,22 +366,25 @@ export function useFormBuilderDnd(formStore: any) {
   function onClickAtFormElement(index: number, listKey?: BuilderFieldListKey | null) {
     const fieldsList = formStore.resolveFieldList(listKey) || formStore.activeFields
     const field = fieldsList.find((_: any, idx: number) => idx === index) || null
-    activeNameFields.value.active[0] = field?.name
-    activeNameFields.value.active[1] = field?.name
     setActiveField(field)
     setActiveStepConfig(null)
     setActiveTabConfig(null)
   }
 
   function onMouseOverAtFormElement(field: any) {
-    activeNameFields.value.hover = field?.name
+    hoverName.value = field?.name || ''
   }
 
   function onMouseLeaveAtFormElement() {
-    activeNameFields.value.hover = ''
+    hoverName.value = ''
   }
 
   function onDragEnterStepHeader(stepName: string) {
+    if (isDraggingRootOnlyStructure.value) {
+      setRootOnlyDropTarget()
+      isUserDraggingOver.value = true
+      return
+    }
     if (!formStore.hasStepper || !elementBeingDragged.value.field) return
     targetStepName.value = stepName
     targetListKey.value = `step:${stepName}`
@@ -358,6 +411,11 @@ export function useFormBuilderDnd(formStore: any) {
   }
 
   function onDragEnterContainer(listKey: BuilderFieldListKey) {
+    if (isDraggingRootOnlyStructure.value) {
+      setRootOnlyDropTarget()
+      isUserDraggingOver.value = true
+      return
+    }
     targetListKey.value = listKey
     indexPointer.value = null
     dragInIndicator.value = {}
@@ -379,9 +437,6 @@ export function useFormBuilderDnd(formStore: any) {
 
   function handleCopyField(field: any, index: number, listKey?: BuilderFieldListKey | null) {
     copyField(index, field, listKey)
-    activeNameFields.value.active[0] = field?.name
-    const fieldsList = formStore.resolveFieldList(listKey) || formStore.activeFields
-    activeNameFields.value.active[1] = fieldsList.at(index + 1)?.name
   }
 
   function removeField(field: any, index: number) {
@@ -431,6 +486,20 @@ export function useFormBuilderDnd(formStore: any) {
     document.removeEventListener('mousemove', throttleResize)
     document.removeEventListener('mouseup', stopResize)
   }
+
+  onMounted(() => {
+    window.addEventListener('dragover', onGlobalDragover)
+    window.addEventListener('drop', onGlobalDrop)
+    window.addEventListener('dragend', onGlobalDragend)
+    window.addEventListener('keydown', onGlobalKeydown)
+  })
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('dragover', onGlobalDragover)
+    window.removeEventListener('drop', onGlobalDrop)
+    window.removeEventListener('dragend', onGlobalDragend)
+    window.removeEventListener('keydown', onGlobalKeydown)
+  })
 
   return {
     // refs

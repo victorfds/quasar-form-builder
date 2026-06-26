@@ -90,6 +90,7 @@ export type ComponentsTypes
     | 'q-slider'
     | 'q-range'
     | 'q-file'
+    | 'q-separator'
     | 'q-date'
     | 'q-date-multiple'
     | 'q-date-range'

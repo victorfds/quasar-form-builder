@@ -40,28 +40,35 @@ const visibleTabs = computed(() => {
 })
 const renderedTabs = computed(() => (isEditing.value ? tabs.value : visibleTabs.value))
 
-watch(renderedTabs, (newTabs) => {
-  if (!newTabs.length) {
-    activeTab.value = ''
-    return
-  }
-  if (!newTabs.some(tab => tab.name === activeTab.value)) {
-    activeTab.value = newTabs[0].name
-  }
-}, { immediate: true })
-
-watch(selectedTabName, (tabName) => {
-  if (tabName && renderedTabs.value.some(tab => tab.name === tabName)) {
-    activeTab.value = tabName
-  }
-})
-
 function getTabListKey(tabName: string): BuilderFieldListKey {
   return `tab:${tabsFieldName.value}:${tabName}`
 }
 
-function selectTab(tabName: string) {
+function setActiveTab(tabName: string) {
+  if (activeTab.value === tabName) return
   activeTab.value = tabName
+}
+
+function ensureActiveTab() {
+  const newTabs = renderedTabs.value
+  if (!newTabs.length) {
+    setActiveTab('')
+    return
+  }
+
+  const configuredTab = selectedTabName.value
+  if (configuredTab && newTabs.some(tab => tab.name === configuredTab)) {
+    setActiveTab(configuredTab)
+    return
+  }
+
+  if (!newTabs.some(tab => tab.name === activeTab.value)) {
+    setActiveTab(newTabs[0].name)
+  }
+}
+
+function selectTab(tabName: string) {
+  setActiveTab(tabName)
   if (!isEditing.value) return
   formStore.setActiveField(null)
   formStore.setActiveTabConfig(tabsFieldName.value, tabName)
@@ -74,7 +81,7 @@ function isSelectedTab(tabName: string) {
 function onTabDragenter(ev: DragEvent, tabName: string) {
   if (!isEditing.value) return
   ev.stopPropagation()
-  activeTab.value = tabName
+  setActiveTab(tabName)
   builderDnd?.handleDragover?.(ev)
   builderDnd?.onDragEnterContainer?.(getTabListKey(tabName))
 }
@@ -97,6 +104,14 @@ function removeTabsStructure() {
   if (!tabsField) return
   formStore.removeField(tabsField)
 }
+
+onMounted(() => {
+  ensureActiveTab()
+})
+
+onUpdated(() => {
+  ensureActiveTab()
+})
 </script>
 
 <template>
@@ -113,7 +128,7 @@ function removeTabsStructure() {
         @click.stop="removeTabsStructure"
       />
     </div>
-    <q-tabs v-model="activeTab" dense align="left" active-color="primary">
+    <q-tabs :model-value="activeTab" dense align="left" active-color="primary" @update:model-value="tabName => setActiveTab(String(tabName))">
       <q-tab
         v-for="tab in renderedTabs"
         :key="tab.name"
@@ -128,7 +143,7 @@ function removeTabsStructure() {
       />
     </q-tabs>
     <q-separator />
-    <q-tab-panels v-model="activeTab" :animated="!isEditing">
+    <q-tab-panels :model-value="activeTab" :animated="!isEditing" @update:model-value="tabName => setActiveTab(String(tabName))">
       <q-tab-panel v-for="tab in renderedTabs" :key="tab.name" :name="tab.name" class="q-px-none">
         <BuilderStructureCanvas :fields="tab.children || []" :list-key="getTabListKey(tab.name)" empty-text="Aba vazia" />
       </q-tab-panel>

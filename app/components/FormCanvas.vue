@@ -39,14 +39,14 @@ function handleDragover(ev: DragEvent) {
 }
 
 function handleDragenter(ev: DragEvent) {
-  if (!props.droppable || !props.empty) return
+  if (!props.droppable) return
   ev.preventDefault()
   ev.stopPropagation()
   emit('dragenter', ev)
 }
 
 function handleDragleave(ev: DragEvent) {
-  if (!props.droppable || !props.empty) return
+  if (!props.droppable) return
   ev.preventDefault()
   ev.stopPropagation()
   emit('dragleave', ev)
@@ -56,10 +56,12 @@ function handleDragleave(ev: DragEvent) {
 <template>
   <div
     ref="rootRef"
-    class="form-canvas q-py-sm rounded-borders grid grid-cols-12 row-gap-y-gutter column-gap-x-gutter"
+    class="form-canvas q-py-sm rounded-borders"
     v-bind="attrs"
     @drop="handleDrop"
     @dragover="handleDragover"
+    @dragenter="handleDragenter"
+    @dragleave="handleDragleave"
   >
     <div
       v-if="empty"
@@ -84,19 +86,36 @@ function handleDragleave(ev: DragEvent) {
 
 <style lang="scss">
 .form-canvas {
+  column-gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   height: fit-content;
+  row-gap: 0;
+  width: 100%;
+}
+
+.form-canvas--cell-list {
+  column-gap: 0;
 }
 
 .form-field {
+  box-sizing: border-box;
   grid-column: span var(--field-column-default, 12) / span var(--field-column-default, 12);
-  position: relative;
-  pointer-events: auto;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
+  min-width: 0;
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+}
+
+.form-canvas--cell-list > .form-field {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .form-field .form-field {
-  z-index: 4;
+  z-index: 6;
 }
 
 @media (min-width: 600px) {
@@ -115,6 +134,7 @@ function handleDragleave(ev: DragEvent) {
   background: rgba(129, 212, 250, .24);
   border: 1px dashed rgba(69, 140, 163, .52);
   color: #4f93a8;
+  grid-column: 1 / -1;
   position: relative;
   top: 0;
   bottom: 0;

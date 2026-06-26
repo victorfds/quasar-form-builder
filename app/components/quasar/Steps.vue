@@ -27,22 +27,21 @@ const schemaData = inject(schemaDataKey, computed(() => ({})))
 const builderMode = inject(builderModeKey, false)
 const isFormSettingsDrawerOpened = useState<boolean>('form-settings-drawer', () => false)
 const builderDnd = inject(formBuilderDndKey, null) as Record<string, any> | null
-const { activeStep, visitedSteps, steps: stepStates, stepPlugin } = useSteps()
+const { activeStep, visitedSteps, steps: stepStates, stepPlugin, setActiveStep: setLocalActiveStep } = useSteps()
 
 const steps = computed(() => (props.context?.steps || []) as StepDefinition[])
 const isEditing = computed(() => builderMode && formStore.formSettings.previewMode === 'editing')
 const isPreviewEditing = computed(() => builderMode && formStore.formSettings.previewMode === 'editing')
 const canDrag = computed(() => Boolean(isEditing.value && builderDnd))
 const isSmallScreen = computed(() => screen.lt.md)
-const stepLabels = reactive<Record<string, string>>({})
 const stepCanvasRefs = reactive<Record<string, HTMLElement | null>>({})
 const stepperWrapperRef = ref<HTMLElement | null>(null)
 const selectedHeaderEl = ref<HTMLElement | null>(null)
 const headerOverlayWrapperRef = ref<HTMLElement | null>(null)
-const headerListenerCleanup = ref<Array<() => void>>([])
 const headerOverlayRect = ref<{ top: number, left: number, width: number, height: number } | null>(null)
-const headerResizeObserver = ref<ResizeObserver | null>(null)
 const selectedStepName = computed(() => formStore.activeStepConfigName)
+let headerListenerCleanup: Array<() => void> = []
+let headerResizeObserver: ResizeObserver | null = null
 const schemaValues = computed(() => unref(schemaData) || {})
 const dndState = computed(() => ({
   activeNames: unref(builderDnd?.activeNameFields)?.active || [],
@@ -218,43 +217,49 @@ const visibleSteps = computed(() => {
 const renderedSteps = computed(() => (isPreviewEditing.value ? steps.value : visibleSteps.value))
 const stepOrder = computed(() => renderedSteps.value.map(step => step.name))
 
-watch(steps, (newSteps) => {
-  const known = new Set(newSteps.map(step => step.name))
-  newSteps.forEach((step) => {
-    stepLabels[step.name] = step.label || step.name
-  })
-  Object.keys(stepLabels).forEach((stepName) => {
-    if (!known.has(stepName)) delete stepLabels[stepName]
-  })
-}, { deep: true, immediate: true })
+function setCurrentStep(stepName: string, { syncStore = true }: { syncStore?: boolean } = {}) {
+  if (activeStep.value !== stepName) {
+    setLocalActiveStep(stepName)
+  }
+  if (syncStore && stepName && formStore.activeStepName !== stepName) {
+    formStore.setActiveStep(stepName)
+  }
+  syncActiveCanvasRef(stepName)
+}
 
-watch(renderedSteps, (newSteps) => {
+function syncActiveCanvasRef(stepName = activeStep.value) {
+  if (!builderDnd?.formDroppableRef) return
+  void nextTick(() => {
+    const nextCanvas = stepCanvasRefs[stepName] || null
+    if (builderDnd.formDroppableRef.value !== nextCanvas) {
+      builderDnd.formDroppableRef.value = nextCanvas
+    }
+  })
+}
+
+function ensureRenderableActiveStep() {
+  const newSteps = renderedSteps.value
   if (!newSteps.length) {
-    activeStep.value = ''
+    setCurrentStep('')
     formStore.setActiveStep('')
     formStore.setActiveStepConfig(null)
     return
   }
 
+  const storeStepName = formStore.activeStepName
+  if (storeStepName && newSteps.some(step => step.name === storeStepName)) {
+    setCurrentStep(storeStepName, { syncStore: false })
+    return
+  }
+
   if (!newSteps.find(step => step.name === activeStep.value)) {
-    activeStep.value = newSteps[0].name
+    setCurrentStep(newSteps[0].name)
   }
-}, { deep: true, immediate: true })
-
-watch(activeStep, (newStep) => {
-  if (newStep && formStore.activeStepName !== newStep) {
-    formStore.setActiveStep(newStep)
-  }
-})
-
-watch(() => formStore.activeStepName, (newStep) => {
-  if (newStep && newStep !== activeStep.value) {
-    activeStep.value = newStep
-  }
-})
+}
 
 function selectStep(stepName: string, { openDrawer = true }: { openDrawer?: boolean } = {}) {
   if (!isEditing.value) return
+  setCurrentStep(stepName)
   formStore.setActiveField(null)
   formStore.setActiveStepConfig(stepName)
   if (openDrawer) {
@@ -280,8 +285,8 @@ function handleStepperClick(ev: MouseEvent) {
 }
 
 function cleanupHeaderListeners() {
-  headerListenerCleanup.value.forEach(cleanup => cleanup())
-  headerListenerCleanup.value = []
+  headerListenerCleanup.forEach(cleanup => cleanup())
+  headerListenerCleanup = []
 }
 
 function getStepperTabs() {
@@ -298,16 +303,18 @@ function attachHeaderListeners() {
     const clickHandler = () => selectStep(stepName)
     const dragenterHandler = (ev: Event) => {
       ev.preventDefault()
+      setCurrentStep(stepName)
       builderDnd?.onDragEnterStepHeader?.(stepName)
     }
     const dragoverHandler = (ev: Event) => {
       ev.preventDefault()
+      setCurrentStep(stepName)
       builderDnd?.onDragEnterStepHeader?.(stepName)
     }
     tab.addEventListener('click', clickHandler)
     tab.addEventListener('dragenter', dragenterHandler)
     tab.addEventListener('dragover', dragoverHandler)
-    headerListenerCleanup.value.push(() => {
+    headerListenerCleanup.push(() => {
       tab.removeEventListener('click', clickHandler)
       tab.removeEventListener('dragenter', dragenterHandler)
       tab.removeEventListener('dragover', dragoverHandler)
@@ -333,12 +340,23 @@ function updateHeaderOverlay() {
   }
   const wrapperRect = stepperWrapperRef.value.getBoundingClientRect()
   const headerRect = selectedHeaderEl.value.getBoundingClientRect()
-  headerOverlayRect.value = {
+  const nextRect = {
     top: headerRect.top - wrapperRect.top,
     left: headerRect.left - wrapperRect.left,
     width: headerRect.width,
     height: headerRect.height,
   }
+  const currentRect = headerOverlayRect.value
+  if (
+    currentRect
+    && currentRect.top === nextRect.top
+    && currentRect.left === nextRect.left
+    && currentRect.width === nextRect.width
+    && currentRect.height === nextRect.height
+  ) {
+    return
+  }
+  headerOverlayRect.value = nextRect
 }
 
 function getHeaderStepNameFromPoint(ev: DragEvent) {
@@ -357,6 +375,7 @@ function handleWindowHeaderDragover(ev: DragEvent) {
   const stepName = getHeaderStepNameFromPoint(ev)
   if (!stepName) return
   ev.preventDefault()
+  setCurrentStep(stepName)
   builderDnd?.onDragEnterStepHeader?.(stepName)
 }
 
@@ -369,12 +388,12 @@ function handleWindowHeaderDrop(ev: DragEvent) {
 }
 
 function observeSelectedHeader() {
-  headerResizeObserver.value?.disconnect()
-  headerResizeObserver.value = null
+  headerResizeObserver?.disconnect()
+  headerResizeObserver = null
   if (!selectedHeaderEl.value || typeof ResizeObserver === 'undefined') return
   const observer = new ResizeObserver(() => updateHeaderOverlay())
   observer.observe(selectedHeaderEl.value)
-  headerResizeObserver.value = observer
+  headerResizeObserver = observer
 }
 
 const headerOverlayStyle = computed(() => {
@@ -389,20 +408,37 @@ const headerOverlayStyle = computed(() => {
 })
 
 let stopStepperClick: (() => void) | undefined
+let stepperUiRefreshScheduled = false
+let stepperUiSignature = ''
 
-watch(activeStep, async (newStep) => {
-  if (!builderDnd?.formDroppableRef) return
-  await nextTick()
-  builderDnd.formDroppableRef.value = stepCanvasRefs[newStep] || null
-}, { immediate: true })
+function getStepperUiSignature() {
+  return [
+    isEditing.value ? 'editing' : 'preview',
+    activeStep.value,
+    selectedStepName.value || '',
+    renderedSteps.value.map(step => `${step.name}:${step.label || ''}`).join('|'),
+  ].join('::')
+}
 
-watch([renderedSteps, selectedStepName, isEditing], async () => {
-  await nextTick()
-  attachHeaderListeners()
-  syncSelectedHeader()
-  updateHeaderOverlay()
-  observeSelectedHeader()
-}, { deep: true, immediate: true })
+function refreshStepperUi() {
+  if (stepperUiRefreshScheduled) return
+  stepperUiRefreshScheduled = true
+  void nextTick(() => {
+    stepperUiRefreshScheduled = false
+    ensureRenderableActiveStep()
+    const nextSignature = getStepperUiSignature()
+    if (stepperUiSignature === nextSignature) {
+      syncActiveCanvasRef()
+      return
+    }
+    stepperUiSignature = nextSignature
+    attachHeaderListeners()
+    syncSelectedHeader()
+    updateHeaderOverlay()
+    observeSelectedHeader()
+    syncActiveCanvasRef()
+  })
+}
 
 onMounted(() => {
   if (typeof window === 'undefined') return
@@ -411,12 +447,17 @@ onMounted(() => {
   window.addEventListener('resize', updateHeaderOverlay)
   window.addEventListener('dragover', handleWindowHeaderDragover)
   window.addEventListener('drop', handleWindowHeaderDrop)
+  refreshStepperUi()
+})
+
+onUpdated(() => {
+  refreshStepperUi()
 })
 
 onBeforeUnmount(() => {
   cleanupHeaderListeners()
   stopStepperClick?.()
-  headerResizeObserver.value?.disconnect()
+  headerResizeObserver?.disconnect()
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateHeaderOverlay)
     window.removeEventListener('dragover', handleWindowHeaderDragover)
@@ -442,7 +483,6 @@ function goToStep(delta: number, stepName: string) {
   if (index < 0) return
   const target = stepOrder.value[index + delta]
   if (!target) return
-  activeStep.value = target
   selectStep(target)
 }
 
@@ -499,7 +539,7 @@ function getFieldClasses(field: FormKitSchemaDefinition & { columns?: any, align
 }
 
 function getFieldStyle(field: FormKitSchemaDefinition & { columns?: any, align?: any }) {
-  return fieldUi.getGridColumnStyle(field as any, formStore.formSettings.columns)
+  return fieldUi.getGridColumnStyle(field as any)
 }
 
 function stepHasErrors(stepName: string) {
@@ -554,13 +594,14 @@ function removeSelectedStep() {
     </div>
 
     <q-stepper
-      v-model="activeStep"
+      :model-value="activeStep"
       :vertical="isSmallScreen"
       animated
       header-nav
       keep-alive
       flat
       class="bg-transparent"
+      @update:model-value="stepName => setCurrentStep(String(stepName))"
     >
       <q-step
         v-for="step in renderedSteps"
@@ -584,7 +625,7 @@ function removeSelectedStep() {
             <div
               v-for="(field, index) in getDisplayFields(step)"
               :key="field?.name || index"
-              class="form-field"
+              class="form-field form-field--responsive"
               :data-field-name="field?.name"
               :class="getFieldClasses(field)"
               :style="getFieldStyle(field)"

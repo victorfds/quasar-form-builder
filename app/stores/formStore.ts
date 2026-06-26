@@ -1,11 +1,11 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, ColumnsType, FormSettingsType, FormViewportType, StructureCell } from '~/types'
+import { getBrowserJsonItem, setBrowserStorageItem } from '~/utils/browserStorage'
 
 export const useFormStore = defineStore('formStore', () => {
-  const { notify, localStorage } = useQuasar()
+  const { notify } = useQuasar()
   const formHistoryStore = useFormHistoryStore()
-
-  const cachedFormFields: string | null = localStorage.getItem('form-fields')
+  const formFieldsStorageKey = 'form-fields'
 
   const formSettings = ref<FormSettingsType>({
     formName: 'Meu Formulário',
@@ -14,14 +14,12 @@ export const useFormStore = defineStore('formStore', () => {
     columns: 'default',
   })
 
-  const formFields = ref<FormKitSchemaDefinition[]>(cachedFormFields ? JSON.parse(cachedFormFields) : [])
+  const formFields = ref<FormKitSchemaDefinition[]>([])
   const activeField = ref<ActiveFieldType>(null)
   const activeStepName = ref('')
   const activeStepConfigName = ref<string | null>(null)
   const activeTabsFieldName = ref<string | null>(null)
   const activeTabConfigName = ref<string | null>(null)
-  const stepLabelFocusToken = ref(0)
-  const tabLabelFocusToken = ref(0)
   const values = reactive({})
   const stepperType = 'q-stepper'
   const tabsType = 'q-tabs'
@@ -216,7 +214,21 @@ export const useFormStore = defineStore('formStore', () => {
 
   const ensureCellChildren = (cell: StructureCell) => {
     if (!Array.isArray(cell.children)) cell.children = []
+    if (cell.children.length > 1) cell.children = cell.children.slice(0, 1)
     return cell.children
+  }
+
+  function isCellListKey(listKey?: BuilderFieldListKey | null) {
+    return listKey?.startsWith('cell:') === true
+  }
+
+  function getCellListOwnerName(listKey?: BuilderFieldListKey | null) {
+    if (!isCellListKey(listKey)) return null
+    return listKey?.split(':')[1] || null
+  }
+
+  function replaceCellChildren(list: FormKitSchemaDefinition[], field: FormKitSchemaDefinition) {
+    list.splice(0, list.length, field)
   }
 
   function makeCellName(row: string | number, column: string | number) {
@@ -307,11 +319,33 @@ export const useFormStore = defineStore('formStore', () => {
         ...legacyChildren,
         ...orphanedChildren,
         ...(firstCell.children || []),
-      ]
+      ].slice(0, 1)
       field.children = []
     }
 
     return field.cells
+  }
+
+  function normalizeStructureFields(fields: FormKitSchemaDefinition[]) {
+    fields.forEach((field) => {
+      ensureStructureCells(field as StructureRegionField)
+
+      if (Array.isArray(field.children)) {
+        normalizeStructureFields(field.children as FormKitSchemaDefinition[])
+      }
+
+      ;((field as StepperField).steps || []).forEach((step) => {
+        if (Array.isArray(step.children)) normalizeStructureFields(step.children)
+      })
+
+      ;((field as TabsField).tabs || []).forEach((tab) => {
+        if (Array.isArray(tab.children)) normalizeStructureFields(tab.children)
+      })
+
+      ;((field as StructureRegionField).cells || []).forEach((cell) => {
+        if (Array.isArray(cell.children)) normalizeStructureFields(cell.children)
+      })
+    })
   }
 
   function getStructureChildrenForMigration(field: FormKitSchemaDefinition): FormKitSchemaDefinition[] {
@@ -370,7 +404,7 @@ export const useFormStore = defineStore('formStore', () => {
       return tab ? ensureTabChildren(tab) : null
     }
 
-    if (key.startsWith('cell:')) {
+    if (isCellListKey(key)) {
       const [, fieldName, cellName] = key.split(':')
       const field = getFieldByName(fieldName || '') as StructureRegionField | undefined
       const cell = ensureStructureCells(field || {}).find(item => item.name === cellName)
@@ -647,10 +681,11 @@ export const useFormStore = defineStore('formStore', () => {
 
   function cacheFormFields() {
     formHistoryStore.addToMemory(formFields.value)
-    localStorage.setItem('form-fields', JSON.stringify(formFields.value))
+    setBrowserStorageItem(formFieldsStorageKey, JSON.stringify(formFields.value))
   }
 
   const setFormFields = (newFields: FormKitSchemaDefinition[]) => {
+    normalizeStructureFields(newFields)
     formFields.value = newFields
     if (hasStepper.value) {
       ensureActiveStep()
@@ -663,11 +698,44 @@ export const useFormStore = defineStore('formStore', () => {
       activeTabsFieldName.value = null
       activeTabConfigName.value = null
     }
-    localStorage.setItem('form-fields', JSON.stringify(newFields))
+    setBrowserStorageItem(formFieldsStorageKey, JSON.stringify(newFields))
+  }
+
+  function hydrateFromStorage() {
+    const cachedFields = getBrowserJsonItem<FormKitSchemaDefinition[]>(formFieldsStorageKey, [])
+    if (!Array.isArray(cachedFields)) return
+    setFormFields(cachedFields)
   }
 
   function getFieldByName(fieldName: string) {
     return allFields.value.find(formField => formField.name === fieldName)
+  }
+
+  function getCellListOwnerField(listKey?: BuilderFieldListKey | null) {
+    const ownerName = getCellListOwnerName(listKey)
+    return ownerName ? getFieldByName(ownerName) : null
+  }
+
+  function isGridField(field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+    return field?.$formkit === 'q-grid'
+  }
+
+  function isGridNestedInGridCell(fieldName?: string | null) {
+    if (!fieldName) return false
+    const location = getFieldLocationByName(fieldName)
+    if (!isCellListKey(location?.listKey)) return false
+    return isGridField(getCellListOwnerField(location?.listKey))
+  }
+
+  function canPlaceFieldInList(field: FormKitSchemaDefinition | FormKitSchemaNode, targetListKey?: BuilderFieldListKey | null) {
+    if (!isGridField(field) || !isCellListKey(targetListKey)) return true
+
+    const ownerField = getCellListOwnerField(targetListKey)
+    if (!isGridField(ownerField)) return true
+    if (!isGridNestedInGridCell(ownerField?.name || null)) return true
+
+    notify({ color: 'dark', message: 'Um sub grid não pode receber outro grid' })
+    return false
   }
 
   function canPlaceRootOnlyStructure(field: FormKitSchemaNode, _pos?: number | null, listKey?: BuilderFieldListKey | null) {
@@ -691,12 +759,22 @@ export const useFormStore = defineStore('formStore', () => {
       return replaceRootOnlyStructure(field)
     }
 
-    const fieldsList = resolveFieldList(listKey) || activeFields.value
+    const targetListKey = listKey || getActiveListKey.value
+    if (!canPlaceFieldInList(field, targetListKey)) return false
+
+    const fieldsList = resolveFieldList(targetListKey) || activeFields.value
     const formLength = fieldsList.length
     const destinationIndex = pos === undefined || pos === null ? formLength : Number(pos)
 
     field.name = generateUniqueName(field?.name, allFields.value)
     ensureStructureCells(field as StructureRegionField)
+
+    if (isCellListKey(targetListKey)) {
+      replaceCellChildren(fieldsList, field)
+      notify({ color: 'dark', message: `${field?.name} adicionado` })
+      cacheFormFields()
+      return true
+    }
 
     if (destinationIndex <= 0) {
       fieldsList.unshift(field)
@@ -733,7 +811,7 @@ export const useFormStore = defineStore('formStore', () => {
     if (!listKey || listKey === 'root') return null
     if (listKey.startsWith('children:')) return listKey.slice('children:'.length)
     if (listKey.startsWith('tab:')) return listKey.split(':')[1] || null
-    if (listKey.startsWith('cell:')) return listKey.split(':')[1] || null
+    if (isCellListKey(listKey)) return listKey.split(':')[1] || null
     if (listKey.startsWith('step:')) return getStepper()?.name || null
     return null
   }
@@ -765,12 +843,28 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   function moveFieldToList(fieldName: string, targetListKey?: BuilderFieldListKey | null, destinationIndex?: number | null) {
+    const destinationListKey = targetListKey || getActiveListKey.value
     const sourceLocation = getFieldLocationByName(fieldName)
-    const targetList = resolveFieldList(targetListKey)
+    const targetList = resolveFieldList(destinationListKey)
     if (!sourceLocation || !targetList) return
-    if (!canMoveFieldToList(fieldName, targetListKey)) return false
+    if (!canMoveFieldToList(fieldName, destinationListKey)) return false
+    if (!canPlaceFieldInList(sourceLocation.field, destinationListKey)) return false
 
     if (sourceLocation.list === targetList && (destinationIndex === undefined || destinationIndex === null)) return
+
+    if (isCellListKey(destinationListKey)) {
+      const [field] = sourceLocation.list.splice(sourceLocation.index, 1)
+      if (!field) return false
+
+      replaceCellChildren(targetList, field)
+
+      if (field.name === activeField.value?.name) {
+        activeField.value = field as ActiveFieldType
+      }
+
+      cacheFormFields()
+      return true
+    }
 
     const isSameList = sourceLocation.list === targetList
     const requestedIndex = destinationIndex === undefined || destinationIndex === null ? targetList.length : destinationIndex
@@ -786,8 +880,8 @@ export const useFormStore = defineStore('formStore', () => {
 
     targetList.splice(boundedIndex, 0, field)
 
-    if (targetListKey?.startsWith('step:')) {
-      activeStepName.value = targetListKey.slice('step:'.length)
+    if (destinationListKey?.startsWith('step:')) {
+      activeStepName.value = destinationListKey.slice('step:'.length)
     }
 
     if (field.name === activeField.value?.name) {
@@ -798,16 +892,85 @@ export const useFormStore = defineStore('formStore', () => {
     return true
   }
 
-  function applyBesideColumnLayout(targetField: FormKitSchemaDefinition, insertedField: FormKitSchemaDefinition) {
-    const targetSpan = getFieldColumnSpan(targetField as FieldWithColumns)
+  function getFieldRowRange(list: FormKitSchemaDefinition[], targetIndex: number) {
+    let rowStart = 0
+    let rowSpan = 0
 
-    if (targetSpan >= 12) {
-      setFieldColumnSpan(targetField as FieldWithColumns, 6)
-      setFieldColumnSpan(insertedField as FieldWithColumns, 6)
+    for (let index = 0; index < list.length; index++) {
+      const currentSpan = getFieldColumnSpan(list[index] as FieldWithColumns)
+
+      if (rowSpan > 0 && rowSpan + currentSpan > 12) {
+        rowStart = index
+        rowSpan = 0
+      }
+
+      rowSpan += currentSpan
+
+      if (index === targetIndex) {
+        let rowEnd = index + 1
+        let nextSpan = rowSpan
+
+        while (rowEnd < list.length) {
+          const nextFieldSpan = getFieldColumnSpan(list[rowEnd] as FieldWithColumns)
+          if (nextSpan + nextFieldSpan > 12) break
+          nextSpan += nextFieldSpan
+          rowEnd++
+          if (nextSpan >= 12) break
+        }
+
+        return { start: rowStart, end: rowEnd }
+      }
+
+      if (rowSpan >= 12) {
+        rowStart = index + 1
+        rowSpan = 0
+      }
+    }
+
+    return { start: targetIndex, end: targetIndex + 1 }
+  }
+
+  function distributeFieldsAcrossRow(fields: FormKitSchemaDefinition[]) {
+    const fieldsToResize = fields.slice(0, 12)
+    const baseSpan = Math.max(1, Math.floor(12 / fieldsToResize.length))
+    const remainder = 12 % fieldsToResize.length
+
+    fieldsToResize.forEach((field, index) => {
+      setFieldColumnSpan(field as FieldWithColumns, baseSpan + (index < remainder ? 1 : 0))
+    })
+  }
+
+  function getBesideInsertIndex(
+    list: FormKitSchemaDefinition[],
+    targetIndex: number,
+    placement: Extract<BuilderDragPlacement, 'left' | 'right'>,
+  ) {
+    const rowRange = getFieldRowRange(list, targetIndex)
+    const rowLength = rowRange.end - rowRange.start
+
+    if (rowLength >= 12) {
+      return placement === 'left' ? rowRange.start : rowRange.end
+    }
+
+    return placement === 'left' ? targetIndex : targetIndex + 1
+  }
+
+  function applyBesideRowColumnLayout(
+    list: FormKitSchemaDefinition[],
+    rowRangeBeforeInsert: { start: number, end: number },
+    insertedField: FormKitSchemaDefinition,
+  ) {
+    const rowFieldsCountBeforeInsert = rowRangeBeforeInsert.end - rowRangeBeforeInsert.start
+
+    if (rowFieldsCountBeforeInsert >= 12) {
+      setFieldColumnSpan(insertedField as FieldWithColumns, 12)
       return
     }
 
-    setFieldColumnSpan(insertedField as FieldWithColumns, 12 - targetSpan)
+    const rowFields = list.slice(rowRangeBeforeInsert.start, rowRangeBeforeInsert.end + 1)
+
+    if (!rowFields.some(field => field.name === insertedField.name)) return
+    distributeFieldsAcrossRow(rowFields)
   }
 
   function getBesideInsertionContext(targetFieldName: string, targetListKey?: BuilderFieldListKey | null) {
@@ -842,14 +1005,23 @@ export const useFormStore = defineStore('formStore', () => {
 
     const context = getBesideInsertionContext(targetFieldName, targetListKey)
     if (!context) return false
+    if (!canPlaceFieldInList(field, context.listKey)) return false
 
     const nextField = cloneFieldForInsert(field)
     nextField.name = generateUniqueName(nextField?.name, allFields.value)
     ensureStructureCells(nextField as StructureRegionField)
-    applyBesideColumnLayout(context.targetField, nextField)
 
-    const insertIndex = placement === 'left' ? context.targetIndex : context.targetIndex + 1
+    if (isCellListKey(context.listKey)) {
+      replaceCellChildren(context.list, nextField)
+      notify({ color: 'dark', message: `${nextField?.name} adicionado` })
+      cacheFormFields()
+      return true
+    }
+
+    const rowRange = getFieldRowRange(context.list, context.targetIndex)
+    const insertIndex = getBesideInsertIndex(context.list, context.targetIndex, placement)
     context.list.splice(insertIndex, 0, nextField)
+    applyBesideRowColumnLayout(context.list, rowRange, nextField)
 
     notify({ color: 'dark', message: `${nextField?.name} adicionado` })
     cacheFormFields()
@@ -872,6 +1044,21 @@ export const useFormStore = defineStore('formStore', () => {
       return false
     }
     if (!canMoveFieldToList(fieldName, context.listKey)) return false
+    if (!canPlaceFieldInList(sourceLocation.field, context.listKey)) return false
+
+    if (isCellListKey(context.listKey)) {
+      const [field] = sourceLocation.list.splice(sourceLocation.index, 1)
+      if (!field) return false
+
+      replaceCellChildren(context.list, field)
+
+      if (field.name === activeField.value?.name) {
+        activeField.value = field as ActiveFieldType
+      }
+
+      cacheFormFields()
+      return true
+    }
 
     const [field] = sourceLocation.list.splice(sourceLocation.index, 1)
     if (!field) return false
@@ -882,10 +1069,7 @@ export const useFormStore = defineStore('formStore', () => {
       return false
     }
 
-    const targetField = context.list[targetIndex]!
-    applyBesideColumnLayout(targetField, field)
-
-    const insertIndex = placement === 'left' ? targetIndex : targetIndex + 1
+    const insertIndex = getBesideInsertIndex(context.list, targetIndex, placement)
     context.list.splice(insertIndex, 0, field)
 
     if (context.listKey.startsWith('step:')) {
@@ -976,7 +1160,10 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const copyField = (index: number | null, fieldElement?: FormKitSchemaNode, listKey?: BuilderFieldListKey | null) => {
-    const fieldsList = resolveFieldList(listKey) || activeFields.value
+    const sourceLocation = fieldElement?.name ? getFieldLocationByName(fieldElement.name) : null
+    const targetListKey = listKey || sourceLocation?.listKey || getActiveListKey.value
+    const fieldsList = resolveFieldList(targetListKey) || activeFields.value
+    if (isCellListKey(targetListKey) || isCellListKey(sourceLocation?.listKey)) return false
     const field = fieldElement || fieldsList.find((_, i) => i === index)
     if (!field) return
     if (!index && index !== 0) {
@@ -1219,6 +1406,15 @@ export const useFormStore = defineStore('formStore', () => {
     formSettings.value.columns = viewportToChange
   }
 
+  const changePreviewMode = (mode: FormSettingsType['previewMode']) => {
+    if (!['editing', 'previewing'].includes(mode)) return
+    if (formSettings.value.previewMode === mode) return
+    formSettings.value.previewMode = mode
+    if (import.meta.client) {
+      window.dispatchEvent(new CustomEvent('builder:preview-mode-change', { detail: { mode } }))
+    }
+  }
+
   const setActiveStep = (stepName: string) => {
     activeStepName.value = stepName
   }
@@ -1232,7 +1428,9 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const requestStepLabelFocus = () => {
-    stepLabelFocusToken.value += 1
+    if (import.meta.client) {
+      window.dispatchEvent(new CustomEvent('builder:focus-step-label'))
+    }
   }
 
   const setActiveTabConfig = (tabsFieldName: string | null, tabName: string | null = null) => {
@@ -1249,7 +1447,9 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const requestTabLabelFocus = () => {
-    tabLabelFocusToken.value += 1
+    if (import.meta.client) {
+      window.dispatchEvent(new CustomEvent('builder:focus-tab-label'))
+    }
   }
 
   const generateTabName = (tabsField: TabsField) => {
@@ -1495,8 +1695,6 @@ export const useFormStore = defineStore('formStore', () => {
     activeTabsFieldName,
     activeTabConfigName,
     activeTabConfig,
-    stepLabelFocusToken,
-    tabLabelFocusToken,
     hasStepper,
     hasRootOnlyStructure,
     activeField,
@@ -1511,6 +1709,7 @@ export const useFormStore = defineStore('formStore', () => {
     isRootOnlyStructure,
     getRootOnlyStructure,
     canMoveFieldToList,
+    hydrateFromStorage,
     setFormFields,
     getFieldByName,
     addField,
@@ -1546,6 +1745,7 @@ export const useFormStore = defineStore('formStore', () => {
     updatePropFromActiveField,
     changePreviewWidth,
     togglePreviewFullWidth,
+    changePreviewMode,
     changeViewport,
     updateActiveFieldColumns,
     updateActiveFieldOnFormFields,
