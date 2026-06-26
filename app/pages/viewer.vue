@@ -85,11 +85,8 @@ const formFields = [
 
 const formValues = ref({})
 
-watch(formValues, (data) => {
-  onUpdateValues(data)
-}, { deep: true })
-
 function onUpdateValues(data: any) {
+  formValues.value = data
   console.warn(data)
 }
 
@@ -99,5 +96,5 @@ function onSubmit(data: any) {
 </script>
 
 <template>
-  <FormViewer v-model="formValues" :form-fields="formFields" @submit="onSubmit" />
+  <FormViewer :model-value="formValues" :form-fields="formFields" @update:model-value="onUpdateValues" @submit="onSubmit" />
 </template>

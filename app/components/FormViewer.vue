@@ -19,13 +19,6 @@ const emit = defineEmits<{
   (e: 'submit', data: any): void
 }>()
 const values = defineModel<any>({ default: () => ({}) })
-const modelValues = computed({
-  get: () => values.value,
-  set: (newValues) => {
-    if (props.readonly) return
-    values.value = newValues
-  },
-})
 const data = computed(() => ({
   ...values.value,
   empty,
@@ -45,6 +38,11 @@ function onSubmit(data: any, _node: FormKitNode) {
   if (props.readonly) return
   emit('submit', data)
   // The node has a builtin function that can be used called node.submit()
+}
+
+function updateModelValues(newValues: any) {
+  if (props.readonly) return
+  values.value = newValues
 }
 
 function onSubmitInvalid(node: FormKitNode) {
@@ -71,8 +69,9 @@ const { getGridColumnStyle, getAlignClass } = useFieldLayout()
 <template>
   <article>
     <FormKit
-      v-model="modelValues" type="form" :actions="false"
+      :model-value="values" type="form" :actions="false"
       validation-visibility="submit" @submit="onSubmit" @submit-invalid="onSubmitInvalid"
+      @update:model-value="updateModelValues"
     >
       <FormCanvas>
         <div

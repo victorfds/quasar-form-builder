@@ -1,14 +1,15 @@
+import { getBrowserStorageItem } from '~/utils/browserStorage'
+
 export const useFormHistoryStore = defineStore('formHistoryStore', () => {
   const pointer = ref(0)
 
   const memory = useMemory()
-  const { localStorage } = useQuasar()
 
   function addToMemory(value: any) {
     const size = memory.getSize()
 
     if (size === 0) {
-      const cachedFormFields: string | null = localStorage.getItem('form-fields')
+      const cachedFormFields = getBrowserStorageItem('form-fields')
 
       memory.setItem(size, cachedFormFields || JSON.stringify([]))
       memory.setItem(size + 1, JSON.stringify(value))

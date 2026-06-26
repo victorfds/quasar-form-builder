@@ -1,7 +1,7 @@
 <script setup lang="ts">
-const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
 const formHistoryStore = useFormHistoryStore()
+const { isDark, toggleTheme } = useThemeMode()
 
 const isElementsDrawerOpened = ref(false)
 const isFormSettingsDrawerOpened = useState<boolean>('form-settings-drawer', () => false)
@@ -23,9 +23,12 @@ function fnTweak(offset: number) {
 }
 
 function toggleThemeFn(newState: boolean) {
-  const localTheme = newState ? 'dark' : 'light'
-  dark.set(newState)
-  localStorage.set('theme', localTheme)
+  toggleTheme(newState)
+}
+
+function updatePreviewMode(mode: string | null) {
+  if (mode !== 'editing' && mode !== 'previewing') return
+  formStore.changePreviewMode(mode)
 }
 
 function handleGoBack() {
@@ -45,14 +48,14 @@ function handleGoForward() {
 
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header bordered class="text-white" height-hint="98" :class="dark.isActive ? 'bg-grey-10' : 'bg-white'">
+    <q-header bordered class="text-white" height-hint="98" :class="isDark ? 'bg-grey-10' : 'bg-white'">
       <q-toolbar>
-        <q-toolbar-title :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'">
+        <q-toolbar-title :class="isDark ? 'text-grey-11' : 'text-blue-grey-10'">
           Construtor de Formulários
         </q-toolbar-title>
         <ClientOnly>
           <q-toggle
-            :model-value="dark.isActive" checked-icon="dark_mode" unchecked-icon="light_mode" size="3rem"
+            :model-value="isDark" checked-icon="dark_mode" unchecked-icon="light_mode" size="3rem"
             color="primary" keep-color @update:model-value="toggleThemeFn"
           />
         </ClientOnly>
@@ -68,9 +71,10 @@ function handleGoForward() {
         <slot />
         <q-page-sticky position="top-left" :offset="[12, 12]" data-keep-active>
           <q-tabs
-            v-model="formStore.formSettings.previewMode" vertical dense shrink class="rounded-borders"
-            :class="dark.isActive ? 'bg-dark text-white' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+            :model-value="formStore.formSettings.previewMode" vertical dense shrink class="rounded-borders"
+            :class="isDark ? 'bg-dark text-white' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;"
+            @update:model-value="updatePreviewMode"
           >
             <q-tab name="editing">
               <template #default>
@@ -96,7 +100,7 @@ function handleGoForward() {
         <q-page-sticky position="top-right" :offset="[12, 12]" data-keep-active>
           <q-tabs
             vertical dense shrink class="rounded-borders"
-            :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+            :class="isDark ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             style="max-height: 4.5rem;"
           >
             <q-tab name="undo" :disable="formHistoryStore.isBackDisabled()" @click="handleGoBack">
@@ -123,7 +127,7 @@ function handleGoForward() {
         <q-page-sticky position="bottom-left" :offset="[12, 12]" data-keep-active>
           <q-tabs
             vertical dense shrink class="rounded-borders q-mb-sm"
-            :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+            :class="isDark ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             style="max-height: 4.5rem;"
           >
             <q-tab name="close-left-panel" @click="toggleLeftDrawer">
@@ -138,7 +142,7 @@ function handleGoForward() {
           </q-tabs>
           <q-tabs
             vertical dense shrink class="rounded-borders"
-            :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+            :class="isDark ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             style="max-height: 4.5rem;"
           >
             <q-tab name="empty-form-fields">
@@ -156,7 +160,7 @@ function handleGoForward() {
         <q-page-sticky position="bottom-right" :offset="[12, 12]">
           <q-tabs
             vertical dense shrink class="rounded-borders q-mb-sm"
-            :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+            :class="isDark ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             style="max-height: 4.5rem;"
           >
             <q-tab name="close-right-panel" @click="toggleRightDrawer">
@@ -171,7 +175,7 @@ function handleGoForward() {
           </q-tabs>
           <q-tabs
             vertical dense shrink class="rounded-borders"
-            :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
+            :class="isDark ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
             style="max-height: 4.5rem;"
           >
             <q-tab name="is-safe">
