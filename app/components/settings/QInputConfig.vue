@@ -1,19 +1,19 @@
 <template>
   <SettingsExpansionBaseWrapper>
     <template #properties>
-      <SettingsSlotsPropertiesCard hasInputType hasPlaceholder hasDescription />
+      <SettingsSlotsPropertiesCard has-input-type has-placeholder has-description />
     </template>
     <template #layout>
-      <SettingsSlotsLayoutCard showDense />
+      <SettingsSlotsLayoutCard show-dense />
     </template>
     <template #validation>
-      <SettingsSlotsValidationCard showLength />
+      <SettingsSlotsValidationCard show-length />
     </template>
     <template #conditions>
       <SettingsSlotsConditionsCard />
     </template>
     <template #attributes>
-      <SettingsSlotsAttributesCard showReadonly />
+      <SettingsSlotsAttributesCard show-readonly />
     </template>
   </SettingsExpansionBaseWrapper>
 </template>

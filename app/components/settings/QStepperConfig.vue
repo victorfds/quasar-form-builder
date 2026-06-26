@@ -90,8 +90,10 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
   <q-list separator style="max-width: 340px;">
     <q-item :class="{ 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }">
       <q-item-section avatar>
-        <q-btn size="sm" flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-          @click="closeStepConfig" />
+        <q-btn
+          size="sm" flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+          @click="closeStepConfig"
+        />
       </q-item-section>
 
       <q-item-section>
@@ -104,17 +106,22 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
 
       <q-item-section side>
         <div class="q-gutter-xs">
-          <q-btn size="sm" flat dense round icon="o_content_copy" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            @click="duplicateStep" />
-          <q-btn size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            :disable="stepsCount <= 1" @click="removeStep" />
+          <q-btn
+            size="sm" flat dense round icon="o_content_copy" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+            @click="duplicateStep"
+          />
+          <q-btn
+            size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+            :disable="stepsCount <= 1" @click="removeStep"
+          />
         </div>
       </q-item-section>
     </q-item>
 
     <q-expansion-item
       :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-      :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'" label="Propriedades" default-opened>
+      :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'" label="Propriedades" default-opened
+    >
       <q-card>
         <q-card-section>
           <div class="row align-center items-center justify-between">
@@ -123,8 +130,10 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
                 Cabeçalho
               </span>
             </label>
-            <q-input id="step-label" ref="labelInputRef" v-model="labelModel" hide-bottom-space filled class="mw-200"
-              color="cyan-8" dense type="text" />
+            <q-input
+              id="step-label" ref="labelInputRef" v-model="labelModel" hide-bottom-space filled class="mw-200"
+              color="cyan-8" dense type="text"
+            />
           </div>
         </q-card-section>
       </q-card>
@@ -132,7 +141,8 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
 
     <q-expansion-item
       :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-      :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'" label="Layout">
+      :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'" label="Layout"
+    >
       <q-card>
         <q-card-section>
           <div class="row align-center items-center justify-between">
@@ -149,9 +159,11 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
                 Texto do anterior
               </span>
             </label>
-            <q-input id="step-prev-label" ref="prevLabelInputRef" v-model="prevLabel" hide-bottom-space filled
+            <q-input
+              id="step-prev-label" ref="prevLabelInputRef" v-model="prevLabel" hide-bottom-space filled
               class="stepper-layout-input" color="cyan-8" dense type="text" placeholder="padrão"
-              :disable="!showPrevious" />
+              :disable="!showPrevious"
+            />
           </div>
           <div class="row align-center items-center justify-between q-mt-sm">
             <label for="step-next-label" @click="onClickLabel(nextLabelInputRef)">
@@ -159,8 +171,10 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
                 {{ isLastStep ? 'Texto do finalizar' : 'Texto do próximo' }}
               </span>
             </label>
-            <q-input id="step-next-label" ref="nextLabelInputRef" v-model="nextLabel" hide-bottom-space filled
-              class="stepper-layout-input" color="cyan-8" dense type="text" placeholder="padrão" />
+            <q-input
+              id="step-next-label" ref="nextLabelInputRef" v-model="nextLabel" hide-bottom-space filled
+              class="stepper-layout-input" color="cyan-8" dense type="text" placeholder="padrão"
+            />
           </div>
         </q-card-section>
       </q-card>
@@ -168,7 +182,8 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
 
     <q-expansion-item
       :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
-      :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'" label="Condições">
+      :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'" label="Condições"
+    >
       <SettingsSlotsConditionsCard
         v-if="activeStep"
         :key="activeStep?.name"

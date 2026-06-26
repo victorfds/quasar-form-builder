@@ -1,16 +1,16 @@
 <template>
   <SettingsExpansionBaseWrapper>
     <template #properties>
-      <SettingsSlotsPropertiesCard hasDescription />
+      <SettingsSlotsPropertiesCard has-description />
     </template>
     <template #data>
       <SettingsSlotsDataCard />
     </template>
     <template #layout>
-      <SettingsSlotsLayoutCard showDense />
+      <SettingsSlotsLayoutCard show-dense />
     </template>
     <template #validation>
-      <SettingsSlotsValidationCard showLength />
+      <SettingsSlotsValidationCard show-length />
     </template>
     <template #conditions>
       <SettingsSlotsConditionsCard />

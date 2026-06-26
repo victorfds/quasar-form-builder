@@ -7,6 +7,11 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@formkit/nuxt',
   ],
+  eslint: {
+    config: {
+      standalone: false,
+    },
+  },
   imports: {
     dirs: ['stores'],
   },
@@ -26,5 +31,5 @@ export default defineNuxtConfig({
     extras: { animations: 'all', fontIcons: ['material-icons', 'material-icons-outlined', 'material-symbols-outlined'] },
     config: { brand: { primary: '#FFA726' } },
     sassVariables: true,
-  }
+  },
 })

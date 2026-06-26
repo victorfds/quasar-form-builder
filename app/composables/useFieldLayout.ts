@@ -1,29 +1,13 @@
-import type { ColumnsType } from '~/types'
+import type { ColumnsType, FormViewportType } from '~/types'
 
-type HasColumns = { columns?: ColumnsType & Record<string, any> }
-type HasAlign = { align?: 'left' | 'center' | 'right' }
+interface HasColumns { columns?: ColumnsType & Record<string, any> }
+interface HasAlign { align?: 'left' | 'center' | 'right' }
 
 export function useFieldLayout() {
-  function getContainerSpan(field: HasColumns): number {
-    if (!field?.columns) return 12
-    const columns = field.columns
-    return (
-      (columns as any).container
-      || columns.default?.container
-      || 12
-    ) as number
-  }
+  const fieldUi = useFieldUi()
+  const getContainerSpan = (field: HasColumns, viewport: FormViewportType = 'default') => fieldUi.getColumnSpan(field, viewport)
+  const getGridColumnStyle = (field: HasColumns, viewport?: FormViewportType) => fieldUi.getGridColumnStyle(field, viewport)
+  const getAlignClass = (field: HasAlign) => fieldUi.getAlignClass(field)
 
-  function getAlignClass(field: HasAlign): string {
-    if (!field?.align) return ''
-    const map: Record<'right' | 'center' | 'left', string> = {
-      right: 'flex justify-end',
-      center: 'flex justify-center',
-      left: 'flex justify-start',
-    }
-    return map[field.align] || ''
-  }
-
-  return { getContainerSpan, getAlignClass }
+  return { getContainerSpan, getGridColumnStyle, getAlignClass }
 }
-

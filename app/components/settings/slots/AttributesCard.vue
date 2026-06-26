@@ -1,18 +1,14 @@
 <script setup lang="ts">
-const { dark, localStorage } = useQuasar()
+defineProps<{ showReadonly?: boolean }>()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
-
-defineProps<{ showReadonly?: boolean }>()
-
-const elementsClosed = localStorage.getItem('elements-closed')
 
 const elementStates = reactive<{
   disable?: boolean
   readonly?: boolean
 }>({
   disable: Boolean(formStore.activeField?.disable),
-  readonly: Boolean(formStore.activeField?.readonly)
+  readonly: Boolean(formStore.activeField?.readonly),
 })
 
 watch(() => formStore.activeField, (newVal) => {
@@ -20,6 +16,7 @@ watch(() => formStore.activeField, (newVal) => {
   elementStates.readonly = Boolean(newVal?.readonly)
 }, { deep: true })
 </script>
+
 <template>
   <q-card flat>
     <q-card-section>
@@ -29,17 +26,21 @@ watch(() => formStore.activeField, (newVal) => {
             Desabilitado
           </span>
         </label>
-        <q-toggle id="form-required" :model-value="elementStates.disable" color="primary" @update:model-value="val => {
-          elementStates.disable = val
-          if (!val && formStore.activeField?.disable?.if) {
-            onEnteredProp('disable', { if: '' })
-          }
-          onEnteredProp('disable', val)
-        }" />
+        <q-toggle
+          id="form-required" :model-value="elementStates.disable" color="primary" @update:model-value="val => {
+            elementStates.disable = val
+            if (!val && formStore.activeField?.disable?.if) {
+              onEnteredProp('disable', { if: '' })
+            }
+            onEnteredProp('disable', val)
+          }"
+        />
 
-        <SettingsSlotsConditionsCard v-if="elementStates.disable" saveTo="disable"
-          noConditionsMessage="Regra de desabilitação vazia"
-          :conditionsDialogSubtitle="`${formStore.activeField?.name} / regra para desabilitação`" />
+        <SettingsSlotsConditionsCard
+          v-if="elementStates.disable" save-to="disable"
+          no-conditions-message="Regra de desabilitação vazia"
+          :conditions-dialog-subtitle="`${formStore.activeField?.name} / regra para desabilitação`"
+        />
       </div>
 
       <div v-if="showReadonly" class="row align-center items-center justify-between">
@@ -48,13 +49,15 @@ watch(() => formStore.activeField, (newVal) => {
             Apenas leitura
           </span>
         </label>
-        <q-toggle id="form-readonly" :model-value="elementStates.readonly" color="primary" @update:model-value="val => {
-          elementStates.readonly = val
-          if (!val && formStore.activeField?.readonly?.if) {
-            onEnteredProp('readonly', { if: '' })
-          }
-          onEnteredProp('readonly', val)
-        }" />
+        <q-toggle
+          id="form-readonly" :model-value="elementStates.readonly" color="primary" @update:model-value="val => {
+            elementStates.readonly = val
+            if (!val && formStore.activeField?.readonly?.if) {
+              onEnteredProp('readonly', { if: '' })
+            }
+            onEnteredProp('readonly', val)
+          }"
+        />
 
         <!-- <SettingsSlotsConditionsCard v-if="elementStates.readonly" saveTo="disable" -->
         <!--   noConditionsMessage="Regra de apenas leitura vazia" -->

@@ -32,6 +32,6 @@ export function useMemory() {
     },
     getSize() {
       return data.size
-    }
+    },
   }
 }

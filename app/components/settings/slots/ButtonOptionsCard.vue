@@ -1,9 +1,7 @@
 <script setup lang="ts">
-const { dark, localStorage } = useQuasar()
+const { dark } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
-
-const elementsClosed = localStorage.getItem('elements-closed')
 
 const elementStates = reactive<{
   buttonLabel?: string
@@ -39,6 +37,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
   }
 }
 </script>
+
 <template>
   <q-card flat>
     <q-card-section>
@@ -48,9 +47,11 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             Texto do botão
           </span>
         </label>
-        <q-input id="form-button-label" ref="propButtonLabelInputRef" v-model.trim="elementStates.buttonLabel"
+        <q-input
+          id="form-button-label" ref="propButtonLabelInputRef" v-model.trim="elementStates.buttonLabel"
           hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
-          @update:model-value="val => onEnteredProp('buttonLabel', val)" />
+          @update:model-value="val => onEnteredProp('buttonLabel', val)"
+        />
       </div>
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -61,7 +62,8 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             Tipo
           </span>
         </label>
-        <q-btn-toggle id="form-button-type" :model-value="elementStates.buttonType" no-wrap unelevated no-caps
+        <q-btn-toggle
+          id="form-button-type" :model-value="elementStates.buttonType" no-wrap unelevated no-caps
           toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'" dense
           :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
             { label: 'Primário', value: 'primary' },
@@ -70,7 +72,8 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
           ]" @update:model-value="val => {
             elementStates.buttonType = val
             onEnteredProp('color', val)
-          }" />
+          }"
+        />
       </div>
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -83,7 +86,8 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             </span>
           </label>
 
-          <q-toggle :model-value="elementStates.buttonReset" color="primary" :true-value="false" :false-value="true"
+          <q-toggle
+            :model-value="elementStates.buttonReset" color="primary" :true-value="false" :false-value="true"
             @update:model-value="val => {
               elementStates.buttonReset = val
               if (val) {
@@ -92,7 +96,8 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
               if (!val) {
                 onEnteredProp('type', 'submit')
               }
-            }" />
+            }"
+          />
         </div>
         <div class="row align-center items-center justify-between">
           <label for="form-button-toggle-submit">
@@ -101,15 +106,17 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             </span>
           </label>
 
-          <q-toggle :model-value="elementStates.buttonReset" color="primary" @update:model-value="val => {
-            elementStates.buttonReset = val
-            if (val) {
-              onEnteredProp('type', 'reset')
-            }
-            if (!val) {
-              onEnteredProp('type', 'submit')
-            }
-          }" />
+          <q-toggle
+            :model-value="elementStates.buttonReset" color="primary" @update:model-value="val => {
+              elementStates.buttonReset = val
+              if (val) {
+                onEnteredProp('type', 'reset')
+              }
+              if (!val) {
+                onEnteredProp('type', 'submit')
+              }
+            }"
+          />
         </div>
       </div>
     </q-card-section>

@@ -2,6 +2,7 @@
   "name": "form-builder-layer",
   "type": "module",
   "version": "0.0.1",
+  "packageManager": "pnpm@10.2.0",
   "main": "./nuxt.config.ts",
   "scripts": {
     "dev": "nuxi dev .playground",
@@ -10,7 +11,8 @@
     "generate": "nuxt generate .playground",
     "preview": "nuxt preview .playground",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@formkit/core": "^1.7.2",
@@ -27,11 +29,11 @@
     "@formkit/nuxt": "^1.7.2",
     "@nuxt/eslint": "^1.12.1",
     "@pinia/nuxt": "^0.11.3",
+    "@playwright/test": "^1.61.1",
     "eslint": "^9.39.2",
     "nuxt-quasar-ui": "^2.1.13",
     "sass": "^1.97.2",
     "shiki": "^3.21.0",
     "typescript": "^5.9.3"
-  },
-  "packageManager": "pnpm@10.2.0"
+  }
 }

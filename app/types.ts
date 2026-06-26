@@ -1,4 +1,4 @@
-import type {FormKitSchemaNode} from "@formkit/core"
+import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 
 export interface ElementType {
   type: string
@@ -26,14 +26,25 @@ export interface ElementType {
   file?: { rules?: string[] }
 }
 
-export type ColumnsType = {
-  container?: number | null,
-  default?: { container: number } | null,
-  sm?: { container: number } | null,
+export type BuilderCatalogCategory = 'fields' | 'statics' | 'structures'
+
+export interface BuilderCatalogItem {
+  name: string
+  icon: string
+  title: string
+  description: string
+  category: BuilderCatalogCategory
+  schema: FormKitSchemaDefinition
+}
+
+export interface ColumnsType {
+  container?: number | null
+  default?: { container: number } | null
+  sm?: { container: number } | null
   lg?: { container: number } | null
 }
 
-export type FormSettingsType = {
+export interface FormSettingsType {
   formName?: string
   preview: { width?: string | number | null, isFullWidth: boolean }
   previewMode: 'editing' | 'previewing'
@@ -44,12 +55,53 @@ export type ActiveFieldType = FormKitSchemaNode & { columns: ColumnsType } | nul
 
 export type FormViewportType = 'default' | 'sm' | 'lg'
 
-export type LogicField = {
-  name: string,
-  operator: string,
-  value: string,
-  values: string[],
+export type BuilderDragPlacement = 'top' | 'bottom' | 'left' | 'right' | 'inside'
+
+export type BuilderFieldListKey
+  = | 'root'
+    | `step:${string}`
+    | `children:${string}`
+    | `tab:${string}:${string}`
+    | `cell:${string}:${string}`
+
+export interface StructureCell {
+  name: string
+  label?: string
+  row?: string
+  column?: string
+  children?: FormKitSchemaDefinition[]
+}
+
+export interface LogicField {
+  name: string
+  operator: string
+  value: string
+  values: string[]
   or?: LogicField[] | null
 }
 
-export type ComponentsTypes = 'q-input' | undefined
+export type ComponentsTypes
+  = | 'q-input'
+    | 'q-select'
+    | 'q-option-group'
+    | 'q-btn-toggle'
+    | 'q-checkbox'
+    | 'q-toggle'
+    | 'q-slider'
+    | 'q-range'
+    | 'q-file'
+    | 'q-date'
+    | 'q-date-multiple'
+    | 'q-date-range'
+    | 'q-datetime'
+    | 'q-time'
+    | 'q-editor'
+    | 'q-signature'
+    | 'q-matrix'
+    | 'q-container'
+    | 'q-tabs'
+    | 'q-grid'
+    | 'q-table-structure'
+    | 'q-list-structure'
+    | 'q-stepper'
+    | undefined

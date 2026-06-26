@@ -3,7 +3,7 @@ import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/
 import type { LogicField } from '~/types'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '~/constants/injectionKeys'
 
-type StepDefinition = {
+interface StepDefinition {
   name: string
   label?: string
   showPrevious?: boolean
@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 const { context } = props
 
-const { dark, screen } = useQuasar()
+const { screen } = useQuasar()
 const formStore = useFormStore()
 const fieldUi = useFieldUi()
 const schemaData = inject(schemaDataKey, computed(() => ({})))
@@ -40,7 +40,7 @@ const stepperWrapperRef = ref<HTMLElement | null>(null)
 const selectedHeaderEl = ref<HTMLElement | null>(null)
 const headerOverlayWrapperRef = ref<HTMLElement | null>(null)
 const headerListenerCleanup = ref<Array<() => void>>([])
-const headerOverlayRect = ref<{ top: number; left: number; width: number; height: number } | null>(null)
+const headerOverlayRect = ref<{ top: number, left: number, width: number, height: number } | null>(null)
 const headerResizeObserver = ref<ResizeObserver | null>(null)
 const selectedStepName = computed(() => formStore.activeStepConfigName)
 const schemaValues = computed(() => unref(schemaData) || {})
@@ -52,6 +52,7 @@ const dndState = computed(() => ({
   dragInIndicator: unref(builderDnd?.dragInIndicator),
   highlightDropArea: unref(builderDnd?.highlightDropArea),
   isDraggingStepper: unref(builderDnd?.isDraggingStepper),
+  isDraggingRootOnlyStructure: unref(builderDnd?.isDraggingRootOnlyStructure),
   hasStepper: formStore.hasStepper,
 }))
 
@@ -173,7 +174,7 @@ function evaluateSingleCondition(condition: LogicField) {
   if (operator === 'equals') {
     if (condition.values?.length) {
       const targets = normalizeValues(condition.values)
-      return targets.some(target => value === target)
+      return targets.includes(value)
     }
     return value === normalizeLiteral(condition.value)
   }
@@ -279,20 +280,38 @@ function handleStepperClick(ev: MouseEvent) {
 }
 
 function cleanupHeaderListeners() {
-  headerListenerCleanup.value.forEach((cleanup) => cleanup())
+  headerListenerCleanup.value.forEach(cleanup => cleanup())
   headerListenerCleanup.value = []
+}
+
+function getStepperTabs() {
+  return stepperWrapperRef.value?.querySelectorAll('.q-stepper__tab') || []
 }
 
 function attachHeaderListeners() {
   cleanupHeaderListeners()
   if (!isEditing.value || !stepperWrapperRef.value) return
-  const tabs = stepperWrapperRef.value.querySelectorAll('.q-stepper__header .q-stepper__tab')
+  const tabs = getStepperTabs()
   tabs.forEach((tab, index) => {
     const stepName = renderedSteps.value[index]?.name
     if (!stepName) return
-    const handler = () => selectStep(stepName)
-    tab.addEventListener('click', handler)
-    headerListenerCleanup.value.push(() => tab.removeEventListener('click', handler))
+    const clickHandler = () => selectStep(stepName)
+    const dragenterHandler = (ev: Event) => {
+      ev.preventDefault()
+      builderDnd?.onDragEnterStepHeader?.(stepName)
+    }
+    const dragoverHandler = (ev: Event) => {
+      ev.preventDefault()
+      builderDnd?.onDragEnterStepHeader?.(stepName)
+    }
+    tab.addEventListener('click', clickHandler)
+    tab.addEventListener('dragenter', dragenterHandler)
+    tab.addEventListener('dragover', dragoverHandler)
+    headerListenerCleanup.value.push(() => {
+      tab.removeEventListener('click', clickHandler)
+      tab.removeEventListener('dragenter', dragenterHandler)
+      tab.removeEventListener('dragover', dragoverHandler)
+    })
   })
 }
 
@@ -301,7 +320,7 @@ function syncSelectedHeader() {
     selectedHeaderEl.value = null
     return
   }
-  const tabs = stepperWrapperRef.value.querySelectorAll('.q-stepper__header .q-stepper__tab')
+  const tabs = getStepperTabs()
   const index = renderedSteps.value.findIndex(step => step.name === selectedStepName.value)
   const target = index >= 0 ? (tabs[index] as HTMLElement | undefined) : undefined
   selectedHeaderEl.value = target || null
@@ -320,6 +339,33 @@ function updateHeaderOverlay() {
     width: headerRect.width,
     height: headerRect.height,
   }
+}
+
+function getHeaderStepNameFromPoint(ev: DragEvent) {
+  if (!isEditing.value || !stepperWrapperRef.value) return null
+  const tabs = getStepperTabs()
+  for (let index = 0; index < tabs.length; index++) {
+    const tab = tabs[index] as HTMLElement
+    const rect = tab.getBoundingClientRect()
+    const isInside = ev.clientX >= rect.left && ev.clientX <= rect.right && ev.clientY >= rect.top && ev.clientY <= rect.bottom
+    if (isInside) return renderedSteps.value[index]?.name || null
+  }
+  return null
+}
+
+function handleWindowHeaderDragover(ev: DragEvent) {
+  const stepName = getHeaderStepNameFromPoint(ev)
+  if (!stepName) return
+  ev.preventDefault()
+  builderDnd?.onDragEnterStepHeader?.(stepName)
+}
+
+function handleWindowHeaderDrop(ev: DragEvent) {
+  const stepName = getHeaderStepNameFromPoint(ev)
+  if (!stepName) return
+  ev.preventDefault()
+  const fieldName = ev.dataTransfer?.getData('application/x-builder-field')
+  builderDnd?.onDropOnStepHeader?.(stepName, fieldName)
 }
 
 function observeSelectedHeader() {
@@ -363,6 +409,8 @@ onMounted(() => {
   const clickTarget = builderDnd?.previewFormSectionRef || stepperWrapperRef
   stopStepperClick = useEventListener(clickTarget, 'click', handleStepperClick, { capture: true })
   window.addEventListener('resize', updateHeaderOverlay)
+  window.addEventListener('dragover', handleWindowHeaderDragover)
+  window.addEventListener('drop', handleWindowHeaderDrop)
 })
 
 onBeforeUnmount(() => {
@@ -371,6 +419,8 @@ onBeforeUnmount(() => {
   headerResizeObserver.value?.disconnect()
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', updateHeaderOverlay)
+    window.removeEventListener('dragover', handleWindowHeaderDragover)
+    window.removeEventListener('drop', handleWindowHeaderDrop)
   }
 })
 
@@ -425,15 +475,15 @@ function getStepFields(step: StepDefinition) {
 
 function getDisplayFields(step: StepDefinition) {
   const fields = getStepFields(step)
-  if (!isPreviewEditing.value) return fields
+  if (!isPreviewEditing.value) return withStructureChildrenListForRender(fields)
 
   return fields.map((field) => {
     if (field && Object.keys(field).some(key => key.includes('if'))) {
       // @ts-expect-error schema keys are dynamic
       const { if: _if, ...rest } = field
-      return { ...rest, hasCondition: true }
+      return withStructureChildrenForRender({ ...rest, hasCondition: true } as FormKitSchemaDefinition)
     }
-    return field
+    return withStructureChildrenForRender(field)
   })
 }
 
@@ -443,10 +493,13 @@ function hasCondition(field: FormKitSchemaDefinition & { hasCondition?: boolean 
 
 function getFieldClasses(field: FormKitSchemaDefinition & { columns?: any, align?: any }) {
   return [
-    fieldUi.getSpanClass(field as any, formStore.formSettings.columns),
     fieldUi.getAlignClass(field as any),
     hasCondition(field) && isPreviewEditing.value ? 'opacity-50' : '',
   ]
+}
+
+function getFieldStyle(field: FormKitSchemaDefinition & { columns?: any, align?: any }) {
+  return fieldUi.getGridColumnStyle(field as any, formStore.formSettings.columns)
 }
 
 function stepHasErrors(stepName: string) {
@@ -470,19 +523,9 @@ function addStep() {
   }
 }
 
-function removeStep(stepName: string) {
-  if (!isEditing.value) return
-  formStore.removeStep(stepName)
-}
-
 function removeStepperStructure() {
   if (!isEditing.value) return
   formStore.removeStepper()
-}
-
-function saveStepLabel(stepName: string) {
-  if (!isEditing.value) return
-  formStore.renameStep(stepName, stepLabels[stepName] || '')
 }
 
 function focusSelectedStepLabel() {
@@ -499,11 +542,15 @@ function removeSelectedStep() {
 
 <template>
   <div ref="stepperWrapperRef" class="steps-wrapper">
-    <div v-if="isEditing" class="steps-header-actions">     
-      <q-btn round flat icon="add" size="sm" class="steps-header-action steps-header-action--add" color="grey-6"
-        @click="addStep" />
-         <q-btn round flat icon="close" size="sm" class="steps-header-action steps-header-action--remove" color="grey-6"
-        @click="removeStepperStructure" />
+    <div v-if="isEditing" class="steps-header-actions">
+      <q-btn
+        round flat icon="add" size="sm" class="steps-header-action steps-header-action--add" color="grey-6"
+        @click="addStep"
+      />
+      <q-btn
+        round flat icon="close" size="sm" class="steps-header-action steps-header-action--remove" color="grey-6"
+        @click="removeStepperStructure"
+      />
     </div>
 
     <q-stepper
@@ -514,7 +561,7 @@ function removeSelectedStep() {
       keep-alive
       flat
       class="bg-transparent"
-        >
+    >
       <q-step
         v-for="step in renderedSteps"
         :key="step.name"
@@ -529,9 +576,9 @@ function removeSelectedStep() {
             :droppable="canDrag"
             :empty="canDrag && !getDisplayFields(step).length"
             :highlight-empty="canDrag ? dndState.highlightDropArea : false"
-            @drop="builderDnd?.onDrop"
+            @drop="(ev) => builderDnd?.onDrop?.(ev, `step:${step.name}`)"
             @dragover="builderDnd?.handleDragover"
-            @dragenter="builderDnd?.onDragEnterFormSectionArea"
+            @dragenter="(ev) => { builderDnd?.onDragEnterContainer?.(`step:${step.name}`); builderDnd?.onDragEnterFormSectionArea?.(ev) }"
             @dragleave="builderDnd?.onDragLeaveFormSectionArea"
           >
             <div
@@ -540,11 +587,14 @@ function removeSelectedStep() {
               class="form-field"
               :data-field-name="field?.name"
               :class="getFieldClasses(field)"
+              :style="getFieldStyle(field)"
               @mouseover.prevent="canDrag ? builderDnd?.onMouseOverAtFormElement(field) : undefined"
               @mouseleave.prevent="canDrag ? builderDnd?.onMouseLeaveAtFormElement() : undefined"
             >
-              <WithLabelAndDescription v-if="field.$el" :label="field.label" :info="field.info"
-                :description="field.description">
+              <WithLabelAndDescription
+                v-if="field.$el" :label="field.label" :info="field.info"
+                :description="field.description"
+              >
                 <FormKitSchema :schema="field" :data="schemaData" />
               </WithLabelAndDescription>
 
@@ -560,19 +610,23 @@ function removeSelectedStep() {
                   elementBeingDragged: dndState.elementBeingDragged,
                   isUserDraggingOver: dndState.isUserDraggingOver,
                   dragInIndicator: dndState.dragInIndicator,
+                  listKey: `step:${step.name}`,
                   isDraggingStepper: dndState.isDraggingStepper,
+                  isDraggingRootOnlyStructure: dndState.isDraggingRootOnlyStructure,
                   hasStepper: dndState.hasStepper,
                 }"
                 :preview-mode-editing="isPreviewEditing"
-                @click="builderDnd?.onClickAtFormElement"
-                @dragstart="({ field: f, index: i }) => builderDnd?.onDragStartField(f, i)"
+                @click="(idx) => builderDnd?.onClickAtFormElement?.(idx, `step:${step.name}`)"
+                @dragstart="({ field: f, index: i, ev }) => builderDnd?.onDragStartField(f, i, ev, `step:${step.name}`)"
                 @dragend="builderDnd?.onDragEnd"
-                @dragover="builderDnd?.onDragOverDropArea"
-                @dragenter:top="({ ev, name, index: idx }) => builderDnd?.onDragEnterInDropArea(ev, name || '', idx)"
-                @dragenter:bottom="({ ev, name, index: idx }) => builderDnd?.onDragEnterInDropArea(ev, name || '', idx)"
-                @copy="({ field: f, index: i }) => builderDnd?.handleCopyField(f, i)"
+                @dragover="(ev) => builderDnd?.onDragOverDropArea?.(ev, `step:${step.name}`)"
+                @drag-enter-top="({ ev, name, index: idx, placement }) => builderDnd?.onDragEnterInDropArea(ev, name || '', idx, placement, `step:${step.name}`)"
+                @drag-enter-bottom="({ ev, name, index: idx, placement }) => builderDnd?.onDragEnterInDropArea(ev, name || '', idx, placement, `step:${step.name}`)"
+                @drag-enter-left="({ ev, name, index: idx, placement }) => builderDnd?.onDragEnterInDropArea(ev, name || '', idx, placement, `step:${step.name}`)"
+                @drag-enter-right="({ ev, name, index: idx, placement }) => builderDnd?.onDragEnterInDropArea(ev, name || '', idx, placement, `step:${step.name}`)"
+                @copy="({ field: f, index: i }) => builderDnd?.handleCopyField(f, i, `step:${step.name}`)"
                 @remove="({ field: f, index: i }) => builderDnd?.removeField(f, i)"
-                @resize:start="({ ev, field: f }) => builderDnd?.startResize(ev, f)"
+                @resize-start="({ ev, field: f }) => builderDnd?.startResize(ev, f)"
               />
             </div>
           </FormCanvas>
@@ -605,17 +659,25 @@ function removeSelectedStep() {
       :style="headerOverlayStyle"
     >
       <div class="stepper-header-overlay stepper-header-overlay--active" />
-      <q-icon name="o_edit" class="stepper-header-action stepper-header-action--left cursor-pointer"
-        @click.stop="focusSelectedStepLabel">
-        <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
-          self="bottom middle" :offset="[4, 4]">
+      <q-icon
+        name="o_edit" class="stepper-header-action stepper-header-action--left cursor-pointer"
+        @click.stop="focusSelectedStepLabel"
+      >
+        <q-tooltip
+          class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+          self="bottom middle" :offset="[4, 4]"
+        >
           Editar
         </q-tooltip>
       </q-icon>
-      <q-icon name="o_delete" class="stepper-header-action stepper-header-action--right cursor-pointer"
-        :class="{ disabled: steps.length <= 1 }" @click.stop="steps.length <= 1 ? undefined : removeSelectedStep()">
-        <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
-          self="bottom middle" :offset="[4, 4]">
+      <q-icon
+        name="o_delete" class="stepper-header-action stepper-header-action--right cursor-pointer"
+        :class="{ disabled: steps.length <= 1 }" @click.stop="steps.length <= 1 ? undefined : removeSelectedStep()"
+      >
+        <q-tooltip
+          class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+          self="bottom middle" :offset="[4, 4]"
+        >
           Remover
         </q-tooltip>
       </q-icon>

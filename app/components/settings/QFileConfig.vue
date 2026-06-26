@@ -1,10 +1,10 @@
 <template>
   <SettingsExpansionBaseWrapper>
     <template #properties>
-      <SettingsSlotsPropertiesCard hasPlaceholder hasDescription />
+      <SettingsSlotsPropertiesCard has-placeholder has-description />
     </template>
     <template #layout>
-      <SettingsSlotsLayoutCard showDense />
+      <SettingsSlotsLayoutCard show-dense />
     </template>
     <template #validation>
       <SettingsSlotsValidationCard />
@@ -16,9 +16,7 @@
       <SettingsSlotsConditionsCard />
     </template>
     <template #attributes>
-      <SettingsSlotsAttributesCard showReadonly />
+      <SettingsSlotsAttributesCard show-readonly />
     </template>
   </SettingsExpansionBaseWrapper>
 </template>
-
-

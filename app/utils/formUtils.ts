@@ -1,4 +1,5 @@
 import type { LogicField } from '~/types'
+import { contains } from './logic'
 
 export function transformOperatorValue(operatorValue: string): string {
   const operatorMap: Record<string, string> = {
@@ -42,7 +43,7 @@ export function reverseOperatorValue(symbol?: string): string {
     '$isDayAfterTomorrow': 'isDayAfterTomorrow',
     '$isDayBeforeYesterday': 'isDayBeforeYesterday',
     '== true': 'isTrue',
-    '== false': 'isFalse'
+    '== false': 'isFalse',
   }
 
   if (!symbol) return ''
@@ -79,7 +80,7 @@ export function processSingleCondition(condition: LogicField, orData: string[]):
 }
 
 export function processConditions(conditions: LogicField[]): string[] {
-  return conditions.map(orCondition => {
+  return conditions.map((orCondition) => {
     const { name, operator, value, values } = orCondition
 
     if (['$empty', '!$empty'].includes(operator)) {
@@ -107,7 +108,9 @@ export function processConditions(conditions: LogicField[]): string[] {
   })
 }
 
-export function saveLogic(elementStates: { logicFields: LogicField[] }, property: 'if' | 'disable' | 'validation' | 'readonly' = 'if', updatePropFn: Function) {
+type LogicUpdateProp = (property: 'if' | 'disable' | 'validation' | 'readonly', value: unknown) => void
+
+export function saveLogic(elementStates: { logicFields: LogicField[] }, property: 'if' | 'disable' | 'validation' | 'readonly' = 'if', updatePropFn: LogicUpdateProp) {
   if (!elementStates.logicFields.length) return
 
   // Transform conditions and nested "or" fields
@@ -116,13 +119,13 @@ export function saveLogic(elementStates: { logicFields: LogicField[] }, property
     operator: transformOperatorValue(logicField.operator),
     or: logicField.or?.map(orField => ({
       ...orField,
-      operator: transformOperatorValue(orField.operator)
-    })).filter(transformed => (transformed.name && transformed.operator) || (transformed.value || transformed.values.length))
+      operator: transformOperatorValue(orField.operator),
+    })).filter(transformed => (transformed.name && transformed.operator) || (transformed.value || transformed.values.length)),
   })).filter(transformed => (transformed.name && transformed.operator) || (transformed.value || transformed.values.length))
 
   const data: string[] = []
 
-  transformedConditions.forEach(condition => {
+  transformedConditions.forEach((condition) => {
     const orData = condition.or ? processConditions(condition.or) : []
     const conditionString = processSingleCondition(condition, orData)
 
@@ -155,7 +158,7 @@ export function parseLogic(logicString?: string): LogicField[] {
   // Split by "&&" to separate main conditions
   const mainConditions = logicString.split(' && ')
 
-  mainConditions.forEach(mainConditionString => {
+  mainConditions.forEach((mainConditionString) => {
     // Split by "||" to handle "or" conditions
     const orConditionsStrings = mainConditionString.split(' || ')
     const mainCondition = parseCondition(orConditionsStrings.shift()!) // First is the main condition
@@ -175,41 +178,183 @@ export function parseLogic(logicString?: string): LogicField[] {
   return logicFields
 }
 
+function normalizeLiteral(raw: string) {
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+  const unquoted = trimmed.replace(/^['"]|['"]$/g, '')
+  if (unquoted === 'true') return true
+  if (unquoted === 'false') return false
+  const asNumber = Number(unquoted)
+  if (!Number.isNaN(asNumber) && unquoted !== '') return asNumber
+  return unquoted
+}
+
+function isEmptyConditionValue(value: any, source: Record<string, any>) {
+  if (typeof source.empty === 'function') return source.empty(value)
+  if (Array.isArray(value)) return value.length === 0
+  return value === '' || value === null || value === undefined
+}
+
+function isPlainRecord(value: unknown): value is Record<string, any> {
+  if (!value || typeof value !== 'object') return false
+  if (Array.isArray(value)) return false
+  return Object.prototype.toString.call(value) === '[object Object]'
+}
+
+function getPathValue(source: unknown, path: string) {
+  if (!path) return { found: false, value: undefined }
+  const segments = path.split('.').filter(Boolean)
+  let current: any = source
+
+  for (const segment of segments) {
+    if (!isPlainRecord(current) || !Object.prototype.hasOwnProperty.call(current, segment)) {
+      return { found: false, value: undefined }
+    }
+    const next = current[segment]
+    if (typeof next === 'function') return { found: false, value: undefined }
+    current = next
+  }
+
+  return { found: true, value: current }
+}
+
+function findNestedValue(source: unknown, targetKey: string, visited = new WeakSet<object>()) {
+  if (Array.isArray(source)) {
+    for (const item of source) {
+      if (isPlainRecord(item) || Array.isArray(item)) {
+        const result = findNestedValue(item, targetKey, visited)
+        if (result.found) return result
+      }
+    }
+    return { found: false, value: undefined }
+  }
+
+  if (!isPlainRecord(source)) return { found: false, value: undefined }
+  if (visited.has(source)) return { found: false, value: undefined }
+  visited.add(source)
+
+  if (Object.prototype.hasOwnProperty.call(source, targetKey)) {
+    const direct = source[targetKey]
+    if (typeof direct !== 'function') return { found: true, value: direct }
+  }
+
+  for (const key of Object.keys(source)) {
+    const value = source[key]
+    if (typeof value === 'function') continue
+    if (isPlainRecord(value) || Array.isArray(value)) {
+      const result = findNestedValue(value, targetKey, visited)
+      if (result.found) return result
+    }
+  }
+
+  return { found: false, value: undefined }
+}
+
+function getConditionValue(source: Record<string, any>, fieldName: string) {
+  if (!fieldName) return undefined
+
+  if (fieldName.includes('.')) {
+    const pathResult = getPathValue(source, fieldName)
+    if (pathResult.found) return pathResult.value
+  }
+
+  if (Object.prototype.hasOwnProperty.call(source, fieldName)) {
+    const direct = source[fieldName]
+    if (typeof direct !== 'function') return direct
+  }
+
+  const nestedResult = findNestedValue(source, fieldName)
+  return nestedResult.found ? nestedResult.value : undefined
+}
+
+function evaluateSingleLogicCondition(condition: LogicField, source: Record<string, any>) {
+  const value = getConditionValue(source, condition.name)
+  const operator = condition.operator
+
+  if (operator === 'empty') return isEmptyConditionValue(value, source)
+  if (operator === 'notEmpty') return !isEmptyConditionValue(value, source)
+  if (operator === 'isTrue') return value === true
+  if (operator === 'isFalse') return value === false
+
+  if (operator === 'contains') {
+    const containsFn = typeof source.contains === 'function' ? source.contains : contains
+    return containsFn(value, normalizeLiteral(condition.value))
+  }
+
+  if (operator.startsWith('is')) {
+    const fn = source[operator]
+    if (typeof fn === 'function') return fn(value)
+  }
+
+  const normalizeValues = (list: string[]) => list.map(item => normalizeLiteral(item))
+  if (operator === 'equals') {
+    if (condition.values?.length) return normalizeValues(condition.values).includes(value)
+    return value === normalizeLiteral(condition.value)
+  }
+
+  if (operator === 'notEquals') {
+    if (condition.values?.length) return normalizeValues(condition.values).every(target => value !== target)
+    return value !== normalizeLiteral(condition.value)
+  }
+
+  const left = Number(value)
+  const right = Number(normalizeLiteral(condition.value))
+  if (Number.isNaN(left) || Number.isNaN(right)) return false
+
+  if (operator === 'greaterThan') return left > right
+  if (operator === 'greaterOrEqualsThan') return left >= right
+  if (operator === 'lessThan') return left < right
+  if (operator === 'lessOrEqualsThan') return left <= right
+
+  return true
+}
+
+export function evaluateLogicString(logicString: string | undefined, source: Record<string, any>) {
+  if (!logicString) return true
+  const parsed = parseLogic(logicString).filter(entry => entry.name && entry.operator)
+  if (!parsed.length) return true
+  return parsed.every((entry) => {
+    const orFields = [entry].concat(entry.or || []).filter(orEntry => orEntry.name && orEntry.operator)
+    if (!orFields.length) return true
+    return orFields.some(orEntry => evaluateSingleLogicCondition(orEntry, source))
+  })
+}
+
 export function parseCondition(conditionString: string): LogicField {
   // Match function-like operators: $empty(name), !$empty(name), $contains(name,value), $isToday(name), ...
-  const functionMatch = conditionString.match(/^(!?\$[a-zA-Z][\w]*)\((.*?)\)$/)
+  const functionMatch = conditionString.match(/^(!?\$[a-z]\w*)\((.*?)\)$/i)
   if (functionMatch) {
     const operator = reverseOperatorValue(functionMatch[1])
 
     // For $contains, we have 2 parameters: name and value
     if (operator === 'contains') {
-      const [name = '', value = ''] = functionMatch[2]?.split(',').map(item => item.trim())!
+      const [name = '', value = ''] = (functionMatch[2] || '').split(',').map(item => item.trim())
 
       return {
-        operator: operator,
+        operator,
         name: name?.replace('$', ''),
-        value: value,
-        values: []
+        value,
+        values: [],
       }
     }
 
     // Generic 1-argument function operators (date ops, $empty, etc.)
     return {
-      operator: operator,
+      operator,
       name: functionMatch[2]?.replace('$', '') || '',
       value: '',
-      values: []
+      values: [],
     }
   }
 
-  const trueOrFalseMatch = conditionString.match(/^\$(.*?)\s(==)\s(true|false)$/);
+  const trueOrFalseMatch = conditionString.match(/^\$(.*?)\s(==)\s(true|false)$/)
   if (trueOrFalseMatch) {
     const [_, name, operator, value] = trueOrFalseMatch
     return {
       name: name?.replace('$', '') || '',
       operator: reverseOperatorValue(`${operator} ${value}`),
       value: '',
-      values: []
+      values: [],
     }
   }
 
@@ -222,7 +367,7 @@ export function parseCondition(conditionString: string): LogicField {
       name: name?.replace('$', '') || '',
       operator: reverseOperatorValue(operator),
       value: '',
-      values
+      values,
     }
   }
 
@@ -233,7 +378,7 @@ export function parseCondition(conditionString: string): LogicField {
       name: comparisonMatch[1]?.replace('$', '') || '',
       operator: reverseOperatorValue(comparisonMatch[2]),
       value: comparisonMatch[3]?.trim() || '',
-      values: []
+      values: [],
     }
   }
 
@@ -241,7 +386,7 @@ export function parseCondition(conditionString: string): LogicField {
 }
 
 export function generateHumanReadableText(parsedLogic: LogicField[], operators: {
-  value: string;
+  value: string
   label: string
 }[]): string {
   // Helper to map operator values to human-readable labels
@@ -300,12 +445,12 @@ function groupConditions(values: string[]): string[] {
 
   // Map grouped conditions into formatted strings
   const groupedConditions = Object.entries(grouped).map(
-    ([keyOperator, values]) => `${keyOperator} ${values.join(", ")}`
+    ([keyOperator, values]) => `${keyOperator} ${values.join(', ')}`,
   )
 
   // Filter unique conditions (not grouped)
   const uniqueConditions = values.filter(
-    condition => !condition.match(/(.+?)(==|!=)\s*(.+)/)
+    condition => !condition.match(/(.+?)(==|!=)\s*(.+)/),
   )
 
   // Combine grouped and unique conditions

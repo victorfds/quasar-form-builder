@@ -26,7 +26,7 @@ Notes: Use `pnpm` (see `packageManager`). Docker is available via `Dockerfile` i
 - Composables: `useXxx.ts`; Stores: `SomethingStore.ts` (Pinia).
 
 ## Testing Guidelines
-- No automated tests are configured yet. For changes, provide: 
+- No automated tests are configured yet. For changes, provide:
   - Repro steps in `.playground`, and before/after screenshots or a short GIF.
   - Unit tests are welcome; prefer Vitest (`tests/**/*.spec.ts`) if introduced.
 

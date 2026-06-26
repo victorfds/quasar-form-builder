@@ -1,4 +1,4 @@
-import { createHighlighter } from "shiki"
+import { createHighlighter } from 'shiki'
 
 /**
  * Creates a JSON highlighter function for rendering JSON with syntax highlighting.
@@ -24,7 +24,7 @@ import { createHighlighter } from "shiki"
 export async function highlightJson(): Promise<(data: any, isDark: boolean) => string> {
   const highlighter = await createHighlighter({
     langs: ['json'],
-    themes: ['vitesse-dark', 'vitesse-light']
+    themes: ['vitesse-dark', 'vitesse-light'],
   })
 
   return function highlightData(data: any, isDark: boolean): string {

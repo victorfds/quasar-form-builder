@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const { dark } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
 
@@ -40,93 +39,113 @@ watch(() => formStore.activeField, (val) => {
           <label>
             <span class="text-body2">Accept</span>
           </label>
-          <q-input :model-value="elementStates.accept" hide-bottom-space filled class="mw-200" color="cyan-8" dense
+          <q-input
+            :model-value="elementStates.accept" hide-bottom-space filled class="mw-200" color="cyan-8" dense
             placeholder="e.g. image/*, .pdf, .docx"
-            @update:model-value="val => { elementStates.accept = val; onEnteredProp('accept', val) }" />
+            @update:model-value="val => { elementStates.accept = val; onEnteredProp('accept', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Multiple files</span>
           </label>
-          <q-toggle :model-value="elementStates.multiple" color="primary"
-            @update:model-value="val => { elementStates.multiple = val; onEnteredProp('multiple', val) }" />
+          <q-toggle
+            :model-value="elementStates.multiple" color="primary"
+            @update:model-value="val => { elementStates.multiple = val; onEnteredProp('multiple', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Max file size (bytes)</span>
           </label>
-          <q-input :model-value="elementStates.maxFileSize" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
-            @update:model-value="val => { elementStates.maxFileSize = val; onEnteredProp('maxFileSize', val) }" />
+          <q-input
+            :model-value="elementStates.maxFileSize" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
+            @update:model-value="val => { elementStates.maxFileSize = val; onEnteredProp('maxFileSize', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Max total size (bytes)</span>
           </label>
-          <q-input :model-value="elementStates.maxTotalSize" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
-            @update:model-value="val => { elementStates.maxTotalSize = val; onEnteredProp('maxTotalSize', val) }" />
+          <q-input
+            :model-value="elementStates.maxTotalSize" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
+            @update:model-value="val => { elementStates.maxTotalSize = val; onEnteredProp('maxTotalSize', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Max files</span>
           </label>
-          <q-input :model-value="elementStates.maxFiles" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
-            @update:model-value="val => { elementStates.maxFiles = val; onEnteredProp('maxFiles', val) }" />
+          <q-input
+            :model-value="elementStates.maxFiles" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
+            @update:model-value="val => { elementStates.maxFiles = val; onEnteredProp('maxFiles', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Auto upload</span>
           </label>
-          <q-toggle :model-value="elementStates.autoUpload" color="primary"
-            @update:model-value="val => { elementStates.autoUpload = val; onEnteredProp('autoUpload', val) }" />
+          <q-toggle
+            :model-value="elementStates.autoUpload" color="primary"
+            @update:model-value="val => { elementStates.autoUpload = val; onEnteredProp('autoUpload', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Hide upload button</span>
           </label>
-          <q-toggle :model-value="elementStates.hideUploadBtn" color="primary"
-            @update:model-value="val => { elementStates.hideUploadBtn = val; onEnteredProp('hideUploadBtn', val) }" />
+          <q-toggle
+            :model-value="elementStates.hideUploadBtn" color="primary"
+            @update:model-value="val => { elementStates.hideUploadBtn = val; onEnteredProp('hideUploadBtn', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Use chips for selected files</span>
           </label>
-          <q-toggle :model-value="elementStates.useChips" color="primary"
-            @update:model-value="val => { elementStates.useChips = val; onEnteredProp('useChips', val) }" />
+          <q-toggle
+            :model-value="elementStates.useChips" color="primary"
+            @update:model-value="val => { elementStates.useChips = val; onEnteredProp('useChips', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Show counter</span>
           </label>
-          <q-toggle :model-value="elementStates.counter" color="primary"
-            @update:model-value="val => { elementStates.counter = val; onEnteredProp('counter', val) }" />
+          <q-toggle
+            :model-value="elementStates.counter" color="primary"
+            @update:model-value="val => { elementStates.counter = val; onEnteredProp('counter', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Clearable</span>
           </label>
-          <q-toggle :model-value="elementStates.clearable" color="primary"
-            @update:model-value="val => { elementStates.clearable = val; onEnteredProp('clearable', val) }" />
+          <q-toggle
+            :model-value="elementStates.clearable" color="primary"
+            @update:model-value="val => { elementStates.clearable = val; onEnteredProp('clearable', val) }"
+          />
         </div>
 
         <div class="row align-center items-center justify-between">
           <label>
             <span class="text-body2">Disable</span>
           </label>
-          <q-toggle :model-value="elementStates.disable" color="primary"
-            @update:model-value="val => { elementStates.disable = val; onEnteredProp('disable', val) }" />
+          <q-toggle
+            :model-value="elementStates.disable" color="primary"
+            @update:model-value="val => { elementStates.disable = val; onEnteredProp('disable', val) }"
+          />
         </div>
       </div>
     </q-card-section>
   </q-card>
 </template>
-
-

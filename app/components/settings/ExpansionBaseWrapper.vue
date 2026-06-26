@@ -26,8 +26,6 @@ const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
 const { setActiveField, copyField, removeField } = formStore
 
-const elementsClosed = localStorage.getItem('elements-closed')
-
 // Retrieve and parse the localStorage item, and handle cases where it might be `null`
 // This variable is initialized only once
 const elementClosed: string[] = JSON.parse(localStorage.getItem('element-closed') || '[]')
@@ -112,8 +110,10 @@ function toggleExpandAll() {
   <q-list separator style="max-width: 340px;">
     <q-item :class="{ 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }">
       <q-item-section avatar>
-        <q-btn size="sm" flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-          @click="setActiveField(null)" />
+        <q-btn
+          size="sm" flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+          @click="setActiveField(null)"
+        />
       </q-item-section>
 
       <q-item-section>
@@ -126,22 +126,30 @@ function toggleExpandAll() {
 
       <q-item-section side>
         <div class="q-gutter-xs">
-          <q-btn size="sm" flat dense round icon="o_content_copy" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            @click="copyField(null, formStore.activeField)" />
-          <q-btn size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            @click="removeField(formStore.activeField)" />
-          <q-btn size="sm" flat dense round :icon="allExpanded ? 'minimize' : 'o_expand'"
-            :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" @click="toggleExpandAll" />
+          <q-btn
+            size="sm" flat dense round icon="o_content_copy" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+            @click="copyField(null, formStore.activeField)"
+          />
+          <q-btn
+            size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
+            @click="removeField(formStore.activeField)"
+          />
+          <q-btn
+            size="sm" flat dense round :icon="allExpanded ? 'minimize' : 'o_expand'"
+            :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" @click="toggleExpandAll"
+          />
         </div>
       </q-item-section>
     </q-item>
     <ClientOnly>
-      <q-expansion-item v-for="slotKey in availableSlots" :key="slotKey" :model-value="expansionState[slotKey]"
+      <q-expansion-item
+        v-for="slotKey in availableSlots" :key="slotKey" :model-value="expansionState[slotKey]"
         :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
         :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'"
         :label="sectionLabels?.[slotKey] || sections[slotKey]"
         :default-opened="allExpanded ? true : !elementClosed.includes(slotKey)"
-        @update:model-value="val => cachingDefaultClosed(slotKey, val)">
+        @update:model-value="val => cachingDefaultClosed(slotKey, val)"
+      >
         <slot :name="slotKey" :foo="(newLabel: string) => { label = newLabel }" />
       </q-expansion-item>
     </ClientOnly>

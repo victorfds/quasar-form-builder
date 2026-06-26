@@ -7,7 +7,7 @@ const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(p
 const errorActive = computed(() =>
   hasError.value
   || (props.context?.state?.submitted && props.context?.state?.valid === false)
-  || (props.context?.state?.touched && props.context?.state?.valid === false)
+  || (props.context?.state?.touched && props.context?.state?.valid === false),
 )
 </script>
 

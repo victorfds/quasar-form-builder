@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
+import type { ColumnsType } from '~/types'
 import { empty, eq } from '@formkit/utils'
 import { clearErrors, reset } from '@formkit/vue'
-import type { ColumnsType } from '~/types'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '~/constants/injectionKeys'
 
 type ViewerField = FormKitSchemaDefinition & {
@@ -29,14 +29,13 @@ const {
   formRefComponent,
   indexPointer,
   elementBeingDragged,
-  originalFieldIndex,
+  originalListKey,
+  targetListKey,
   activeNameFields,
   dragInIndicator,
   isUserDraggingOver,
-  isDragging,
   isDraggingStepper,
-  startX,
-  lastDeltaColumns,
+  isDraggingRootOnlyStructure,
   // computed
   getUserWidthInput,
   // methods
@@ -51,6 +50,10 @@ const {
   onClickAtFormElement,
   onMouseOverAtFormElement,
   onMouseLeaveAtFormElement,
+  onDragEnterStepHeader,
+  onDropOnStepHeader,
+  onDragEnterContainer,
+  onDropOnContainer,
   handleCopyField,
   removeField,
   startResize,
@@ -65,10 +68,13 @@ provide(formBuilderDndKey, {
   formDroppableRef,
   indexPointer,
   elementBeingDragged,
+  originalListKey,
+  targetListKey,
   activeNameFields,
   dragInIndicator,
   isUserDraggingOver,
   isDraggingStepper,
+  isDraggingRootOnlyStructure,
   onDrop,
   handleDragover,
   onDragEnterFormSectionArea,
@@ -79,6 +85,10 @@ provide(formBuilderDndKey, {
   onClickAtFormElement,
   onMouseOverAtFormElement,
   onMouseLeaveAtFormElement,
+  onDragEnterStepHeader,
+  onDropOnStepHeader,
+  onDragEnterContainer,
+  onDropOnContainer,
   handleCopyField,
   removeField,
   onDragEnterInDropArea,
@@ -156,13 +166,12 @@ const data = computed(() => ({
 
 provide(schemaDataKey, data)
 
-function onSubmit(data: any, node: FormKitNode) {
-  console.log(data)
+function onSubmit(_data: any, node: FormKitNode) {
   reset(node, {})
 }
 
 const isPreviewEditing = computed(() => formStore.formSettings.previewMode === 'editing')
-const builderFields = computed(() => formStore.getFields as unknown as ViewerField[])
+const builderFields = computed(() => withStructureChildrenListForRender(formStore.getFields as unknown as ViewerField[]))
 
 function hasCondition(field: ViewerField) {
   return Object.keys(field).some(key => key.includes('hasCondition'))
@@ -170,45 +179,57 @@ function hasCondition(field: ViewerField) {
 
 function getFieldClasses(field: ViewerField) {
   return [
-    fieldUi.getSpanClass(field as any, formStore.formSettings.columns),
     fieldUi.getAlignClass(field as any),
     hasCondition(field) && isPreviewEditing.value ? 'opacity-50' : '',
   ]
 }
 
+function getFieldStyle(field: ViewerField) {
+  return fieldUi.getGridColumnStyle(field as any, formStore.formSettings.columns)
+}
 </script>
 
 <template>
   <section class="full-width" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
-    <q-scroll-area class="full-width relative-position" :content-style="scrollAreaContentStyle"
+    <q-scroll-area
+      class="full-width relative-position" :content-style="scrollAreaContentStyle"
       :content-active-style="scrollAreaContentStyle" :style="`height: calc(100vh - ${offset}px);`"
-      :thumb-style="{ width: '4px' }">
-
+      :thumb-style="{ width: '4px' }"
+    >
       <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
-        <q-card flat class="preview-form-container q-my-md"
+        <q-card
+          flat class="preview-form-container q-my-md"
           :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
-          :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }">
+          :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }"
+        >
           <q-card-section class="my-form-wrapper no-padding">
-            <FormKit id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="false"
-              @submit="onSubmit">
+            <FormKit
+              id="myForm" ref="formRefComponent" v-model="formStore.values" type="form" :actions="false"
+              @submit="onSubmit"
+            >
               <FormCanvas
                 v-if="!hasStepper"
                 v-model:root-ref="formDroppableRef"
                 droppable
                 :empty="!formStore.formFields.length"
                 :highlight-empty="highlightDropArea"
-                @drop="onDrop"
+                @drop="(ev) => onDrop(ev, 'root')"
                 @dragover="handleDragover"
-                @dragenter="onDragEnterFormSectionArea"
+                @dragenter="(ev) => { onDragEnterContainer('root'); onDragEnterFormSectionArea(ev) }"
                 @dragleave="onDragLeaveFormSectionArea"
               >
-                <div v-for="(field, index) in builderFields" :key="field?.name || index" class="form-field"
+                <div
+                  v-for="(field, index) in builderFields" :key="field?.name || index" class="form-field"
                   :data-field-name="field?.name"
-                  :class="getFieldClasses(field)" @mouseover.prevent="onMouseOverAtFormElement(field)"
-                  @mouseleave.prevent="onMouseLeaveAtFormElement">
-
-                  <WithLabelAndDescription v-if="field.$el" :label="field.label" :info="field.info"
-                    :description="field.description">
+                  :class="getFieldClasses(field)"
+                  :style="getFieldStyle(field)"
+                  @mouseover.prevent="onMouseOverAtFormElement(field)"
+                  @mouseleave.prevent="onMouseLeaveAtFormElement"
+                >
+                  <WithLabelAndDescription
+                    v-if="field.$el" :label="field.label" :info="field.info"
+                    :description="field.description"
+                  >
                     <FormKitSchema :schema="field" :data="data" />
                   </WithLabelAndDescription>
 
@@ -223,19 +244,23 @@ function getFieldClasses(field: ViewerField) {
                       elementBeingDragged: elementBeingDragged as any,
                       isUserDraggingOver,
                       dragInIndicator: dragInIndicator as any,
+                      listKey: 'root',
                       isDraggingStepper,
+                      isDraggingRootOnlyStructure,
                       hasStepper,
                     }"
                     :preview-mode-editing="isPreviewEditing"
-                    @click="onClickAtFormElement"
-                    @dragstart="({ field: f, index: i }) => onDragStartField(f, i)"
+                    @click="(idx) => onClickAtFormElement(idx, 'root')"
+                    @dragstart="({ field: f, index: i, ev }) => onDragStartField(f, i, ev, 'root')"
                     @dragend="onDragEnd"
-                    @dragover="onDragOverDropArea"
-                    @dragenter:top="({ ev, name, index: idx }) => onDragEnterInDropArea(ev, name || '', idx)"
-                    @dragenter:bottom="({ ev, name, index: idx }) => onDragEnterInDropArea(ev, name || '', idx)"
-                    @copy="({ field: f, index: i }) => handleCopyField(f, i)"
+                    @dragover="(ev) => onDragOverDropArea(ev, 'root')"
+                    @drag-enter-top="({ ev, name, index: idx, placement }) => onDragEnterInDropArea(ev, name || '', idx, placement, 'root')"
+                    @drag-enter-bottom="({ ev, name, index: idx, placement }) => onDragEnterInDropArea(ev, name || '', idx, placement, 'root')"
+                    @drag-enter-left="({ ev, name, index: idx, placement }) => onDragEnterInDropArea(ev, name || '', idx, placement, 'root')"
+                    @drag-enter-right="({ ev, name, index: idx, placement }) => onDragEnterInDropArea(ev, name || '', idx, placement, 'root')"
+                    @copy="({ field: f, index: i }) => handleCopyField(f, i, 'root')"
                     @remove="({ field: f, index: i }) => removeField(f, i)"
-                    @resize:start="({ ev, field: f }) => startResize(ev, f)"
+                    @resize-start="({ ev, field: f }) => startResize(ev, f)"
                   />
                 </div>
               </FormCanvas>

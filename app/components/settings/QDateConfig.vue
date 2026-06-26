@@ -1,10 +1,10 @@
 <template>
-  <SettingsExpansionBaseWrapper :sectionLabels="{ data: 'Opções de data' }">
+  <SettingsExpansionBaseWrapper :section-labels="{ data: 'Opções de data' }">
     <template #properties>
-      <SettingsSlotsPropertiesCard hasPlaceholder hasDescription />
+      <SettingsSlotsPropertiesCard has-placeholder has-description />
     </template>
     <template #layout>
-      <SettingsSlotsLayoutCard showDense />
+      <SettingsSlotsLayoutCard show-dense />
     </template>
     <template #data>
       <SettingsSlotsDateOptionsCard />
@@ -16,7 +16,7 @@
       <SettingsSlotsConditionsCard />
     </template>
     <template #attributes>
-      <SettingsSlotsAttributesCard showReadonly />
+      <SettingsSlotsAttributesCard show-readonly />
     </template>
   </SettingsExpansionBaseWrapper>
 </template>

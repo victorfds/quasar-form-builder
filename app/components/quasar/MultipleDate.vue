@@ -2,7 +2,6 @@
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QInputProps } from 'quasar'
 
-
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QInputProps } }>()
 
 const { dark } = useQuasar()
@@ -10,14 +9,14 @@ const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(p
 const errorActive = computed(() =>
   hasError.value
   || (props.context?.state?.submitted && props.context?.state?.valid === false)
-  || (props.context?.state?.touched && props.context?.state?.valid === false)
+  || (props.context?.state?.touched && props.context?.state?.valid === false),
 )
 
 const mask = computed(() => (props.context?.attrs as any)?.mask || 'DD/MM/YYYY')
 const displayValue = computed(() => {
   const v: any = props.context?.value
   if (Array.isArray(v)) return v.filter(Boolean).join(', ')
-  return v ? String(v) :  ''
+  return v ? String(v) : ''
 })
 const dateModel = computed(() => {
   const v: any = props.context?.value
@@ -76,21 +75,24 @@ function optionsFn(date: string): boolean {
   if (disabledDatesSet.value.size && current != null && disabledDatesSet.value.has(current)) return false
   return true
 }
-
 </script>
 
 <template>
-  <q-input filled :model-value="displayValue" :error-message="getMessages" color="cyan-8"
+  <q-input
+    filled :model-value="displayValue" :error-message="getMessages" color="cyan-8"
     :error="errorActive" :label="context.label" :hint="context.attrs.description" :dense="context.attrs.dense"
     inputmode="none" :rules="[(val) => !!val || true]" hide-bottom-space :placeholder="context.attrs.placeholder"
     @blur="checkForErrorMessages"
-    @keydown.stop.prevent @keypress.stop.prevent @beforeinput.stop.prevent @paste.stop.prevent @drop.stop.prevent @cut.stop.prevent>
+    @keydown.stop.prevent @keypress.stop.prevent @beforeinput.stop.prevent @paste.stop.prevent @drop.stop.prevent @cut.stop.prevent
+  >
     <template #append>
       <q-icon name="event" class="cursor-pointer" :color="dark.isActive ? 'grey-5' : 'blue-grey-5'">
         <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-          <q-date :model-value="dateModel" :mask="mask" today-btn :options="optionsFn"
-            :emit-immediately="context.attrs.emitImmediately" @update:model-value="(val) => context?.node.input(val)"
-            :readonly="context.attrs.readonly" multiple>
+          <q-date
+            :model-value="dateModel" :mask="mask" today-btn :options="optionsFn"
+            :emit-immediately="context.attrs.emitImmediately" :readonly="context.attrs.readonly"
+            multiple @update:model-value="(val) => context?.node.input(val)"
+          >
             <div class="row items-center justify-end">
               <q-btn v-close-popup label="Fechar" color="primary" flat />
             </div>

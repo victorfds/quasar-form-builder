@@ -12,7 +12,7 @@ export function generateUniqueName(
 ): string {
   const formLength = formFields.length
 
-  return [...new Array(formLength + 1).keys()]
+  return Array.from({ length: formLength + 1 }, (_, counter) => counter)
     .map(counter => (counter === 0 ? name : `${name}_${counter}`))
     .find(uniqueName => !nameExists(uniqueName, formFields)) || name
 }
@@ -24,6 +24,54 @@ export function isEmptyObject(value: any): boolean {
     && !Array.isArray(value)
     && Object.keys(value).length === 0
   )
+}
+
+export function firstFilledArray<T>(...values: unknown[]): T[] {
+  const arrays = values.filter(Array.isArray) as T[][]
+  return arrays.find(value => value.length > 0) || arrays[0] || []
+}
+
+export function withStructureChildrenForRender<T extends FormKitSchemaDefinition>(field: T): T {
+  if (!field || typeof field !== 'object') return field
+
+  const clone: any = { ...field }
+  const normalizeChildren = (children?: unknown) => Array.isArray(children)
+    ? children.map(child => withStructureChildrenForRender(child as FormKitSchemaDefinition))
+    : []
+
+  if (Array.isArray(clone.children)) {
+    clone.children = normalizeChildren(clone.children)
+    if (['q-container', 'q-list-structure', 'q-grid'].includes(String(clone.$formkit || ''))) {
+      clone.structureChildren = clone.children
+    }
+  }
+
+  if (Array.isArray(clone.tabs)) {
+    clone.tabs = clone.tabs.map((tab: any) => ({
+      ...tab,
+      children: normalizeChildren(tab.children),
+    }))
+  }
+
+  if (Array.isArray(clone.steps)) {
+    clone.steps = clone.steps.map((step: any) => ({
+      ...step,
+      children: normalizeChildren(step.children),
+    }))
+  }
+
+  if (Array.isArray(clone.cells)) {
+    clone.cells = clone.cells.map((cell: any) => ({
+      ...cell,
+      children: normalizeChildren(cell.children),
+    }))
+  }
+
+  return clone
+}
+
+export function withStructureChildrenListForRender<T extends FormKitSchemaDefinition>(fields: T[]): T[] {
+  return fields.map(field => withStructureChildrenForRender(field))
 }
 
 export function hasOnlyOneKeyWithName(obj: Record<string, any>, keyName: string): boolean {
@@ -41,7 +89,7 @@ export function getTypesBasedOnFieldType(fieldType: ComponentsTypes): { label: s
 
 export function getLengthLimitsFromValidation(
   validation: string | { if: string, then: string, else: string },
-  startsWith: string
+  startsWith: string,
 ): { min?: number | string, max?: number | string, exact?: number | string } {
   if (!validation) return { min: '', max: '', exact: '' }
 
@@ -51,16 +99,16 @@ export function getLengthLimitsFromValidation(
     : validation.then
 
   // Find the specific rule that starts with the given prefix
-  const rule = validationRule.split("|").find((rule) => rule.startsWith(`${startsWith}:`))
+  const rule = validationRule.split('|').find(rule => rule.startsWith(`${startsWith}:`))
 
   // If the rule is found, process it
   if (rule) {
-    const extracted = rule.replace(`${startsWith}:`, "")
+    const extracted = rule.replace(`${startsWith}:`, '')
 
     if (startsWith !== 'length' && startsWith !== 'between') return { [startsWith]: extracted }
 
     // For length rules, extract the min and max values
-    const [min, max] = extracted.split(",").map(Number)
+    const [min, max] = extracted.split(',').map(Number)
 
     // If min and max are the same, return as exact length
     if (min === max) {

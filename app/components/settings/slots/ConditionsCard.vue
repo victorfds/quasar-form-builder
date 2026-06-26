@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { LogicField } from '~/types'
-import { operators, htmlTypes, checkboxOperators, dateOperators } from '~/constants'
+import { checkboxOperators, dateOperators, htmlTypes, operators } from '~/constants'
 
 const props = defineProps<{
   noConditionsMessage?: string
@@ -138,11 +138,14 @@ function hasSubtitle(): boolean {
   return Boolean(props.conditionsDialogSubtitle)
 }
 </script>
+
 <template>
   <q-card flat>
     <q-card-section>
-      <div class="row align-center items-center justify-between q-pa-sm rounded-borders"
-        :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
+      <div
+        class="row align-center items-center justify-between q-pa-sm rounded-borders"
+        :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'"
+      >
         <div v-if="shouldShowNoConditionsSummary()" class="text-body2">
           {{ noConditionsMessage || 'Este elemento não contém condições' }}
         </div>
@@ -155,22 +158,28 @@ function hasSubtitle(): boolean {
       </div>
     </q-card-section>
   </q-card>
-  <q-dialog v-model="conditionDialog" backdrop-filter="brightness(50%)"
-    @before-hide="() => { showConditionsForm = false }">
+  <q-dialog
+    v-model="conditionDialog" backdrop-filter="brightness(50%)"
+    @before-hide="() => { showConditionsForm = false }"
+  >
     <q-card style="width: 700px; max-width: 80vw;">
       <q-card-section class="row items-center" :class="dark.isActive ? 'bg-grey-10' : 'bg-blue-grey-1'">
         <div>
-          <h5 class="text-weight-semibold no-margin">Condições</h5>
-          <h6 v-if="hasSubtitle()" class="text-subtitle1 no-margin"
-            :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'">
+          <h5 class="text-weight-semibold no-margin">
+            Condições
+          </h5>
+          <h6
+            v-if="hasSubtitle()" class="text-subtitle1 no-margin"
+            :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'"
+          >
             {{ conditionsDialogSubtitle }}
           </h6>
-          <div class="text-body1" :class="dark.isActive ? 'text-grey-7' : 'text-blue-grey-6'">{{ elementStates.name }}
+          <div class="text-body1" :class="dark.isActive ? 'text-grey-7' : 'text-blue-grey-6'">
+            {{ elementStates.name }}
           </div>
         </div>
         <q-space />
-        <q-btn flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" v-close-popup />
-
+        <q-btn v-close-popup flat dense round icon="close" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'" />
       </q-card-section>
 
       <q-card-section>
@@ -178,23 +187,28 @@ function hasSubtitle(): boolean {
           <div class="text-body2 text-weight-semibold">
             Sem condições
           </div>
-          <div class="text-body2" :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'">A lista de condições está
+          <div class="text-body2" :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'">
+            A lista de condições está
             vazia
           </div>
-          <q-btn no-caps class="q-mt-sm" label="Adicionar condição" color="primary"
-            @click="showConditionsForm = !showConditionsForm" />
+          <q-btn
+            no-caps class="q-mt-sm" label="Adicionar condição" color="primary"
+            @click="showConditionsForm = !showConditionsForm"
+          />
         </div>
         <div v-else>
-          <div class="condition-and" v-for="(field, index) in elementStates.logicFields" :key="index">
+          <div v-for="(field, index) in elementStates.logicFields" :key="index" class="condition-and">
             <div class="condition-wrapper">
-              <q-select :options="getFieldList" v-model="field.name" option-disable="cannotSelect" emit-value filled
+              <q-select
+                v-model="field.name" :options="getFieldList" option-disable="cannotSelect" emit-value filled
                 label="Campo" @update:model-value="() => {
                   field.values = []
-                }" />
+                }"
+              />
 
               <div :class="columnClass(field)">
-                <q-select :options="getOperators(field)" v-model="field.operator" filled emit-value map-options>
-                  <template v-slot:no-option>
+                <q-select v-model="field.operator" :options="getOperators(field)" filled emit-value map-options>
+                  <template #no-option>
                     <q-item>
                       <q-item-section class="text-grey">
                         Escolha um campo primeiro
@@ -203,10 +217,12 @@ function hasSubtitle(): boolean {
                   </template>
                 </q-select>
 
-                <q-select v-if="showOptionsSelect(field)"
-                  :options="getOptionsBasedOnField(field.name)" multiple v-model="field.values" filled label="valor"
-                  map-options emit-value>
-                  <template v-slot:no-option>
+                <q-select
+                  v-if="showOptionsSelect(field)"
+                  v-model="field.values" :options="getOptionsBasedOnField(field.name)" multiple filled label="valor"
+                  map-options emit-value
+                >
+                  <template #no-option>
                     <q-item>
                       <q-item-section class="text-italic text-grey">
                         Sem opções
@@ -214,8 +230,9 @@ function hasSubtitle(): boolean {
                     </q-item>
                   </template>
                 </q-select>
-                <q-input v-if="showTagsInput(field)"
-                  v-model="field.value" filled @keyup.enter="function addTag() {
+                <q-input
+                  v-if="showTagsInput(field)"
+                  v-model="field.value" filled clearable @keyup.enter="function addTag() {
                     const value = field.value.trim()
                     if (value && !field.values.includes(value)) {
                       field.values.push(value)
@@ -227,13 +244,16 @@ function hasSubtitle(): boolean {
                       field.values.push(value)
                     }
                     field.value = ''
-                  }" clearable>
-                  <template v-slot:prepend>
+                  }"
+                >
+                  <template #prepend>
                     <div class="q-gutter-xs row flex-wrap">
-                      <q-chip v-for="(tag, index) in field.values" :key="index" removable @remove="() => (function removeTag(index: number) {
-                        field.values.splice(index, 1)
-                      })(index)
-                        ">
+                      <q-chip
+                        v-for="(tag, tagIndex) in field.values" :key="tagIndex" removable @remove="() => (function removeTag(index: number) {
+                          field.values.splice(index, 1)
+                        })(tagIndex)
+                        "
+                      >
                         {{ tag }}
                       </q-chip>
                     </div>
@@ -244,16 +264,18 @@ function hasSubtitle(): boolean {
               </div>
             </div>
 
-            <div class="condition-or" v-for="(fieldOr, indexOr) in elementStates.logicFields[index]?.or" :key="indexOr">
+            <div v-for="(fieldOr, indexOr) in elementStates.logicFields[index]?.or" :key="indexOr" class="condition-or">
               <div class="condition-wrapper-or">
-                <q-select :options="getFieldList" v-model="fieldOr.name" option-disable="cannotSelect" filled emit-value
+                <q-select
+                  v-model="fieldOr.name" :options="getFieldList" option-disable="cannotSelect" filled emit-value
                   label="Campo" @update:model-value="() => {
                     fieldOr.values = []
-                  }" />
+                  }"
+                />
 
                 <div :class="columnClass(fieldOr)">
-                  <q-select :options="getOperators(fieldOr)" v-model="fieldOr.operator" filled emit-value map-options>
-                    <template v-slot:no-option>
+                  <q-select v-model="fieldOr.operator" :options="getOperators(fieldOr)" filled emit-value map-options>
+                    <template #no-option>
                       <q-item>
                         <q-item-section class="text-grey">
                           Escolha um campo primeiro
@@ -262,10 +284,12 @@ function hasSubtitle(): boolean {
                     </template>
                   </q-select>
 
-                  <q-select v-if="showOptionsSelect(fieldOr)"
-                    :options="getOptionsBasedOnField(fieldOr.name)" multiple v-model="fieldOr.values" filled
-                    label="valor" map-options emit-value>
-                    <template v-slot:no-option>
+                  <q-select
+                    v-if="showOptionsSelect(fieldOr)"
+                    v-model="fieldOr.values" :options="getOptionsBasedOnField(fieldOr.name)" multiple filled
+                    label="valor" map-options emit-value
+                  >
+                    <template #no-option>
                       <q-item>
                         <q-item-section class="text-italic text-grey">
                           Sem opções
@@ -273,7 +297,8 @@ function hasSubtitle(): boolean {
                       </q-item>
                     </template>
                   </q-select>
-                  <q-input v-if="showTagsInput(fieldOr)" v-model="fieldOr.value" filled @keyup.enter="function addTag() {
+                  <q-input
+                    v-if="showTagsInput(fieldOr)" v-model="fieldOr.value" filled clearable @keyup.enter="function addTag() {
                       const value = fieldOr.value.trim()
                       if (value && !fieldOr.values.includes(value)) {
                         fieldOr.values.push(value)
@@ -285,13 +310,16 @@ function hasSubtitle(): boolean {
                         fieldOr.values.push(value)
                       }
                       fieldOr.value = ''
-                    }" clearable>
-                    <template v-slot:prepend>
+                    }"
+                  >
+                    <template #prepend>
                       <div class="q-gutter-xs row flex-wrap">
-                        <q-chip v-for="(tag, indexTag) in fieldOr.values" :key="indexTag" removable @remove="() => (function removeTag(index: number) {
-                          fieldOr.values.splice(index, 1)
-                        })(indexTag)
-                          ">
+                        <q-chip
+                          v-for="(tag, indexTag) in fieldOr.values" :key="indexTag" removable @remove="() => (function removeTag(index: number) {
+                            fieldOr.values.splice(index, 1)
+                          })(indexTag)
+                          "
+                        >
                           {{ tag }}
                         </q-chip>
                       </div>
@@ -301,17 +329,18 @@ function hasSubtitle(): boolean {
                   <q-input v-if="showValueInput(fieldOr)" v-model="fieldOr.value" filled />
                 </div>
               </div>
-
-
             </div>
-            <q-btn color="primary" label="Ou" no-caps class="q-mt-md" @click="() => {
-              elementStates.logicFields[index].or = elementStates.logicFields[index].or || []
-              elementStates.logicFields[index].or!.push({ name: '', operator: '', value: '', values: [], or: [] })
-            }" />
-
+            <q-btn
+              color="primary" label="Ou" no-caps class="q-mt-md" @click="() => {
+                elementStates.logicFields[index].or = elementStates.logicFields[index].or || []
+                elementStates.logicFields[index].or!.push({ name: '', operator: '', value: '', values: [], or: [] })
+              }"
+            />
           </div>
-          <q-btn color="primary" label="E" class="q-mt-md"
-            @click="elementStates.logicFields.push({ name: '', operator: '', value: '', values: [], or: [] })" />
+          <q-btn
+            color="primary" label="E" class="q-mt-md"
+            @click="elementStates.logicFields.push({ name: '', operator: '', value: '', values: [], or: [] })"
+          />
         </div>
       </q-card-section>
 
@@ -327,6 +356,7 @@ function hasSubtitle(): boolean {
     </q-card>
   </q-dialog>
 </template>
+
 <style lang="scss" scoped>
 :root {
   --line-color: grey;

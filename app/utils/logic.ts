@@ -8,4 +8,3 @@ export function contains(input: string | number | any[], value: string | number)
   }
   return false
 }
-

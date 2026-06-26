@@ -1,10 +1,6 @@
 <script setup lang="ts">
-
-const { dark, localStorage } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
-
-const elementsClosed = localStorage.getItem('elements-closed')
 
 const elementStates = reactive<{
   trueValue?: string
@@ -28,6 +24,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
   }
 }
 </script>
+
 <template>
   <q-card flat>
     <q-card-section>
@@ -38,12 +35,14 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
               Valor verdadeiro
             </span>
           </label>
-          <q-input id="form-true-value" ref="propTrueValueInputRef" :model-value="elementStates.trueValue"
-            @update:model-value="val => {
+          <q-input
+            id="form-true-value" ref="propTrueValueInputRef" :model-value="elementStates.trueValue"
+            placeholder="verdadeiro" hide-bottom-space filled class="mw-180" color="secondary" dense type="text" @update:model-value="val => {
               const stringfied = String(val).trim()
               elementStates.trueValue = stringfied
               onEnteredProp('true-value', stringfied)
-            }" placeholder="verdadeiro" hide-bottom-space filled class="mw-180" color="secondary" dense type="text" />
+            }"
+          />
         </div>
         <div class="row align-center items-center justify-between q-mt-sm">
           <label for="form-false-value" @click="onClickLabel(propFalseValueInputRef)">
@@ -51,17 +50,20 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
               Valor falso
             </span>
           </label>
-          <q-input id="form-false-value" ref="propFalseValueInputRef" :model-value="elementStates.falseValue"
-            @update:model-value="val => {
+          <q-input
+            id="form-false-value" ref="propFalseValueInputRef" :model-value="elementStates.falseValue"
+            placeholder="falso" hide-bottom-space filled class="mw-180" color="secondary" dense type="text" @update:model-value="val => {
               const stringfied = String(val).trim()
               elementStates.falseValue = stringfied
               onEnteredProp('false-value', stringfied)
-            }" placeholder="falso" hide-bottom-space filled class="mw-180" color="secondary" dense type="text" />
+            }"
+          />
         </div>
       </div>
     </q-card-section>
   </q-card>
 </template>
+
 <style lang="scss" scoped>
 .mw-180 {
   max-width: 180px;

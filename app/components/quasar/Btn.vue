@@ -8,9 +8,11 @@ defineProps<{ context: FormKitFrameworkContext & { attrs: QBtnProps } }>()
 
 <template>
   <WithLabelAndDescription :label="context.label" :info="context.attrs.info" :description="context.attrs.description">
-    <q-btn unelevated :class="{ 'full-width': context.attrs.full }" :label="context.attrs.buttonLabel"
+    <q-btn
+      unelevated :class="{ 'full-width': context.attrs.full }" :label="context.attrs.buttonLabel"
       :icon="context.attrs.icon" :color="context.attrs.color || 'primary'" :loading="context.attrs.loading || false"
-      :type="context.type || 'button'" :disable="context.attrs.disable || false" :size="context.attrs.size || 'md'"
-      no-caps v-bind="context.attrs" @click="(event) => context?.node.input(event)" />
+      :type="context.attrs.type || context.type || 'button'" :disable="context.attrs.disable || false" :size="context.attrs.size || 'md'"
+      no-caps v-bind="context.attrs" @click="(event) => context?.node.input(event)"
+    />
   </WithLabelAndDescription>
 </template>

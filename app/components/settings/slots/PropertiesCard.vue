@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { fieldTypes } from "~/constants"
+import { fieldTypes } from '~/constants'
 
 defineProps<{ hasInputType?: boolean, hasTooltip?: boolean, hasPlaceholder?: boolean, hasDescription?: boolean }>()
 
-const { dark, localStorage } = useQuasar()
+const { dark } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
-
-const elementsClosed = localStorage.getItem('elements-closed')
 
 const elementStates = reactive<{
   name?: string
@@ -19,7 +17,7 @@ const elementStates = reactive<{
   description?: string
 }>({
   name: formStore.activeField?.name,
-  type: fieldTypes[formStore.activeField?.$formkit]?.find(el => el.value === formStore.activeField?.inputType),
+  type: fieldTypes[String(formStore.activeField?.$formkit || '')]?.find(el => el.value === formStore.activeField?.inputType),
   label: formStore.activeField?.label,
   tooltip: formStore.activeField?.info,
   placeholder: formStore.activeField?.placeholder,
@@ -35,7 +33,7 @@ const propDescriptionInputRef = ref<HTMLInputElement | null>(null)
 watch(() => formStore.activeField, (newVal) => {
   elementStates.name = newVal?.name
   elementStates.nameError = ''
-  elementStates.type = fieldTypes[newVal?.$formkit]?.find(el => el.value === newVal?.inputType)
+  elementStates.type = fieldTypes[String(newVal?.$formkit || '')]?.find(el => el.value === newVal?.inputType)
   elementStates.label = newVal?.label
   elementStates.tooltip = formStore.activeField?.info
   elementStates.placeholder = newVal?.placeholder
@@ -85,6 +83,7 @@ function onTypeUpdateModelValue(val: any) {
   elementStates.type = val
 }
 </script>
+
 <template>
   <q-card flat>
     <q-card-section>
@@ -95,9 +94,11 @@ function onTypeUpdateModelValue(val: any) {
               Nome
             </span>
           </label>
-          <q-input id="form-name" ref="propNameInputRef" v-model.trim="elementStates.name"
+          <q-input
+            id="form-name" ref="propNameInputRef" v-model.trim="elementStates.name"
             :error="Boolean(elementStates.nameError)" :error-message="elementStates.nameError" hide-bottom-space filled
-            class="mw-200" color="secondary" dense type="text" @blur="onBlurName" />
+            class="mw-200" color="secondary" dense type="text" @blur="onBlurName"
+          />
         </div>
         <div v-if="hasInputType" class="row align-center items-center justify-between q-mt-sm">
           <label for="form-type" @click="onClickLabel(propTypeInputRef)">
@@ -105,10 +106,12 @@ function onTypeUpdateModelValue(val: any) {
               Tipo de entrada
             </span>
           </label>
-          <q-select id="form-type" ref="propTypeInputRef" :model-value="elementStates.type" hide-bottom-space filled
+          <q-select
+            id="form-type" ref="propTypeInputRef" :model-value="elementStates.type" hide-bottom-space filled
             class="mw-200 full-width" color="cyan-8" dense
             :options="getTypesBasedOnFieldType(formStore.activeField?.$formkit)"
-            @update:model-value="onTypeUpdateModelValue" style="max-width: 200px;" />
+            style="max-width: 200px;" @update:model-value="onTypeUpdateModelValue"
+          />
         </div>
       </div>
     </q-card-section>
@@ -121,8 +124,10 @@ function onTypeUpdateModelValue(val: any) {
               Cabeçalho
             </span>
           </label>
-          <q-input id="form-label" ref="propLabelInputRef" v-model.trim="elementStates.label" hide-bottom-space filled
-            class="mw-200" color="cyan-8" dense type="text" @update:model-value="val => onEnteredProp('label', val)" />
+          <q-input
+            id="form-label" ref="propLabelInputRef" v-model.trim="elementStates.label" hide-bottom-space filled
+            class="mw-200" color="cyan-8" dense type="text" @update:model-value="val => onEnteredProp('label', val)"
+          />
         </div>
         <div v-if="hasTooltip" class="row align-center items-center justify-between q-mt-sm">
           <label for="form-tooltip" @click="onClickLabel(propTooltipInputRef)">
@@ -135,9 +140,11 @@ function onTypeUpdateModelValue(val: any) {
               </q-tooltip>
             </q-icon>
           </label>
-          <q-input id="form-tooltip" ref="propTooltipInputRef" v-model.trim="elementStates.tooltip" hide-bottom-space
+          <q-input
+            id="form-tooltip" ref="propTooltipInputRef" v-model.trim="elementStates.tooltip" hide-bottom-space
             filled class="mw-200" color="cyan-8" dense type="text"
-            @update:model-value="val => onEnteredProp('info', val)" />
+            @update:model-value="val => onEnteredProp('info', val)"
+          />
         </div>
         <div v-if="hasPlaceholder" class="row align-center items-center justify-between q-mt-sm">
           <label for="form-placeholder" @click="onClickLabel(propPlaceholderInputRef)">
@@ -145,11 +152,12 @@ function onTypeUpdateModelValue(val: any) {
               Placeholder
             </span>
           </label>
-          <q-input id="form-placeholder" ref="propPlaceholderInputRef" v-model.trim="elementStates.placeholder"
+          <q-input
+            id="form-placeholder" ref="propPlaceholderInputRef" v-model.trim="elementStates.placeholder"
             hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
-            @update:model-value="val => onEnteredProp('placeholder', val)" />
+            @update:model-value="val => onEnteredProp('placeholder', val)"
+          />
         </div>
-
       </div>
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -160,9 +168,11 @@ function onTypeUpdateModelValue(val: any) {
             Descrição
           </span>
         </label>
-        <q-input id="form-description" ref="propDescriptionInputRef" v-model.trim="elementStates.description"
+        <q-input
+          id="form-description" ref="propDescriptionInputRef" v-model.trim="elementStates.description"
           hide-bottom-space filled class="mw-200" color="cyan-8" dense type="text"
-          @update:model-value="val => onEnteredProp('description', val)" />
+          @update:model-value="val => onEnteredProp('description', val)"
+        />
       </div>
     </q-card-section>
   </q-card>

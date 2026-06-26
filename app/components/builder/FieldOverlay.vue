@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
+import type { BuilderDragPlacement } from '~/types'
 
-type OverlayState = {
+interface OverlayState {
   // active and hover are based on field names for simplicity
   activeNames: string[]
   hoverName?: string
   elementBeingDragged?: { field?: FormKitSchemaDefinition, index?: number }
   isUserDraggingOver?: boolean
-  dragInIndicator?: { index?: number, name?: string }
+  dragInIndicator?: { index?: number, name?: string, placement?: BuilderDragPlacement, listKey?: string }
+  listKey?: string
   isDraggingStepper?: boolean
+  isDraggingRootOnlyStructure?: boolean
   hasStepper?: boolean
 }
 
@@ -21,90 +24,183 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'click', index: number): void
-  (e: 'dragstart', payload: { field: any, index: number }): void
+  (e: 'dragstart', payload: { field: any, index: number, ev: DragEvent }): void
   (e: 'dragend', index: number): void
-  (e: 'dragenter:top', payload: { name?: string, index: number, ev: DragEvent }): void
-  (e: 'dragenter:bottom', payload: { name?: string, index: number, ev: DragEvent }): void
+  (e: 'dragEnterTop', payload: { name?: string, index: number, ev: DragEvent, placement: 'top' }): void
+  (e: 'dragEnterBottom', payload: { name?: string, index: number, ev: DragEvent, placement: 'bottom' }): void
+  (e: 'dragEnterLeft', payload: { name?: string, index: number, ev: DragEvent, placement: 'left' }): void
+  (e: 'dragEnterRight', payload: { name?: string, index: number, ev: DragEvent, placement: 'right' }): void
   (e: 'dragover', ev: DragEvent): void
   (e: 'copy', payload: { field: any, index: number }): void
   (e: 'remove', payload: { field: any, index: number }): void
-  (e: 'resize:start', payload: { ev: MouseEvent, field: any }): void
+  (e: 'resizeStart', payload: { ev: MouseEvent, field: any }): void
 }>()
 
 const isLatest = computed(() => !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && props.state.activeNames.at(-1) === (props.field?.name || ''))
 const isActive = computed(() => !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && props.state.activeNames?.includes(props.field?.name || ''))
 const isDragging = computed(() => (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || ''))
 const isHover = computed(() => !isActive.value && props.state.hoverName === (props.field?.name || ''))
-const showControls = computed(() => props.previewModeEditing && (!props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index) && (isActive.value || isHover.value))
-const hideDropAreas = computed(() => (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || '') || !props.state.isUserDraggingOver || (props.state.isDraggingStepper && props.state.hasStepper))
-const showStepperOnlyTop = computed(() => props.state.isDraggingStepper === true && props.state.hasStepper !== true)
+const isTabsHost = computed(() => props.field?.$formkit === 'q-tabs')
+const isRootOnlyHost = computed(() => ['q-tabs', 'q-stepper'].includes(String(props.field?.$formkit || '')))
+const showControls = computed(() => !isTabsHost.value && props.previewModeEditing && (!props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index) && (isActive.value || isHover.value))
+const hideDropAreas = computed(() =>
+  (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || '')
+  || !props.state.isUserDraggingOver
+  || (props.state.isDraggingRootOnlyStructure && props.state.listKey !== 'root'),
+)
+const isStructureHost = computed(() => ['q-container', 'q-tabs', 'q-grid', 'q-table-structure', 'q-list-structure'].includes(String(props.field?.$formkit || '')))
+const showRootOnlyTop = computed(() => props.state.isDraggingRootOnlyStructure === true)
 const showTopDropArea = computed(() => {
-  if (showStepperOnlyTop.value) {
-    return props.index === 0 && props.state.isUserDraggingOver
+  if (showRootOnlyTop.value) {
+    return props.index === 0 && props.state.listKey === 'root' && props.state.isUserDraggingOver
   }
   return !hideDropAreas.value
 })
 const showBottomDropArea = computed(() => {
-  if (showStepperOnlyTop.value) return false
+  if (showRootOnlyTop.value) return false
   return !hideDropAreas.value
 })
+const showSideDropAreas = computed(() => !showRootOnlyTop.value && !hideDropAreas.value && !isRootOnlyHost.value)
+const matchesIndicatorList = computed(() => {
+  if (!props.state.dragInIndicator?.listKey) return true
+  return props.state.dragInIndicator.listKey === props.state.listKey
+})
+const showTopIndicator = computed(() => matchesIndicatorList.value && props.state.dragInIndicator?.name === (props.field?.name || '') && props.state.dragInIndicator?.placement === 'top')
+const showBottomIndicator = computed(() => matchesIndicatorList.value && props.state.dragInIndicator?.name === (props.field?.name || '') && props.state.dragInIndicator?.placement === 'bottom')
+const showLeftIndicator = computed(() => matchesIndicatorList.value && props.state.dragInIndicator?.name === (props.field?.name || '') && props.state.dragInIndicator?.placement === 'left')
+const showRightIndicator = computed(() => matchesIndicatorList.value && props.state.dragInIndicator?.name === (props.field?.name || '') && props.state.dragInIndicator?.placement === 'right')
 
 function onDragEnterTop(ev: DragEvent) {
-  const destIndex = Number(props.state.elementBeingDragged?.index) < props.index ? props.index - 1 : props.index
-  emit('dragenter:top', { name: props.field?.name, index: destIndex, ev })
+  emit('dragEnterTop', { name: props.field?.name, index: props.index, ev, placement: 'top' })
 }
 function onDragEnterBottom(ev: DragEvent) {
-  const destIndex = Number(props.state.elementBeingDragged?.index) > props.index ? props.index + 1 : props.index
-  emit('dragenter:bottom', { name: props.field?.name, index: destIndex, ev })
+  emit('dragEnterBottom', { name: props.field?.name, index: props.index + 1, ev, placement: 'bottom' })
+}
+function onDragEnterLeft(ev: DragEvent) {
+  emit('dragEnterLeft', { name: props.field?.name, index: props.index, ev, placement: 'left' })
+}
+function onDragEnterRight(ev: DragEvent) {
+  emit('dragEnterRight', { name: props.field?.name, index: props.index + 1, ev, placement: 'right' })
+}
+
+function onOverlayDragStart(ev: DragEvent) {
+  ev.dataTransfer?.setData('application/x-builder-field', props.field?.name || '')
+  emit('dragstart', { field: props.field, index: props.index, ev })
 }
 </script>
 
 <template>
   <!-- Overlay preview layer for a single field -->
-  <div class="overlay-preview-element cursor-pointer" :class="{
-    __latest: isLatest,
-    __active: isActive,
-    __dragging: isDragging,
-    __hover: isHover,
-    hidden: !previewModeEditing,
-  }" draggable="true" @click.stop="emit('click', index)"
-       @dragstart="emit('dragstart', { field, index })" @dragend="emit('dragend', index)" />
+  <div
+    class="overlay-preview-element cursor-pointer" :class="{
+      '__latest': !isTabsHost && isLatest,
+      '__active': !isTabsHost && isActive,
+      '__dragging': isDragging,
+      '__hover': !isTabsHost && isHover,
+      '__structure-host': isStructureHost,
+      '__tabs-host': isTabsHost,
+      'hidden': !previewModeEditing,
+    }" draggable="true" @click.stop="emit('click', index)"
+    @dragstart="onOverlayDragStart" @dragend="emit('dragend', index)"
+  />
+
+  <button
+    v-if="isStructureHost && !isTabsHost && previewModeEditing"
+    type="button"
+    class="preview-structure-select-handle"
+    aria-label="Selecionar estrutura"
+    @click.stop="emit('click', index)"
+  >
+    <q-icon name="select_all" size="14px" />
+  </button>
 
   <!-- Top drop area -->
-  <div class="preview-element-area-top" :class="{ hidden: !showTopDropArea }" @dragenter.prevent="onDragEnterTop"
-       @dragover.prevent="(e) => emit('dragover', e)">
-    <div class="preview-element-label-wrapper preview-element-label-wrapper__top"
-         :class="{ hidden: state.dragInIndicator?.name !== (field?.name || '') || (Number(state.elementBeingDragged?.index) > index && state.dragInIndicator?.index !== index) || (Number(state.elementBeingDragged?.index) < index && state.dragInIndicator?.index !== index - 1) }">
-      <div class="preview-element-label">Drag it here</div>
+  <div
+    class="preview-element-area-top" :class="{ 'hidden': !showTopDropArea, 'preview-element-area--structure-host': isStructureHost }" @dragenter.prevent="onDragEnterTop"
+    @dragover.prevent="(e) => emit('dragover', e)"
+  >
+    <div
+      class="preview-element-label-wrapper preview-element-label-wrapper__top"
+      :class="{ hidden: !showTopIndicator }"
+    >
+      <div class="preview-element-label">
+        Drag it here
+      </div>
     </div>
   </div>
   <!-- Bottom drop area -->
-  <div class="preview-element-area-bottom" :class="{ hidden: !showBottomDropArea }" @dragenter.prevent="onDragEnterBottom"
-       @dragover.prevent="(e) => emit('dragover', e)">
-    <div class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
-         :class="{ hidden: state.dragInIndicator?.name !== (field?.name || '') || (Number(state.elementBeingDragged?.index) > index && state.dragInIndicator?.index !== index + 1) || (Number(state.elementBeingDragged?.index) < index && state.dragInIndicator?.index !== index) }">
-      <div class="preview-element-label">Drag it here</div>
+  <div
+    class="preview-element-area-bottom" :class="{ 'hidden': !showBottomDropArea, 'preview-element-area--structure-host': isStructureHost }" @dragenter.prevent="onDragEnterBottom"
+    @dragover.prevent="(e) => emit('dragover', e)"
+  >
+    <div
+      class="preview-element-label-wrapper preview-element-label-wrapper__bottom"
+      :class="{ hidden: !showBottomIndicator }"
+    >
+      <div class="preview-element-label">
+        Drag it here
+      </div>
+    </div>
+  </div>
+
+  <!-- Left drop area -->
+  <div
+    class="preview-element-area-left" :class="{ hidden: !showSideDropAreas }" @dragenter.prevent="onDragEnterLeft"
+    @dragover.prevent="(e) => emit('dragover', e)"
+  >
+    <div
+      class="preview-element-label-wrapper preview-element-label-wrapper__left"
+      :class="{ hidden: !showLeftIndicator }"
+    >
+      <div class="preview-element-label">
+        Drag it here
+      </div>
+    </div>
+  </div>
+
+  <!-- Right drop area -->
+  <div
+    class="preview-element-area-right" :class="{ hidden: !showSideDropAreas }" @dragenter.prevent="onDragEnterRight"
+    @dragover.prevent="(e) => emit('dragover', e)"
+  >
+    <div
+      class="preview-element-label-wrapper preview-element-label-wrapper__right"
+      :class="{ hidden: !showRightIndicator }"
+    >
+      <div class="preview-element-label">
+        Drag it here
+      </div>
     </div>
   </div>
 
   <!-- Active label and actions -->
-  <div v-if="showControls" class="preview-form-name" @click.stop="emit('click', index)">{{ field?.name }}</div>
-  <q-icon v-if="showControls" name="content_copy" class="preview-form-copy-action cursor-pointer"
-          @click.stop="emit('copy', { field, index })">
-    <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
-               self="bottom middle" :offset="[4, 4]">
+  <div v-if="showControls" class="preview-form-name" @click.stop="emit('click', index)">
+    {{ field?.name }}
+  </div>
+  <q-icon
+    v-if="showControls" name="content_copy" class="preview-form-copy-action cursor-pointer"
+    @click.stop="emit('copy', { field, index })"
+  >
+    <q-tooltip
+      class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+      self="bottom middle" :offset="[4, 4]"
+    >
       Clone
     </q-tooltip>
   </q-icon>
-  <q-icon v-if="showControls" name="o_delete" class="preview-form-remove-action cursor-pointer"
-          @click.stop="emit('remove', { field, index })">
-    <q-tooltip class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
-               self="bottom middle" :offset="[4, 4]">
+  <q-icon
+    v-if="showControls" name="o_delete" class="preview-form-remove-action cursor-pointer"
+    @click.stop="emit('remove', { field, index })"
+  >
+    <q-tooltip
+      class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
+      self="bottom middle" :offset="[4, 4]"
+    >
       Remove
     </q-tooltip>
   </q-icon>
   <div v-if="showControls" class="preview-element-resizer-icon" />
-  <div v-if="showControls" class="preview-element-resizer" @mousedown.stop="(ev: MouseEvent) => emit('resize:start', { ev, field })" />
+  <div v-if="showControls" class="preview-element-resizer" @mousedown.stop="(ev: MouseEvent) => emit('resizeStart', { ev, field })" />
   <div v-if="showControls && state.elementBeingDragged?.field?.name === field?.name" class="preview-element-columns-display">
     <span class="text-caption text-weight-semibold q-pa-xs">{{
       // @ts-expect-error store enriches columns
@@ -143,56 +239,132 @@ function onDragEnterBottom(ev: DragEvent) {
     border-style: dashed;
     z-index: 1;
   }
+
+  &.__structure-host {
+    border-width: 1px;
+  }
+
+  &.__tabs-host {
+    pointer-events: none;
+  }
 }
 
 .preview-element-area-top {
   position: absolute;
-  bottom: 50%;
-  top: -.5rem;
+  top: -1rem;
   left: 0;
   right: 0;
+  height: 1rem;
+  z-index: 3;
 }
 
 .preview-element-area-bottom {
   position: absolute;
-  top: 50%;
-  bottom: -.5rem;
+  bottom: -1rem;
   left: 0;
   right: 0;
+  height: 1rem;
+  z-index: 3;
+}
+
+.preview-element-area-left,
+.preview-element-area-right {
+  bottom: 0;
+  max-width: 6rem;
+  min-width: 2.5rem;
+  position: absolute;
+  top: 0;
+  width: 32%;
+  z-index: 2;
+}
+
+.preview-element-area-left {
+  left: -.5rem;
+}
+
+.preview-element-area-right {
+  right: -.5rem;
 }
 
 .preview-element-label-wrapper {
   pointer-events: none;
   position: absolute;
-  height: .25rem;
+  height: .1875rem;
   border-radius: 9999px;
   background-color: #a82454;
+  box-shadow: 0 0 0 2px rgba(168, 36, 84, .14);
+  z-index: 4;
 
   &__bottom {
-    left: -.5rem;
-    right: -.5rem;
-    bottom: -.125rem;
+    left: 0;
+    right: 0;
+    top: calc(25% - .09375rem);
   }
 
   &__top {
-    left: -.5rem;
-    right: -.5rem;
-    top: -.125rem;
+    left: 0;
+    right: 0;
+    top: calc(75% - .09375rem);
+  }
+
+  &__left,
+  &__right {
+    bottom: 0;
+    height: auto;
+    top: 0;
+    width: .1875rem;
+
+    .preview-element-label {
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  &__left {
+    left: 0;
+  }
+
+  &__right {
+    right: 0;
   }
 
   .preview-element-label {
     color: white;
     position: absolute;
     left: 50%;
-    right: 50%;
     border-radius: 9999px;
     background-color: #a82454;
     padding: .125rem .5rem;
     font-size: .875rem;
     line-height: 1rem;
-    transform: translate(-2.5rem, -.5rem);
+    transform: translate(-50%, -.45rem);
     text-wrap: nowrap;
     width: fit-content;
+  }
+}
+
+.preview-structure-select-handle {
+  align-items: center;
+  background-color: var(--overlay-accent-color, #2980b9);
+  border: 0;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  height: 1.375rem;
+  justify-content: center;
+  left: .25rem;
+  opacity: .72;
+  padding: 0;
+  position: absolute;
+  top: .25rem;
+  width: 1.375rem;
+  z-index: 7;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+    outline: 1px solid white;
+    outline-offset: -2px;
   }
 }
 
@@ -207,7 +379,7 @@ function onDragEnterBottom(ev: DragEvent) {
   padding: 4px;
   position: absolute;
   overflow: hidden;
-  z-index: 2;
+  z-index: 5;
   transform: translateY(-100%);
 }
 
@@ -220,7 +392,7 @@ function onDragEnterBottom(ev: DragEvent) {
   width: fit-content;
   height: fit-content;
   padding: 4px;
-  z-index: 2;
+  z-index: 5;
 }
 
 .preview-form-remove-action {
@@ -229,10 +401,10 @@ function onDragEnterBottom(ev: DragEvent) {
   color: white;
   top: -1.4rem;
   right: 0;
-  width: fit-contet;
+  width: fit-content;
   height: fit-content;
   padding: 4px;
-  z-index: 2;
+  z-index: 5;
 }
 
 .preview-element-resizer-icon {

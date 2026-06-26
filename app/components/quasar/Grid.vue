@@ -1,0 +1,120 @@
+<script setup lang="ts">
+import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
+import type { BuilderFieldListKey, StructureCell } from '~/types'
+
+interface GridOption {
+  label: string
+  value: string
+}
+
+const props = defineProps<{
+  context: FormKitFrameworkContext & {
+    children?: FormKitSchemaDefinition[]
+    structureChildren?: FormKitSchemaDefinition[]
+    columnsCount?: number
+    rowsCount?: number
+    cells?: StructureCell[]
+    attrs: {
+      structureChildren?: FormKitSchemaDefinition[]
+      children?: FormKitSchemaDefinition[]
+      columnsCount?: number
+      rowsCount?: number
+      cells?: StructureCell[]
+      description?: string
+    }
+  }
+}>()
+
+const columnsCount = computed(() => Math.max(1, Math.min(4, Number(props.context.attrs.columnsCount || props.context.columnsCount || 2))))
+const rowsCount = computed(() => Math.max(1, Math.min(8, Number(props.context.attrs.rowsCount || props.context.rowsCount || 1))))
+const gridStyle = computed(() => ({
+  gridTemplateColumns: `repeat(${columnsCount.value}, minmax(0, 1fr))`,
+}))
+
+const rows = computed<GridOption[]>(() =>
+  Array.from({ length: rowsCount.value }, (_, index) => ({
+    label: `Linha ${index + 1}`,
+    value: `row_${index + 1}`,
+  })),
+)
+const columns = computed<GridOption[]>(() =>
+  Array.from({ length: columnsCount.value }, (_, index) => ({
+    label: `Coluna ${index + 1}`,
+    value: `column_${index + 1}`,
+  })),
+)
+const gridCells = computed(() => {
+  const legacyChildren = firstFilledArray<FormKitSchemaDefinition>(
+    props.context.structureChildren,
+    props.context.attrs.structureChildren,
+    props.context.children,
+    props.context.attrs.children,
+  )
+  const existingCells = firstFilledArray<StructureCell>(props.context.cells, props.context.attrs.cells)
+
+  return rows.value.flatMap((row, rowIndex) =>
+    columns.value.map((column, columnIndex) => {
+      const name = `${row.value}__${column.value}`
+      const existingCell = existingCells.find(cell => cell.name === name)
+      return {
+        name,
+        label: `${row.label} / ${column.label}`,
+        row: row.value,
+        column: column.value,
+        children: existingCell?.children || (rowIndex === 0 && columnIndex === 0 ? legacyChildren : []),
+      }
+    }),
+  )
+})
+
+function getCellListKey(cellName: string): BuilderFieldListKey {
+  return `cell:${props.context.node.name}:${cellName}`
+}
+</script>
+
+<template>
+  <div class="structure-grid" :style="gridStyle">
+    <div v-for="cell in gridCells" :key="cell.name" class="structure-grid__cell">
+      <BuilderStructureCanvas
+        :fields="cell.children"
+        :list-key="getCellListKey(cell.name)"
+        :empty-text="cell.label"
+      />
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.structure-grid {
+  display: grid;
+  border: 1px solid var(--line-color, #d7dde2);
+  border-radius: 6px;
+  gap: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.structure-grid__cell {
+  border-bottom: 1px solid var(--line-color, #d7dde2);
+  border-right: 1px solid var(--line-color, #d7dde2);
+  min-width: 0;
+  padding: 0.5rem;
+}
+
+.structure-grid__cell :deep(.form-canvas) {
+  min-height: 5rem;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.structure-grid__cell :deep(.overlay-drop-here) {
+  height: 5rem;
+  min-height: 5rem;
+}
+
+@media (max-width: 599px) {
+  .structure-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>

@@ -10,7 +10,7 @@ export const useFormHistoryStore = defineStore('formHistoryStore', () => {
     if (size === 0) {
       const cachedFormFields: string | null = localStorage.getItem('form-fields')
 
-      memory.setItem(size, cachedFormFields ? cachedFormFields : JSON.stringify([]))
+      memory.setItem(size, cachedFormFields || JSON.stringify([]))
       memory.setItem(size + 1, JSON.stringify(value))
       pointer.value = size + 1
       return
@@ -56,6 +56,6 @@ export const useFormHistoryStore = defineStore('formHistoryStore', () => {
     goBack,
     goForward,
     isBackDisabled,
-    isForwardDisabled
+    isForwardDisabled,
   }
 })

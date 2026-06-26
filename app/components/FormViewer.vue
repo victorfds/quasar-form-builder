@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { FormKitNode, FormKitSchemaDefinition } from "@formkit/core"
+import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
+import type { ColumnsType } from '~/types'
 import { empty, eq } from '@formkit/utils'
-import type { ColumnsType } from "~/types"
 import { builderModeKey, schemaDataKey } from '~/constants/injectionKeys'
 
 type ViewerField = FormKitSchemaDefinition & {
@@ -15,6 +15,9 @@ type ViewerField = FormKitSchemaDefinition & {
 }
 
 const props = defineProps<{ formFields: FormKitSchemaDefinition[], readonly?: boolean }>()
+const emit = defineEmits<{
+  (e: 'submit', data: any): void
+}>()
 const values = defineModel<any>({ default: () => ({}) })
 const modelValues = computed({
   get: () => values.value,
@@ -23,9 +26,6 @@ const modelValues = computed({
     values.value = newValues
   },
 })
-const emit = defineEmits<{
-  (e: 'submit', data: any): void
-}>()
 const data = computed(() => ({
   ...values.value,
   empty,
@@ -41,9 +41,9 @@ const data = computed(() => ({
 provide(builderModeKey, false)
 provide(schemaDataKey, data)
 
-function onSubmit(data: any, node: FormKitNode) {
+function onSubmit(data: any, _node: FormKitNode) {
   if (props.readonly) return
-  emit("submit", data)
+  emit('submit', data)
   // The node has a builtin function that can be used called node.submit()
 }
 
@@ -58,27 +58,34 @@ function onSubmitInvalid(node: FormKitNode) {
       key: 'required',
       blocking: true,
       meta: {
-        touched: true
-      }
+        touched: true,
+      },
     })
   })
 }
 
-const renderFields = computed(() => (props.formFields || []) as unknown as ViewerField[])
-const { getContainerSpan, getAlignClass } = useFieldLayout()
+const renderFields = computed(() => withStructureChildrenListForRender((props.formFields || []) as unknown as ViewerField[]))
+const { getGridColumnStyle, getAlignClass } = useFieldLayout()
 </script>
 
 <template>
   <article>
-    <FormKit type="form" v-model="modelValues" :actions="false"
-      validation-visibility="submit" @submit="onSubmit" @submit-invalid="onSubmitInvalid">
+    <FormKit
+      v-model="modelValues" type="form" :actions="false"
+      validation-visibility="submit" @submit="onSubmit" @submit-invalid="onSubmitInvalid"
+    >
       <FormCanvas>
-        <div v-for="(field, index) in renderFields" :key="field.name || index" class="form-field" :class="[
-          field.columns ? `span-${getContainerSpan(field)}` : 'span-12',
-          getAlignClass(field)
-        ]">
-          <WithLabelAndDescription v-if="field.$el" :label="field.label" :info="field.info"
-            :description="field.description">
+        <div
+          v-for="(field, index) in renderFields"
+          :key="field.name || index"
+          class="form-field form-field--responsive"
+          :class="getAlignClass(field)"
+          :style="getGridColumnStyle(field)"
+        >
+          <WithLabelAndDescription
+            v-if="field.$el" :label="field.label" :info="field.info"
+            :description="field.description"
+          >
             <FormKitSchema :schema="field" :data="data" />
           </WithLabelAndDescription>
 
@@ -88,6 +95,7 @@ const { getContainerSpan, getAlignClass } = useFieldLayout()
     </FormKit>
   </article>
 </template>
+
 <style lang="scss">
 /* When inputs are invalid (after being touched or submit), make the control more evident */
 .formkit-outer[data-invalid="true"] .q-field__control {

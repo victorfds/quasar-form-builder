@@ -3,7 +3,7 @@ import type { ColumnsType } from '~/types'
 
 defineProps<{ showFullWidth?: boolean, showAlignment?: boolean, showSize?: boolean, showDense?: boolean, setAttrs?: boolean }>()
 
-const { dark, localStorage } = useQuasar()
+const { dark } = useQuasar()
 const formStore = useFormStore()
 const { changeViewport, updateActiveFieldColumns, onEnteredProp } = formStore
 
@@ -13,7 +13,7 @@ const elementStates = reactive<{
   align?: 'left' | 'center' | 'right'
   size?: 'default' | 'sm' | 'md' | 'lg'
   columns?: ColumnsType
-  columnsPreferencies: { hasDefault?: boolean, hasTablet?: boolean, hasDesktop?: boolean },
+  columnsPreferencies: { hasDefault?: boolean, hasTablet?: boolean, hasDesktop?: boolean }
 }>({
   fullWidth: formStore.activeField?.full || false,
   dense: formStore.activeField?.dense || false,
@@ -23,8 +23,8 @@ const elementStates = reactive<{
   columnsPreferencies: {
     hasDefault: Boolean(!formStore.activeField?.columns?.container || formStore.activeField?.columns?.container || formStore.activeField?.columns?.default),
     hasTablet: Boolean(formStore.activeField?.columns?.sm),
-    hasDesktop: Boolean(formStore.activeField?.columns?.lg)
-  }
+    hasDesktop: Boolean(formStore.activeField?.columns?.lg),
+  },
 })
 
 const isColumnDefault = computed(() => {
@@ -51,16 +51,19 @@ function handleCheckboxUpdate(isChecked: boolean) {
 
   if (isChecked) {
     elementStates.columns = { ...currentColumns, container: null, [columnKey]: null }
-  } else if (columnKey === 'sm' || columnKey === 'lg') {
+  }
+  else if (columnKey === 'sm' || columnKey === 'lg') {
     elementStates.columns = {
       ...currentColumns,
       [columnKey]: { container: 12 },
       container: currentColumns.container ? null : undefined,
       ...(currentColumns.container && { default: defaultContainer }),
     }
-  } else if (hasSmOrLg) {
+  }
+  else if (hasSmOrLg) {
     elementStates.columns = { ...currentColumns, [columnKey]: defaultContainer }
-  } else {
+  }
+  else {
     elementStates.columns = defaultContainer
   }
 
@@ -74,6 +77,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
   onEnteredProp('columns', elementStates.columns)
 }
 </script>
+
 <template>
   <q-card flat>
     <q-card-section v-if="showFullWidth">
@@ -84,10 +88,12 @@ function handleCheckboxUpdate(isChecked: boolean) {
           </span>
         </label>
 
-        <q-toggle :model-value="elementStates.fullWidth" color="primary" @update:model-value="val => {
-          elementStates.fullWidth = val
-          onEnteredProp('full', val)
-        }" />
+        <q-toggle
+          :model-value="elementStates.fullWidth" color="primary" @update:model-value="val => {
+            elementStates.fullWidth = val
+            onEnteredProp('full', val)
+          }"
+        />
       </div>
     </q-card-section>
     <q-separator v-if="showAlignment" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -98,7 +104,8 @@ function handleCheckboxUpdate(isChecked: boolean) {
             Alinhar
           </span>
         </label>
-        <q-btn-toggle id="form-button-align" :model-value="elementStates.align" no-wrap unelevated no-caps
+        <q-btn-toggle
+          id="form-button-align" :model-value="elementStates.align" no-wrap unelevated no-caps
           toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'" size="sm"
           :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
             { icon: 'format_align_left', value: 'left' },
@@ -111,7 +118,8 @@ function handleCheckboxUpdate(isChecked: boolean) {
               return
             }
             onEnteredProp('align', val)
-          }" />
+          }"
+        />
       </div>
     </q-card-section>
     <q-separator v-if="showSize" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -122,7 +130,8 @@ function handleCheckboxUpdate(isChecked: boolean) {
             Tamanho
           </span>
         </label>
-        <q-btn-toggle id="form-button-size" :model-value="elementStates.size" no-wrap unelevated no-caps
+        <q-btn-toggle
+          id="form-button-size" :model-value="elementStates.size" no-wrap unelevated no-caps
           toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'" dense
           :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
             { label: 'Padrão', value: 'default' },
@@ -136,7 +145,8 @@ function handleCheckboxUpdate(isChecked: boolean) {
               return
             }
             onEnteredProp('size', val)
-          }" />
+          }"
+        />
       </div>
     </q-card-section>
     <q-separator v-if="showDense" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -148,10 +158,12 @@ function handleCheckboxUpdate(isChecked: boolean) {
           </span>
         </label>
 
-        <q-toggle :model-value="elementStates.fullWidth" color="primary" @update:model-value="val => {
-          elementStates.fullWidth = val
-          onEnteredProp('dense', val)
-        }" />
+        <q-toggle
+          :model-value="elementStates.fullWidth" color="primary" @update:model-value="val => {
+            elementStates.fullWidth = val
+            onEnteredProp('dense', val)
+          }"
+        />
       </div>
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
@@ -162,17 +174,22 @@ function handleCheckboxUpdate(isChecked: boolean) {
             Colunas
           </span>
         </label>
-        <q-btn-toggle id="form-button-columns" :model-value="formStore.formSettings.columns" no-wrap unelevated no-caps
+        <q-btn-toggle
+          id="form-button-columns" :model-value="formStore.formSettings.columns" no-wrap unelevated no-caps
           toggle-color="primary" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'" dense
           :text-color="dark.isActive ? 'white' : 'grey-10'" :options="[
             { label: 'Padrão', value: 'default' },
             { label: 'Tablet', value: 'sm' },
             { label: 'Desktop', value: 'lg' },
-          ]" @update:model-value="changeViewport" />
+          ]" @update:model-value="changeViewport"
+        />
       </div>
-      <q-checkbox :model-value="isColumnDefault" label="Largura de coluna padrão"
-        @update:model-value="handleCheckboxUpdate" />
-      <q-btn-toggle v-if="!isColumnDefault" no-wrap unelevated dense spread toggle-color="primary"
+      <q-checkbox
+        :model-value="isColumnDefault" label="Largura de coluna padrão"
+        @update:model-value="handleCheckboxUpdate"
+      />
+      <q-btn-toggle
+        v-if="!isColumnDefault" no-wrap unelevated dense spread toggle-color="primary"
         :text-color="dark.isActive ? 'white' : 'grey-10'" :color="dark.isActive ? 'grey-10' : 'blue-grey-1'"
         :model-value="formStore.activeField?.columns?.[formStore.formSettings.columns]?.container || formStore.activeField?.columns?.container"
         :options="[
@@ -188,7 +205,8 @@ function handleCheckboxUpdate(isChecked: boolean) {
           { label: '10', value: 10 },
           { label: '11', value: 11 },
           { label: '12', value: 12 },
-        ]" @update:model-value="updateActiveFieldColumns" />
+        ]" @update:model-value="updateActiveFieldColumns"
+      />
     </q-card-section>
   </q-card>
 </template>

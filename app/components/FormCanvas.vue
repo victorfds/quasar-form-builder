@@ -1,8 +1,6 @@
 <script setup lang="ts">
 defineOptions({ inheritAttrs: false })
 
-const rootRef = defineModel<HTMLElement | null>('rootRef', { default: null })
-
 const props = withDefaults(defineProps<{
   droppable?: boolean
   empty?: boolean
@@ -22,29 +20,35 @@ const emit = defineEmits<{
   (e: 'dragleave', ev: DragEvent): void
 }>()
 
+const rootRef = defineModel<HTMLElement | null>('rootRef', { default: null })
+
 const attrs = useAttrs()
 
 function handleDrop(ev: DragEvent) {
   if (!props.droppable) return
   ev.preventDefault()
+  ev.stopPropagation()
   emit('drop', ev)
 }
 
 function handleDragover(ev: DragEvent) {
   if (!props.droppable) return
   ev.preventDefault()
+  ev.stopPropagation()
   emit('dragover', ev)
 }
 
 function handleDragenter(ev: DragEvent) {
   if (!props.droppable || !props.empty) return
   ev.preventDefault()
+  ev.stopPropagation()
   emit('dragenter', ev)
 }
 
 function handleDragleave(ev: DragEvent) {
   if (!props.droppable || !props.empty) return
   ev.preventDefault()
+  ev.stopPropagation()
   emit('dragleave', ev)
 }
 </script>
@@ -65,7 +69,12 @@ function handleDragleave(ev: DragEvent) {
       @dragleave="handleDragleave"
     >
       <slot name="empty">
-        {{ emptyText }}
+        <div class="overlay-drop-here__content column items-center justify-center no-wrap">
+          <q-icon name="add_box" class="overlay-drop-here__icon" />
+          <div class="overlay-drop-here__label">
+            {{ emptyText }}
+          </div>
+        </div>
       </slot>
     </div>
 
@@ -79,18 +88,54 @@ function handleDragleave(ev: DragEvent) {
 }
 
 .form-field {
+  grid-column: span var(--field-column-default, 12) / span var(--field-column-default, 12);
   position: relative;
   pointer-events: auto;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
+.form-field .form-field {
+  z-index: 4;
+}
+
+@media (min-width: 600px) {
+  .form-field--responsive {
+    grid-column: span var(--field-column-sm, var(--field-column-default, 12)) / span var(--field-column-sm, var(--field-column-default, 12));
+  }
+}
+
+@media (min-width: 1024px) {
+  .form-field--responsive {
+    grid-column: span var(--field-column-lg, var(--field-column-sm, var(--field-column-default, 12))) / span var(--field-column-lg, var(--field-column-sm, var(--field-column-default, 12)));
+  }
+}
+
 .overlay-drop-here {
+  background: rgba(129, 212, 250, .24);
+  border: 1px dashed rgba(69, 140, 163, .52);
+  color: #4f93a8;
   position: relative;
   top: 0;
   bottom: 0;
   right: 0;
   left: 0;
   height: 328px;
+  min-height: 7.5rem;
+}
+
+.overlay-drop-here__content {
+  gap: .5rem;
+  pointer-events: none;
+}
+
+.overlay-drop-here__icon {
+  font-size: 2rem;
+}
+
+.overlay-drop-here__label {
+  font-size: .875rem;
+  line-height: 1.25rem;
+  text-align: center;
 }
 </style>

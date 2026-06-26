@@ -51,8 +51,10 @@ function handleGoForward() {
           Construtor de Formulários
         </q-toolbar-title>
         <ClientOnly>
-          <q-toggle :model-value="dark.isActive" checked-icon="dark_mode" unchecked-icon="light_mode" size="3rem"
-            color="primary" keep-color @update:model-value="toggleThemeFn" />
+          <q-toggle
+            :model-value="dark.isActive" checked-icon="dark_mode" unchecked-icon="light_mode" size="3rem"
+            color="primary" keep-color @update:model-value="toggleThemeFn"
+          />
         </ClientOnly>
       </q-toolbar>
     </q-header>
@@ -65,9 +67,11 @@ function handleGoForward() {
       <q-page :style-fn="fnTweak">
         <slot />
         <q-page-sticky position="top-left" :offset="[12, 12]" data-keep-active>
-          <q-tabs v-model="formStore.formSettings.previewMode" vertical dense shrink class="rounded-borders"
+          <q-tabs
+            v-model="formStore.formSettings.previewMode" vertical dense shrink class="rounded-borders"
             :class="dark.isActive ? 'bg-dark text-white' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-            active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;">
+            active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;"
+          >
             <q-tab name="editing">
               <template #default>
                 <q-icon name="edit" size="xs">
@@ -90,9 +94,11 @@ function handleGoForward() {
         </q-page-sticky>
 
         <q-page-sticky position="top-right" :offset="[12, 12]" data-keep-active>
-          <q-tabs vertical dense shrink class="rounded-borders"
+          <q-tabs
+            vertical dense shrink class="rounded-borders"
             :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-            style="max-height: 4.5rem;">
+            style="max-height: 4.5rem;"
+          >
             <q-tab name="undo" :disable="formHistoryStore.isBackDisabled()" @click="handleGoBack">
               <template #default>
                 <q-icon name="undo" size="xs">
@@ -115,9 +121,11 @@ function handleGoForward() {
         </q-page-sticky>
 
         <q-page-sticky position="bottom-left" :offset="[12, 12]" data-keep-active>
-          <q-tabs vertical dense shrink class="rounded-borders q-mb-sm"
+          <q-tabs
+            vertical dense shrink class="rounded-borders q-mb-sm"
             :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-            style="max-height: 4.5rem;">
+            style="max-height: 4.5rem;"
+          >
             <q-tab name="close-left-panel" @click="toggleLeftDrawer">
               <template #default>
                 <q-icon :name="isElementsDrawerOpened ? 'arrow_back' : 'arrow_forward'" size="xs">
@@ -128,9 +136,11 @@ function handleGoForward() {
               </template>
             </q-tab>
           </q-tabs>
-          <q-tabs vertical dense shrink class="rounded-borders"
+          <q-tabs
+            vertical dense shrink class="rounded-borders"
             :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-            style="max-height: 4.5rem;">
+            style="max-height: 4.5rem;"
+          >
             <q-tab name="empty-form-fields">
               <template #default>
                 <q-icon name="o_delete_forever" size="xs" @click="formStore.setFormFields([])">
@@ -144,9 +154,11 @@ function handleGoForward() {
         </q-page-sticky>
 
         <q-page-sticky position="bottom-right" :offset="[12, 12]">
-          <q-tabs vertical dense shrink class="rounded-borders q-mb-sm"
+          <q-tabs
+            vertical dense shrink class="rounded-borders q-mb-sm"
             :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-            style="max-height: 4.5rem;">
+            style="max-height: 4.5rem;"
+          >
             <q-tab name="close-right-panel" @click="toggleRightDrawer">
               <template #default>
                 <q-icon :name="isFormSettingsDrawerOpened ? 'arrow_forward' : 'arrow_back'" size="xs">
@@ -157,19 +169,18 @@ function handleGoForward() {
               </template>
             </q-tab>
           </q-tabs>
-          <q-tabs vertical dense shrink class="rounded-borders"
+          <q-tabs
+            vertical dense shrink class="rounded-borders"
             :class="dark.isActive ? 'bg-dark text-grey-11' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-            style="max-height: 4.5rem;">
-
+            style="max-height: 4.5rem;"
+          >
             <q-tab name="is-safe">
               <template #default>
-                <q-icon name="gpp_good" size="xs">
-                </q-icon>
+                <q-icon name="gpp_good" size="xs" />
               </template>
             </q-tab>
           </q-tabs>
         </q-page-sticky>
-
       </q-page>
     </q-page-container>
   </q-layout>

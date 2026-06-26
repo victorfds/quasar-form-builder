@@ -9,25 +9,25 @@ function parseDateString(s: string): Date | null {
   // Remove time part if present
   const [datePart] = s.split(' ')
   // y-m-d or y/m/d
-  let m = datePart.match(/^(\d{4})[-\/]?(\d{2})[-\/]?(\d{2})$/)
+  let m = datePart.match(/^(\d{4})[-/]?(\d{2})[-/]?(\d{2})$/)
   if (m) {
     const [, y, mo, d] = m
     const dt = new Date(Number(y), Number(mo) - 1, Number(d))
-    return isNaN(dt.getTime()) ? null : toStartOfDay(dt)
+    return Number.isNaN(dt.getTime()) ? null : toStartOfDay(dt)
   }
   // d/m/y or d-m-y
-  m = datePart.match(/^(\d{2})[-\/]?(\d{2})[-\/]?(\d{4})$/)
+  m = datePart.match(/^(\d{2})[-/]?(\d{2})[-/]?(\d{4})$/)
   if (m) {
     const [, d, mo, y] = m
     const dt = new Date(Number(y), Number(mo) - 1, Number(d))
-    return isNaN(dt.getTime()) ? null : toStartOfDay(dt)
+    return Number.isNaN(dt.getTime()) ? null : toStartOfDay(dt)
   }
   // Try native Date (ISO)
   const dt = new Date(datePart)
-  return isNaN(dt.getTime()) ? null : toStartOfDay(dt)
+  return Number.isNaN(dt.getTime()) ? null : toStartOfDay(dt)
 }
 
-function normalizeToDates(value: any): { dates: Date[]; range?: { from: Date | null, to: Date | null } } {
+function normalizeToDates(value: any): { dates: Date[], range?: { from: Date | null, to: Date | null } } {
   if (value == null || value === '') return { dates: [] }
   if (Array.isArray(value)) {
     const dates = value.map(v => typeof v === 'string' ? parseDateString(v) : null).filter(Boolean) as Date[]
@@ -87,4 +87,3 @@ export function isDayAfterTomorrow(value: any): boolean {
 export function isDayBeforeYesterday(value: any): boolean {
   return includesTarget(value, getOffsetDay(-2))
 }
-
