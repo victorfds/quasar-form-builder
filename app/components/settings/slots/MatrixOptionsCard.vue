@@ -4,6 +4,8 @@ interface MatrixOption {
   value: string
 }
 
+type MatrixOptionProp = 'rows' | 'columnsConfig'
+
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
@@ -23,25 +25,64 @@ const elementStates = reactive<{
   columnsConfig: cloneOptions(formStore.activeField?.columnsConfig, defaultColumns),
 })
 
-watch(() => formStore.activeField?.name, () => {
-  elementStates.rows = cloneOptions(formStore.activeField?.rows, defaultRows)
-  elementStates.columnsConfig = cloneOptions(formStore.activeField?.columnsConfig, defaultColumns)
-})
+function getOptionPrefixes(propName: MatrixOptionProp) {
+  return propName === 'rows'
+    ? { label: 'Linha', value: 'row' }
+    : { label: 'Coluna', value: 'column' }
+}
 
-function saveOptions(propName: 'rows' | 'columnsConfig') {
-  const values = elementStates[propName].filter(item => item.label && item.value)
+function getNextGeneratedValue(propName: MatrixOptionProp, usedValues = new Set(elementStates[propName].map(item => item.value).filter(Boolean))) {
+  const { value: valuePrefix } = getOptionPrefixes(propName)
+  let nextIndex = 1
+  let nextValue = `${valuePrefix}_${nextIndex}`
+
+  while (usedValues.has(nextValue)) {
+    nextIndex += 1
+    nextValue = `${valuePrefix}_${nextIndex}`
+  }
+
+  return nextValue
+}
+
+function normalizeOptions(propName: MatrixOptionProp) {
+  const usedValues = new Set<string>()
+  const { label: labelPrefix } = getOptionPrefixes(propName)
+
+  return elementStates[propName]
+    .map((item, index) => {
+      const label = String(item.label || '').trim()
+      let value = String(item.value || '').trim()
+
+      if (!label && !value) return null
+
+      if (!value || usedValues.has(value)) {
+        value = getNextGeneratedValue(propName, usedValues)
+      }
+
+      usedValues.add(value)
+
+      return {
+        label: label || `${labelPrefix} ${index + 1}`,
+        value,
+      }
+    })
+    .filter(Boolean) as MatrixOption[]
+}
+
+function saveOptions(propName: MatrixOptionProp) {
+  const values = normalizeOptions(propName)
+  elementStates[propName] = values
   onEnteredProp(propName, values)
 }
 
-function addOption(propName: 'rows' | 'columnsConfig') {
+function addOption(propName: MatrixOptionProp) {
   const nextIndex = elementStates[propName].length + 1
-  const prefix = propName === 'rows' ? 'Linha' : 'Coluna'
-  const valuePrefix = propName === 'rows' ? 'row' : 'column'
-  elementStates[propName].push({ label: `${prefix} ${nextIndex}`, value: `${valuePrefix}_${nextIndex}` })
+  const { label: labelPrefix } = getOptionPrefixes(propName)
+  elementStates[propName].push({ label: `${labelPrefix} ${nextIndex}`, value: getNextGeneratedValue(propName) })
   saveOptions(propName)
 }
 
-function removeOption(propName: 'rows' | 'columnsConfig', index: number) {
+function removeOption(propName: MatrixOptionProp, index: number) {
   elementStates[propName].splice(index, 1)
   saveOptions(propName)
 }

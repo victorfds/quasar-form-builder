@@ -17,6 +17,7 @@ import {
   QuasarOptionGroup,
   QuasarRange,
   QuasarSelect,
+  QuasarSeparator,
   QuasarSignature,
   QuasarSlider,
   QuasarSteps,
@@ -35,7 +36,7 @@ quasarPlugin.library = (node: FormKitNode) => {
   const quasarTypes = {
     'q-input': () => node.define({
       type: 'input',
-      props: ['columns'],
+      props: ['columns', 'clearable', 'counter', 'autogrow', 'loading', 'stackLabel', 'debounce', 'mask', 'fill-mask', 'reverse-fill-mask', 'unmasked-value', 'prefix', 'suffix', 'rounded', 'square', 'dark'],
       component: QuasarInput,
     }),
     'q-date-multiple': () => node.define({
@@ -45,17 +46,17 @@ quasarPlugin.library = (node: FormKitNode) => {
     }),
     'q-select': () => node.define({
       type: 'input',
-      props: ['columns'],
+      props: ['columns', 'options', 'clearable', 'counter', 'multiple', 'useChips', 'useInput', 'fillInput', 'hideSelected', 'optionsDense', 'optionsCover', 'newValueMode', 'behavior', 'maxValues', 'inputDebounce', 'rounded', 'square', 'dark'],
       component: QuasarSelect,
     }),
     'q-option-group': () => node.define({
       type: 'input',
-      props: ['columns', 'options', 'groupType', 'optionStyle'],
+      props: ['columns', 'options', 'groupType', 'optionStyle', 'inline', 'leftLabel', 'dense', 'disable', 'dark'],
       component: QuasarOptionGroup,
     }),
     'q-btn-toggle': () => node.define({
       type: 'input',
-      props: ['columns', 'options', 'multiple'],
+      props: ['columns', 'options', 'multiple', 'spread', 'rounded', 'square', 'clearable', 'toggleColor', 'textColor'],
       component: QuasarBtnToggle,
     }),
     'q-checkbox': () => node.define({
@@ -105,8 +106,13 @@ quasarPlugin.library = (node: FormKitNode) => {
     }),
     'q-file': () => node.define({
       type: 'input',
-      props: ['columns', 'accept', 'multiple', 'maxFileSize', 'maxTotalSize', 'maxFiles', 'useChips', 'counter', 'clearable', 'gallery'],
+      props: ['columns', 'accept', 'multiple', 'maxFileSize', 'maxTotalSize', 'maxFiles', 'useChips', 'counter', 'clearable', 'gallery', 'rounded', 'square', 'dark'],
       component: QuasarFile,
+    }),
+    'q-separator': () => node.define({
+      type: 'input',
+      props: ['columns', 'vertical', 'inset', 'spaced', 'color', 'size'],
+      component: QuasarSeparator,
     }),
     'q-signature': () => node.define({
       type: 'input',

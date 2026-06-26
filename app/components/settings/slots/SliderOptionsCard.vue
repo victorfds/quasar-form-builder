@@ -8,13 +8,6 @@ const elementStates = reactive({
   step: formStore.activeField?.step ?? 1,
   vertical: Boolean(formStore.activeField?.vertical),
 })
-
-watch(() => formStore.activeField, (field) => {
-  elementStates.min = field?.min ?? 0
-  elementStates.max = field?.max ?? 100
-  elementStates.step = field?.step ?? 1
-  elementStates.vertical = Boolean(field?.vertical)
-}, { deep: true })
 </script>
 
 <template>

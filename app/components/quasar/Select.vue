@@ -9,11 +9,20 @@ const errorActive = computed(() =>
   || (props.context?.state?.submitted && props.context?.state?.valid === false)
   || (props.context?.state?.touched && props.context?.state?.valid === false),
 )
+const selectAttrs = computed(() => {
+  const {
+    columns: _columns,
+    description: _description,
+    ...attrs
+  } = props.context.attrs
+
+  return getQuasarFieldDesignAttrs(attrs)
+})
 </script>
 
 <template>
   <q-select
-    v-bind="context.attrs" :model-value="context.value" :label="context.label" filled hide-bottom-space
+    v-bind="selectAttrs" :model-value="context.value" :label="context.label" hide-bottom-space
     :hint="context.help || context.attrs.description" emit-value map-options :error-message="getMessages"
     :error="errorActive" @update:model-value="(val) => context?.node.input(val)" @blur="checkForErrorMessages"
   />

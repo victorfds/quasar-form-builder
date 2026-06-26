@@ -38,15 +38,6 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
   refElement?.focus()
   if (select) refElement?.select()
 }
-
-watch(() => formStore.activeField, (val) => {
-  elementStates.min = val?.min || ''
-  elementStates.max = val?.max || ''
-  elementStates.mask = val?.mask || ''
-  elementStates.emitImmediately = Boolean(val?.emitImmediately) || false
-  elementStates.defaultYearMonth = val?.defaultYearMonth || ''
-  elementStates.disabledDates = (val?.disabledDates as string[] | undefined) || []
-}, { deep: true })
 </script>
 
 <template>

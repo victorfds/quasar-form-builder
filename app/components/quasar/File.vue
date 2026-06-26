@@ -11,6 +11,16 @@ const selectedFiles = computed<File[]>(() => {
   return Array.isArray(props.context.value) ? props.context.value : [props.context.value as File]
 })
 const imageFiles = computed(() => selectedFiles.value.filter(file => file.type?.startsWith('image/')))
+const fileAttrs = computed(() => {
+  const {
+    columns: _columns,
+    description: _description,
+    gallery: _gallery,
+    ...attrs
+  } = props.context.attrs
+
+  return getQuasarFieldDesignAttrs(attrs)
+})
 </script>
 
 <template>
@@ -19,12 +29,11 @@ const imageFiles = computed(() => selectedFiles.value.filter(file => file.type?.
       :model-value="context.value"
       :label="context.label"
       :hint="context.attrs.description"
-      filled
       hide-bottom-space
       color="cyan-8"
       :error-message="getMessages"
       :error="errorActive"
-      v-bind="context.attrs"
+      v-bind="fileAttrs"
       @update:model-value="(val) => context?.node.input(val)"
       @blur="checkForErrorMessages"
     >

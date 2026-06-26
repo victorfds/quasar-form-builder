@@ -30,16 +30,6 @@ const propTooltipInputRef = ref<HTMLInputElement | null>(null)
 const propPlaceholderInputRef = ref<HTMLInputElement | null>(null)
 const propDescriptionInputRef = ref<HTMLInputElement | null>(null)
 
-watch(() => formStore.activeField, (newVal) => {
-  elementStates.name = newVal?.name
-  elementStates.nameError = ''
-  elementStates.type = fieldTypes[String(newVal?.$formkit || '')]?.find(el => el.value === newVal?.inputType)
-  elementStates.label = newVal?.label
-  elementStates.tooltip = formStore.activeField?.info
-  elementStates.placeholder = newVal?.placeholder
-  elementStates.description = newVal?.description
-}, { deep: true })
-
 function onClickLabel(refElement: HTMLInputElement | null, { select = false }: { select?: boolean } = {}) {
   refElement?.focus()
   if (select) {

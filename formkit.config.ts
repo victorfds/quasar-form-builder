@@ -17,6 +17,7 @@ import {
   QuasarOptionGroup,
   QuasarRange,
   QuasarSelect,
+  QuasarSeparator,
   QuasarSignature,
   QuasarSlider,
   QuasarSteps,
@@ -37,11 +38,11 @@ function quasarInput(
 }
 
 const quasarInputs = {
-  'q-input': quasarInput(QuasarInput),
+  'q-input': quasarInput(QuasarInput, ['columns', 'clearable', 'counter', 'autogrow', 'loading', 'stackLabel', 'debounce', 'mask', 'fill-mask', 'reverse-fill-mask', 'unmasked-value', 'prefix', 'suffix', 'rounded', 'square', 'dark']),
   'q-date-multiple': quasarInput(QuasarMultipleDate),
-  'q-select': quasarInput(QuasarSelect),
-  'q-option-group': quasarInput(QuasarOptionGroup, ['columns', 'options', 'groupType', 'optionStyle']),
-  'q-btn-toggle': quasarInput(QuasarBtnToggle, ['columns', 'options', 'multiple']),
+  'q-select': quasarInput(QuasarSelect, ['columns', 'options', 'clearable', 'counter', 'multiple', 'useChips', 'useInput', 'fillInput', 'hideSelected', 'optionsDense', 'optionsCover', 'newValueMode', 'behavior', 'maxValues', 'inputDebounce', 'rounded', 'square', 'dark']),
+  'q-option-group': quasarInput(QuasarOptionGroup, ['columns', 'options', 'groupType', 'optionStyle', 'inline', 'leftLabel', 'dense', 'disable', 'dark']),
+  'q-btn-toggle': quasarInput(QuasarBtnToggle, ['columns', 'options', 'multiple', 'spread', 'rounded', 'square', 'clearable', 'toggleColor', 'textColor']),
   'q-checkbox': quasarInput(QuasarCheckbox),
   'q-toggle': quasarInput(QuasarToggle),
   'q-editor': quasarInput(QuasarEditor),
@@ -51,7 +52,8 @@ const quasarInputs = {
   'q-time': quasarInput(QuasarTime, ['columns', 'mask', 'format24h', 'withSeconds', 'nowBtn']),
   'q-slider': quasarInput(QuasarSlider, ['columns', 'min', 'max', 'step', 'vertical']),
   'q-range': quasarInput(QuasarRange, ['columns', 'min', 'max', 'step']),
-  'q-file': quasarInput(QuasarFile, ['columns', 'accept', 'multiple', 'maxFileSize', 'maxTotalSize', 'maxFiles', 'useChips', 'counter', 'clearable', 'gallery']),
+  'q-file': quasarInput(QuasarFile, ['columns', 'accept', 'multiple', 'maxFileSize', 'maxTotalSize', 'maxFiles', 'useChips', 'counter', 'clearable', 'gallery', 'rounded', 'square', 'dark']),
+  'q-separator': quasarInput(QuasarSeparator, ['columns', 'vertical', 'inset', 'spaced', 'color', 'size']),
   'q-signature': quasarInput(QuasarSignature),
   'q-matrix': quasarInput(QuasarMatrix, ['columns', 'rows', 'columnsConfig', 'table']),
   'q-btn': quasarInput(QuasarBtn, ['columns', 'align']),

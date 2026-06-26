@@ -10,11 +10,6 @@ const elementStates = reactive<{
   disable: Boolean(formStore.activeField?.disable),
   readonly: Boolean(formStore.activeField?.readonly),
 })
-
-watch(() => formStore.activeField, (newVal) => {
-  elementStates.disable = Boolean(newVal?.disable)
-  elementStates.readonly = Boolean(newVal?.readonly)
-}, { deep: true })
 </script>
 
 <template>

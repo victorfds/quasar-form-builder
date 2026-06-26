@@ -21,14 +21,6 @@ const elementStates = reactive<{
 
 const propTypeRef = ref<HTMLInputElement | null>(null)
 
-watch(() => formStore.activeField, (newVal) => {
-  elementStates.type = htmlTypes.find(htmlType => htmlType.value === newVal?.$el)
-  elementStates.content = newVal?.children
-  elementStates.src = newVal?.attrs?.src || ''
-  elementStates.alt = newVal?.attrs?.alt || ''
-  elementStates.href = newVal?.attrs?.href || ''
-}, { deep: true })
-
 function onClickLabel(refElement: HTMLInputElement | null, { select = false }: { select?: boolean } = {}) {
   refElement?.focus()
   if (select) {

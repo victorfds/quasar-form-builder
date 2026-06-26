@@ -22,13 +22,6 @@ const maskOptions = [
 function onClickLabel(refElement: { focus: () => void } | null) {
   refElement?.focus()
 }
-
-watch(() => formStore.activeField, (field) => {
-  elementStates.mask = field?.mask || DEFAULT_TIME_MASK
-  elementStates.format24h = field?.format24h !== false
-  elementStates.withSeconds = Boolean(field?.withSeconds)
-  elementStates.nowBtn = Boolean(field?.nowBtn)
-}, { deep: true })
 </script>
 
 <template>

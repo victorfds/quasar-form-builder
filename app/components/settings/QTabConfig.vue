@@ -13,23 +13,31 @@ const tabsCount = computed(() => {
 })
 
 const labelInputRef = ref<{ focus: () => void } | null>(null)
+const tabLabel = computed(() => activeTab.value?.label || '')
 
-const labelModel = computed({
-  get: () => activeTab.value?.label || '',
-  set: (value: string) => {
-    if (!activeTab.value || !tabsFieldName.value) return
-    formStore.updateTabLabel(tabsFieldName.value, activeTab.value.name, value)
-  },
-})
-
-watch(() => formStore.tabLabelFocusToken, async () => {
+async function focusTabLabel() {
   if (!activeTab.value) return
   await nextTick()
   labelInputRef.value?.focus()
+}
+
+let stopFocusTabLabel: (() => void) | undefined
+
+onMounted(() => {
+  stopFocusTabLabel = useEventListener(window, 'builder:focus-tab-label', focusTabLabel)
+})
+
+onBeforeUnmount(() => {
+  stopFocusTabLabel?.()
 })
 
 function onClickLabel(refElement: { focus: () => void } | null) {
   refElement?.focus()
+}
+
+function updateTabLabel(value: string | number | null) {
+  if (!activeTab.value || !tabsFieldName.value) return
+  formStore.updateTabLabel(tabsFieldName.value, activeTab.value.name, String(value || ''))
 }
 
 function closeTabConfig() {
@@ -117,13 +125,14 @@ function updateTabCondition(prop: 'if' | 'validation' | 'disable' | 'readonly', 
             <q-input
               id="tab-label"
               ref="labelInputRef"
-              v-model="labelModel"
+              :model-value="tabLabel"
               hide-bottom-space
               filled
               class="mw-200"
               color="cyan-8"
               dense
               type="text"
+              @update:model-value="updateTabLabel"
             />
           </div>
         </q-card-section>

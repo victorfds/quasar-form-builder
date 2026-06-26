@@ -21,13 +21,6 @@ const elementStates = reactive<{
   tabs: formStore.activeField?.tabs?.length ? toRaw(formStore.activeField.tabs) : [{ name: 'tab_1', label: 'Aba 1', children: [] }],
 })
 
-watch(() => formStore.activeField, (field) => {
-  elementStates.columnsCount = Number(field?.columnsCount || 2)
-  elementStates.rowsCount = Number(field?.rowsCount || 1)
-  elementStates.nested = Boolean(field?.nested)
-  elementStates.tabs = field?.tabs?.length ? toRaw(field.tabs) : [{ name: 'tab_1', label: 'Aba 1', children: [] }]
-}, { deep: true })
-
 function saveTabs() {
   onEnteredProp('tabs', elementStates.tabs.filter(tab => tab.name))
 }

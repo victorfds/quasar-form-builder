@@ -3,6 +3,9 @@
     <template #properties>
       <SettingsSlotsPropertiesCard has-placeholder has-description />
     </template>
+    <template #decorators>
+      <SettingsSlotsFieldDesignCard />
+    </template>
     <template #layout>
       <SettingsSlotsLayoutCard show-dense />
     </template>

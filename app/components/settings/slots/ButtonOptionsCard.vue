@@ -21,15 +21,6 @@ const elementStates = reactive<{
 const propButtonLabelInputRef = ref<HTMLInputElement | null>(null)
 const propButtonTypeInputRef = ref<HTMLInputElement | null>(null)
 
-watch(() => formStore.activeField, (newVal) => {
-  elementStates.buttonLabel = newVal?.buttonLabel
-  elementStates.buttonType = newVal?.color || 'primary'
-  elementStates.buttonReset = newVal?.type === 'reset'
-  elementStates.fullWidth = newVal?.full
-  elementStates.align = newVal?.align
-  elementStates.size = newVal?.size
-}, { deep: true })
-
 function onClickLabel(refElement: HTMLInputElement | null, { select = false }: { select?: boolean } = {}) {
   refElement?.focus()
   if (select) {

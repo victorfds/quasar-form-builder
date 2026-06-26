@@ -13,10 +13,6 @@ const elementStates = reactive<{
   options: cloneOptions(formStore.activeField?.options),
 })
 
-watch(() => formStore.activeField?.name, () => {
-  elementStates.options = cloneOptions(formStore.activeField?.options)
-})
-
 function addNewOption() {
   elementStates.options?.push({ label: '', value: '' })
 }

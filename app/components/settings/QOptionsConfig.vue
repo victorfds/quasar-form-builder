@@ -6,6 +6,9 @@
     <template #data>
       <SettingsSlotsDataCard />
     </template>
+    <template #options>
+      <SettingsSlotsChoiceDisplayOptionsCard />
+    </template>
     <template #layout>
       <SettingsSlotsLayoutCard show-dense show-alignment />
     </template>

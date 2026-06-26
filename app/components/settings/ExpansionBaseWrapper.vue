@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getBrowserJsonItem, setBrowserStorageItem } from '~/utils/browserStorage'
+
 defineProps<{
   sectionLabels?: {
     properties?: string
@@ -22,13 +24,11 @@ const slots = defineSlots<{
   options: string
 }>()
 
-const { dark, localStorage } = useQuasar()
+const { dark } = useQuasar()
 const formStore = useFormStore()
 const { setActiveField, copyField, removeField } = formStore
 
-// Retrieve and parse the localStorage item, and handle cases where it might be `null`
-// This variable is initialized only once
-const elementClosed: string[] = JSON.parse(localStorage.getItem('element-closed') || '[]')
+const elementClosedStorageKey = 'element-closed'
 
 // Allowed options
 const sections: Record<string, string> = {
@@ -43,18 +43,37 @@ const sections: Record<string, string> = {
 }
 
 const label = ref('')
-const allExpanded = ref(!elementClosed.length || false)
+const closedElements = ref<string[]>([])
+const allExpanded = ref(true)
 const expansionState = ref<Record<string, boolean>>({})
 
 // Dynamically get the available slots
 const availableSlots = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 
 availableSlots.value.forEach((slotKey) => {
-  expansionState.value[slotKey] = !elementClosed.includes(slotKey)
+  expansionState.value[slotKey] = !closedElements.value.includes(slotKey)
 })
 
+function readClosedElements() {
+  return getBrowserJsonItem<string[]>(elementClosedStorageKey, []).filter(Boolean)
+}
+
+function writeClosedElements(value: string[]) {
+  closedElements.value = value
+  setBrowserStorageItem(elementClosedStorageKey, JSON.stringify(value))
+}
+
+function syncExpansionState() {
+  closedElements.value = readClosedElements()
+  allExpanded.value = !closedElements.value.length
+  expansionState.value = availableSlots.value.reduce((acc, slotKey) => {
+    acc[slotKey] = !closedElements.value.includes(slotKey)
+    return acc
+  }, {} as Record<string, boolean>)
+}
+
 function cachingDefaultClosed(slotKey: keyof typeof slots, isOpen: boolean) {
-  const elementClosed: string[] = JSON.parse(localStorage.getItem('element-closed') || '[]')
+  const elementClosed = readClosedElements()
   if (!slotKey || !Array.isArray(elementClosed))
     return
 
@@ -63,14 +82,14 @@ function cachingDefaultClosed(slotKey: keyof typeof slots, isOpen: boolean) {
     // Only push to `elementClosed` if it's not already present
     if (!elementClosed.includes(slotKey)) {
       elementClosed.push(slotKey)
-      localStorage.setItem('element-closed', JSON.stringify(elementClosed))
+      writeClosedElements(elementClosed)
     }
   }
   else if (isOpen) {
     const indexOf = elementClosed.findIndex(el => el === slotKey)
     if (indexOf !== -1) {
       elementClosed.splice(indexOf, 1)
-      localStorage.setItem('element-closed', JSON.stringify(elementClosed))
+      writeClosedElements(elementClosed)
     }
   }
 
@@ -83,7 +102,7 @@ function cachingDefaultClosed(slotKey: keyof typeof slots, isOpen: boolean) {
 function toggleExpandAll() {
   allExpanded.value = !allExpanded.value
 
-  let elementClosed = JSON.parse(localStorage.getItem('element-closed') || '[]')
+  let elementClosed = readClosedElements()
 
   if (allExpanded.value) {
     // Expand all
@@ -102,8 +121,10 @@ function toggleExpandAll() {
     elementClosed = availableSlots.value
   }
 
-  localStorage.setItem('element-closed', JSON.stringify(elementClosed))
+  writeClosedElements(elementClosed)
 }
+
+onMounted(syncExpansionState)
 </script>
 
 <template>
@@ -147,7 +168,7 @@ function toggleExpandAll() {
         :header-class="{ 'text-weight-semibold text-subtitle2': true, 'bg-grey-9 text-grey-11': dark.isActive, 'bg-blue-grey-1 text-blue-grey-10': !dark.isActive }"
         :expand-icon-class="dark.isActive ? 'text-grey-5' : 'text-blue-grey-8'"
         :label="sectionLabels?.[slotKey] || sections[slotKey]"
-        :default-opened="allExpanded ? true : !elementClosed.includes(slotKey)"
+        :default-opened="allExpanded ? true : !closedElements.includes(slotKey)"
         @update:model-value="val => cachingDefaultClosed(slotKey, val)"
       >
         <slot :name="slotKey" :foo="(newLabel: string) => { label = newLabel }" />

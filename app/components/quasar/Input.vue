@@ -12,11 +12,21 @@ const formStore = useFormStore()
 const isEditing = computed(() => builderMode && formStore.formSettings.previewMode === 'editing')
 const inputType = computed(() => props.context.attrs.inputType || 'text')
 const renderedType = computed(() => inputType.value === 'hidden' && isEditing.value ? 'text' : inputType.value)
+const inputAttrs = computed(() => {
+  const {
+    columns: _columns,
+    description: _description,
+    inputType: _inputType,
+    ...attrs
+  } = props.context.attrs
+
+  return getQuasarFieldDesignAttrs(attrs)
+})
 </script>
 
 <template>
   <q-input
-    v-bind="context.attrs" :model-value="context.value" :label="context.label" filled :type="renderedType"
+    v-bind="inputAttrs" :model-value="context.value" :label="context.label" :type="renderedType"
     :hint="context.attrs.description" hide-bottom-space color="cyan-8" :error-message="getMessages" :error="errorActive"
     @update:model-value="(val) => context?.node.input(val)" @blur="checkForErrorMessages"
   />

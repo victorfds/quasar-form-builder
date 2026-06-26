@@ -3,6 +3,12 @@
     <template #properties>
       <SettingsSlotsPropertiesCard has-input-type has-placeholder has-description />
     </template>
+    <template #decorators>
+      <SettingsSlotsFieldDesignCard />
+    </template>
+    <template #options>
+      <SettingsSlotsInputOptionsCard />
+    </template>
     <template #layout>
       <SettingsSlotsLayoutCard show-dense />
     </template>

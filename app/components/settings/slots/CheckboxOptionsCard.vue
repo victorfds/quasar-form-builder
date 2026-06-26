@@ -5,17 +5,16 @@ const { onEnteredProp } = formStore
 const elementStates = reactive<{
   trueValue?: string
   falseValue?: string
+  leftLabel?: boolean
+  toggleIndeterminate?: boolean
 }>({
   trueValue: formStore.activeField?.['true-value'],
   falseValue: formStore.activeField?.['false-value'],
+  leftLabel: Boolean(formStore.activeField?.leftLabel),
+  toggleIndeterminate: Boolean(formStore.activeField?.toggleIndeterminate),
 })
 const propTrueValueInputRef = ref<HTMLInputElement | null>(null)
 const propFalseValueInputRef = ref<HTMLInputElement | null>(null)
-
-watch(() => formStore.activeField, (newVal) => {
-  elementStates.trueValue = newVal?.['true-value']
-  elementStates.falseValue = newVal?.['false-value']
-}, { deep: true })
 
 function onClickLabel(refElement: HTMLInputElement | null, { select = false }: { select?: boolean } = {}) {
   refElement?.focus()
@@ -56,6 +55,38 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
               const stringfied = String(val).trim()
               elementStates.falseValue = stringfied
               onEnteredProp('false-value', stringfied)
+            }"
+          />
+        </div>
+        <div class="row align-center items-center justify-between q-mt-sm">
+          <label for="form-left-label">
+            <span class="text-body2">
+              Label à esquerda
+            </span>
+          </label>
+          <q-toggle
+            id="form-left-label"
+            :model-value="elementStates.leftLabel"
+            color="primary"
+            @update:model-value="val => {
+              elementStates.leftLabel = val
+              onEnteredProp('leftLabel', val)
+            }"
+          />
+        </div>
+        <div v-if="formStore.activeField?.$formkit === 'q-checkbox'" class="row align-center items-center justify-between q-mt-sm">
+          <label for="form-toggle-indeterminate">
+            <span class="text-body2">
+              Indeterminado
+            </span>
+          </label>
+          <q-toggle
+            id="form-toggle-indeterminate"
+            :model-value="elementStates.toggleIndeterminate"
+            color="primary"
+            @update:model-value="val => {
+              elementStates.toggleIndeterminate = val
+              onEnteredProp('toggleIndeterminate', val)
             }"
           />
         </div>

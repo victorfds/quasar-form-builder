@@ -24,46 +24,49 @@ const labelInputRef = ref<{ focus: () => void } | null>(null)
 const prevLabelInputRef = ref<{ focus: () => void } | null>(null)
 const nextLabelInputRef = ref<{ focus: () => void } | null>(null)
 
-const labelModel = computed({
-  get: () => activeStep.value?.label || '',
-  set: (value: string) => {
-    if (!activeStep.value) return
-    formStore.updateStepLabel(activeStep.value.name, value)
-  },
-})
+const labelValue = computed(() => activeStep.value?.label || '')
+const showPreviousValue = computed(() => activeStep.value?.showPrevious !== false)
+const prevLabelValue = computed(() => activeStep.value?.prevLabel || '')
+const nextLabelValue = computed(() => activeStep.value?.nextLabel || '')
 
-const showPrevious = computed({
-  get: () => activeStep.value?.showPrevious !== false,
-  set: (value: boolean) => {
-    if (!activeStep.value) return
-    formStore.updateStepLayout(activeStep.value.name, { showPrevious: value })
-  },
-})
-
-const prevLabel = computed({
-  get: () => activeStep.value?.prevLabel || '',
-  set: (value: string) => {
-    if (!activeStep.value) return
-    formStore.updateStepLayout(activeStep.value.name, { prevLabel: value })
-  },
-})
-
-const nextLabel = computed({
-  get: () => activeStep.value?.nextLabel || '',
-  set: (value: string) => {
-    if (!activeStep.value) return
-    formStore.updateStepLayout(activeStep.value.name, { nextLabel: value })
-  },
-})
-
-watch(() => formStore.stepLabelFocusToken, async () => {
+async function focusStepLabel() {
   if (!activeStep.value) return
   await nextTick()
   labelInputRef.value?.focus()
+}
+
+let stopFocusStepLabel: (() => void) | undefined
+
+onMounted(() => {
+  stopFocusStepLabel = useEventListener(window, 'builder:focus-step-label', focusStepLabel)
+})
+
+onBeforeUnmount(() => {
+  stopFocusStepLabel?.()
 })
 
 function onClickLabel(refElement: { focus: () => void } | null) {
   refElement?.focus()
+}
+
+function updateStepLabelValue(value: string | number | null) {
+  if (!activeStep.value) return
+  formStore.updateStepLabel(activeStep.value.name, String(value || ''))
+}
+
+function updateShowPrevious(value: boolean) {
+  if (!activeStep.value) return
+  formStore.updateStepLayout(activeStep.value.name, { showPrevious: value })
+}
+
+function updatePrevLabel(value: string | number | null) {
+  if (!activeStep.value) return
+  formStore.updateStepLayout(activeStep.value.name, { prevLabel: String(value || '') })
+}
+
+function updateNextLabel(value: string | number | null) {
+  if (!activeStep.value) return
+  formStore.updateStepLayout(activeStep.value.name, { nextLabel: String(value || '') })
 }
 
 function closeStepConfig() {
@@ -131,8 +134,8 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
               </span>
             </label>
             <q-input
-              id="step-label" ref="labelInputRef" v-model="labelModel" hide-bottom-space filled class="mw-200"
-              color="cyan-8" dense type="text"
+              id="step-label" ref="labelInputRef" :model-value="labelValue" hide-bottom-space filled class="mw-200"
+              color="cyan-8" dense type="text" @update:model-value="updateStepLabelValue"
             />
           </div>
         </q-card-section>
@@ -151,7 +154,7 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
                 Mostrar anterior
               </span>
             </label>
-            <q-toggle id="step-show-previous" v-model="showPrevious" color="primary" />
+            <q-toggle id="step-show-previous" :model-value="showPreviousValue" color="primary" @update:model-value="updateShowPrevious" />
           </div>
           <div class="row align-center items-center justify-between q-mt-sm">
             <label for="step-prev-label" @click="onClickLabel(prevLabelInputRef)">
@@ -160,9 +163,9 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
               </span>
             </label>
             <q-input
-              id="step-prev-label" ref="prevLabelInputRef" v-model="prevLabel" hide-bottom-space filled
+              id="step-prev-label" ref="prevLabelInputRef" :model-value="prevLabelValue" hide-bottom-space filled
               class="stepper-layout-input" color="cyan-8" dense type="text" placeholder="padrão"
-              :disable="!showPrevious"
+              :disable="!showPreviousValue" @update:model-value="updatePrevLabel"
             />
           </div>
           <div class="row align-center items-center justify-between q-mt-sm">
@@ -172,8 +175,9 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
               </span>
             </label>
             <q-input
-              id="step-next-label" ref="nextLabelInputRef" v-model="nextLabel" hide-bottom-space filled
+              id="step-next-label" ref="nextLabelInputRef" :model-value="nextLabelValue" hide-bottom-space filled
               class="stepper-layout-input" color="cyan-8" dense type="text" placeholder="padrão"
+              @update:model-value="updateNextLabel"
             />
           </div>
         </q-card-section>

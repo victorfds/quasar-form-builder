@@ -44,7 +44,7 @@ const getComponentSettings = computed(() => {
   if (['q-option-group', 'q-btn-toggle'].includes(formStore.activeField?.$formkit as string)) return SettingsQOptionsConfigComponent
   if (formStore.activeField?.$formkit === 'q-checkbox') return SettingsQCheckboxConfigComponent
   if (formStore.activeField?.$formkit === 'q-toggle') return SettingsQCheckboxConfigComponent
-  if (formStore.activeField?.$el === 'hr') return SettingsQSeparatorConfigComponent
+  if (formStore.activeField?.$formkit === 'q-separator' || formStore.activeField?.$el === 'hr') return SettingsQSeparatorConfigComponent
   if (formStore.activeField?.$formkit === 'q-time') return SettingsQTimeConfigComponent
   if (['q-date', 'q-date-multiple', 'q-date-range', 'q-datetime'].includes(formStore.activeField?.$formkit as string)) return SettingsQDateConfigComponent
   if (['q-slider', 'q-range'].includes(formStore.activeField?.$formkit as string)) return SettingsQSliderConfigComponent
@@ -57,6 +57,14 @@ const getComponentSettings = computed(() => {
   return SettingsDefaultNoConfigComponent
 })
 
+const activeConfigKey = computed(() => [
+  formStore.activeField?.name,
+  formStore.activeField?.$formkit,
+  formStore.activeField?.$el,
+  formStore.activeStepConfig?.name,
+  formStore.activeTabConfig?.name,
+].filter(Boolean).join(':') || 'empty')
+
 function onClickLabelFormName() {
   formNameInputRef.value?.focus()
 }
@@ -66,15 +74,15 @@ function onClickLabelFormName() {
   <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="right" :width="340" data-drawer="right">
     <q-scroll-area class="fit" visible>
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
-        <component :is="getComponentSettings" />
+        <component :is="getComponentSettings" :key="activeConfigKey" />
         <div v-if="isDevelopment" v-html="useHighlight(formStore.activeField, dark.isActive)" />
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && formStore.activeStepConfig">
-        <component :is="SettingsQStepperConfigComponent" />
+        <component :is="SettingsQStepperConfigComponent" :key="activeConfigKey" />
         <div v-if="isDevelopment" v-html="useHighlight(formStore.activeStepConfig, dark.isActive)" />
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && formStore.activeTabConfig">
-        <component :is="SettingsQTabConfigComponent" />
+        <component :is="SettingsQTabConfigComponent" :key="activeConfigKey" />
         <div v-if="isDevelopment" v-html="useHighlight(formStore.activeTabConfig, dark.isActive)" />
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && !formStore.activeField">

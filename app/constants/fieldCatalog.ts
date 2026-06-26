@@ -437,7 +437,7 @@ export const builderFieldCatalog: BuilderCatalogItem[] = [
     icon: 'horizontal_rule',
     title: 'Separador',
     description: 'Linha horizontal divisória',
-    schema: { $el: 'hr', name: 'separator', attrs: { class: 'q-my-sm', style: 'border: none; height: 1px; background-color: #aaa;' } },
+    schema: { $formkit: 'q-separator', name: 'separator', color: 'grey-5', spaced: true },
   },
   {
     category: 'statics',
