@@ -36,7 +36,7 @@ quasarPlugin.library = (node: FormKitNode) => {
   const quasarTypes = {
     'q-input': () => node.define({
       type: 'input',
-      props: ['columns', 'clearable', 'counter', 'autogrow', 'loading', 'stackLabel', 'debounce', 'mask', 'fill-mask', 'reverse-fill-mask', 'unmasked-value', 'prefix', 'suffix', 'rounded', 'square', 'dark'],
+      props: ['columns', 'attrs', 'clearable', 'counter', 'autogrow', 'loading', 'stackLabel', 'debounce', 'mask', 'fill-mask', 'reverse-fill-mask', 'unmasked-value', 'prefix', 'suffix', 'filled', 'outlined', 'standout', 'borderless', 'rounded', 'square', 'dark', 'readonly', 'disable', 'disabled'],
       component: QuasarInput,
     }),
     'q-date-multiple': () => node.define({
@@ -46,27 +46,27 @@ quasarPlugin.library = (node: FormKitNode) => {
     }),
     'q-select': () => node.define({
       type: 'input',
-      props: ['columns', 'options', 'clearable', 'counter', 'multiple', 'useChips', 'useInput', 'fillInput', 'hideSelected', 'optionsDense', 'optionsCover', 'newValueMode', 'behavior', 'maxValues', 'inputDebounce', 'rounded', 'square', 'dark'],
+      props: ['columns', 'options', 'clearable', 'counter', 'multiple', 'useChips', 'useInput', 'fillInput', 'hideSelected', 'optionsDense', 'optionsCover', 'newValueMode', 'behavior', 'maxValues', 'inputDebounce', 'filled', 'outlined', 'standout', 'borderless', 'rounded', 'square', 'dark', 'readonly', 'disable', 'disabled'],
       component: QuasarSelect,
     }),
     'q-option-group': () => node.define({
       type: 'input',
-      props: ['columns', 'options', 'groupType', 'optionStyle', 'inline', 'leftLabel', 'dense', 'disable', 'dark'],
+      props: ['columns', 'options', 'groupType', 'optionStyle', 'inline', 'leftLabel', 'dense', 'disable', 'disabled', 'readonly', 'dark'],
       component: QuasarOptionGroup,
     }),
     'q-btn-toggle': () => node.define({
       type: 'input',
-      props: ['columns', 'options', 'multiple', 'spread', 'rounded', 'square', 'clearable', 'toggleColor', 'textColor'],
+      props: ['columns', 'options', 'multiple', 'spread', 'rounded', 'square', 'clearable', 'toggleColor', 'textColor', 'disable', 'disabled', 'readonly'],
       component: QuasarBtnToggle,
     }),
     'q-checkbox': () => node.define({
       type: 'input',
-      props: ['columns'],
+      props: ['columns', 'disable', 'disabled', 'readonly'],
       component: QuasarCheckbox,
     }),
     'q-toggle': () => node.define({
       type: 'input',
-      props: ['columns'],
+      props: ['columns', 'disable', 'disabled', 'readonly'],
       component: QuasarToggle,
     }),
     'q-editor': () => node.define({
@@ -106,7 +106,7 @@ quasarPlugin.library = (node: FormKitNode) => {
     }),
     'q-file': () => node.define({
       type: 'input',
-      props: ['columns', 'accept', 'multiple', 'maxFileSize', 'maxTotalSize', 'maxFiles', 'useChips', 'counter', 'clearable', 'gallery', 'rounded', 'square', 'dark'],
+      props: ['columns', 'accept', 'multiple', 'maxFileSize', 'maxTotalSize', 'maxFiles', 'useChips', 'counter', 'clearable', 'gallery', 'filled', 'outlined', 'standout', 'borderless', 'rounded', 'square', 'dark'],
       component: QuasarFile,
     }),
     'q-separator': () => node.define({
@@ -116,12 +116,12 @@ quasarPlugin.library = (node: FormKitNode) => {
     }),
     'q-signature': () => node.define({
       type: 'input',
-      props: ['columns'],
+      props: ['columns', 'disable', 'disabled', 'readonly'],
       component: QuasarSignature,
     }),
     'q-matrix': () => node.define({
       type: 'input',
-      props: ['columns', 'rows', 'columnsConfig', 'table'],
+      props: ['columns', 'rows', 'columnsConfig', 'defaultColumnType', 'defaultColumnOptions', 'table', 'rowsMode', 'initialRows', 'minRows', 'maxRows', 'canAddRows', 'addButtonText', 'canRemoveRows', 'matrixView', 'minColumnWidth', 'maxColumnWidth', 'cellGap', 'horizontalPadding', 'hideRowLabels', 'allowMultilineRows', 'stickyRowLabels', 'hideColumnLabels', 'allowMultilineColumns', 'stickyColumnHeaders', 'matrixSize', 'disable', 'disabled', 'readonly'],
       component: QuasarMatrix,
     }),
     'q-btn': () => node.define({

@@ -51,6 +51,20 @@ export function reverseOperatorValue(symbol?: string): string {
   return reverseOperatorMap[symbol] ?? ''
 }
 
+function formatConditionLiteral(raw: unknown) {
+  if (raw === null || raw === undefined) return 'null'
+  if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw)
+
+  const value = String(raw).trim()
+  if (!value) return '""'
+  if (value.startsWith('$')) return value
+  if (value === 'true' || value === 'false' || value === 'null') return value
+  if (/^-?\d+(?:\.\d+)?$/.test(value)) return value
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith('\'') && value.endsWith('\''))) return value
+
+  return JSON.stringify(value)
+}
+
 export function processSingleCondition(condition: LogicField, orData: string[]): string {
   const { name, operator, value, values } = condition
 
@@ -59,7 +73,7 @@ export function processSingleCondition(condition: LogicField, orData: string[]):
   }
 
   if (['$contains'].includes(operator)) {
-    return `${operator}($${name},${value})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+    return `${operator}($${name},${formatConditionLiteral(value)})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
   }
 
   // Handle generic function-like operators (e.g., $isToday, $isTomorrow, etc.)
@@ -72,11 +86,11 @@ export function processSingleCondition(condition: LogicField, orData: string[]):
   }
 
   if (['==', '!='].includes(operator)) {
-    const valuesInString = values.map((val: any) => `$${name} ${operator} ${val}`).join(' || ')
+    const valuesInString = values.map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`).join(' || ')
     return `${valuesInString}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
   }
 
-  return `$${name} ${operator} ${value}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+  return `$${name} ${operator} ${formatConditionLiteral(value)}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
 }
 
 export function processConditions(conditions: LogicField[]): string[] {
@@ -88,7 +102,7 @@ export function processConditions(conditions: LogicField[]): string[] {
     }
 
     if (['$contains'].includes(operator)) {
-      return `${operator}($${name},${value})`
+      return `${operator}($${name},${formatConditionLiteral(value)})`
     }
 
     // Generic function-like operator
@@ -101,10 +115,10 @@ export function processConditions(conditions: LogicField[]): string[] {
     }
 
     if (['==', '!='].includes(operator)) {
-      return values.map((val: any) => `$${name} ${operator} ${val}`).join(' || ')
+      return values.map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`).join(' || ')
     }
 
-    return `$${name} ${operator} ${value}`
+    return `$${name} ${operator} ${formatConditionLiteral(value)}`
   })
 }
 
@@ -143,6 +157,11 @@ export function saveLogic(elementStates: { logicFields: LogicField[] }, property
   if (property === 'disable') {
     // Saving condition
     updatePropFn('disable', { if: data.join(' && '), then: true, else: false })
+    return
+  }
+
+  if (property === 'readonly') {
+    updatePropFn('readonly', { if: data.join(' && '), then: true, else: false })
     return
   }
 
@@ -372,7 +391,7 @@ export function parseCondition(conditionString: string): LogicField {
   }
 
   // Match comparison operators (>, >=, <, <=)
-  const comparisonMatch = conditionString.match(/^\$(.*?)\s(>|>=|<|<=)\s(.+)$/)
+  const comparisonMatch = conditionString.match(/^\$(.*?)\s(>=|<=|>|<)\s(.+)$/)
   if (comparisonMatch) {
     return {
       name: comparisonMatch[1]?.replace('$', '') || '',

@@ -4,6 +4,25 @@ import type { QFileProps } from 'quasar'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QFileProps & { description?: string, gallery?: boolean } } }>()
 
+const filePropNames = [
+  'accept',
+  'multiple',
+  'maxFileSize',
+  'maxTotalSize',
+  'maxFiles',
+  'useChips',
+  'counter',
+  'clearable',
+  'gallery',
+  'filled',
+  'outlined',
+  'standout',
+  'borderless',
+  'rounded',
+  'square',
+  'dark',
+]
+
 const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(props.context?.node)
 const errorActive = computed(() => hasError.value || (props.context?.state?.submitted && props.context?.state?.valid === false) || (props.context?.state?.touched && props.context?.state?.valid === false))
 const selectedFiles = computed<File[]>(() => {
@@ -11,13 +30,15 @@ const selectedFiles = computed<File[]>(() => {
   return Array.isArray(props.context.value) ? props.context.value : [props.context.value as File]
 })
 const imageFiles = computed(() => selectedFiles.value.filter(file => file.type?.startsWith('image/')))
+const mergedAttrs = computed(() => getFormKitContextAttrs(props.context, filePropNames))
+const gallery = computed(() => Boolean(mergedAttrs.value.gallery))
 const fileAttrs = computed(() => {
   const {
     columns: _columns,
     description: _description,
     gallery: _gallery,
     ...attrs
-  } = props.context.attrs
+  } = mergedAttrs.value
 
   return getQuasarFieldDesignAttrs(attrs)
 })
@@ -42,7 +63,7 @@ const fileAttrs = computed(() => {
       </template>
     </q-file>
 
-    <div v-if="context.attrs.gallery && imageFiles.length" class="file-gallery q-mt-sm">
+    <div v-if="gallery && imageFiles.length" class="file-gallery q-mt-sm">
       <div v-for="file in imageFiles" :key="`${file.name}-${file.size}`" class="file-gallery__item">
         {{ file.name }}
       </div>

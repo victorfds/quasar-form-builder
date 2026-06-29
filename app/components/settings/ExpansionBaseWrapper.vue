@@ -1,37 +1,21 @@
 <script setup lang="ts">
 import { getBrowserJsonItem, setBrowserStorageItem } from '~/utils/browserStorage'
 
+type SectionKey = 'properties' | 'decorators' | 'layout' | 'conditions' | 'attributes' | 'validation' | 'data' | 'options'
+
 defineProps<{
-  sectionLabels?: {
-    properties?: string
-    decorators?: string
-    layout?: string
-    conditions?: string
-    attributes?: string
-    validation?: string
-    data?: string
-    options?: string
-  }
-}>()
-const slots = defineSlots<{
-  properties: string
-  decorators: string
-  layout: string
-  conditions: string
-  attributes: string
-  validation: string
-  data: string
-  options: string
+  sectionLabels?: Partial<Record<SectionKey, string>>
 }>()
 
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const { setActiveField, copyField, removeField } = formStore
+const slots = useSlots()
 
 const elementClosedStorageKey = 'element-closed'
 
 // Allowed options
-const sections: Record<string, string> = {
+const sections: Record<SectionKey, string> = {
   properties: 'Propriedades',
   decorators: 'Decorações',
   layout: 'Disposição',
@@ -42,13 +26,15 @@ const sections: Record<string, string> = {
   options: 'Opções',
 }
 
+const sectionOrder: SectionKey[] = ['properties', 'decorators', 'data', 'options', 'layout', 'validation', 'conditions', 'attributes']
+
 const label = ref('')
 const closedElements = ref<string[]>([])
 const allExpanded = ref(true)
 const expansionState = ref<Record<string, boolean>>({})
 
 // Dynamically get the available slots
-const availableSlots = computed(() => Object.keys(slots) as (keyof typeof slots)[])
+const availableSlots = computed(() => sectionOrder.filter(slotKey => Boolean(slots[slotKey])))
 
 availableSlots.value.forEach((slotKey) => {
   expansionState.value[slotKey] = !closedElements.value.includes(slotKey)

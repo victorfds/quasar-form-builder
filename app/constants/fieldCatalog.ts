@@ -11,8 +11,8 @@ const defaultMatrixRows = [
 ]
 
 const defaultMatrixColumns = [
-  { label: 'Coluna 1', value: 'column_1' },
-  { label: 'Coluna 2', value: 'column_2' },
+  { label: 'Coluna 1', value: 'column_1', type: 'default' },
+  { label: 'Coluna 2', value: 'column_2', type: 'default' },
 ]
 
 function createStructureCells(rowCount: number, columnCount: number) {
@@ -181,7 +181,7 @@ export const builderFieldCatalog: BuilderCatalogItem[] = [
     icon: 'table_chart',
     title: 'Tabela matriz',
     description: 'Tabela de entradas de texto',
-    schema: { $formkit: 'q-matrix', name: 'matrixTable', label: 'Tabela matriz', inputType: 'matrix-table', table: true, rows: defaultMatrixRows, columnsConfig: defaultMatrixColumns },
+    schema: { $formkit: 'q-matrix', name: 'matrixTable', label: 'Tabela matriz', inputType: 'matrix-table', table: true, matrixView: 'table', rows: defaultMatrixRows, columnsConfig: defaultMatrixColumns },
   },
   {
     category: 'fields',

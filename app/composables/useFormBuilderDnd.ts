@@ -366,9 +366,9 @@ export function useFormBuilderDnd(formStore: any) {
   function onClickAtFormElement(index: number, listKey?: BuilderFieldListKey | null) {
     const fieldsList = formStore.resolveFieldList(listKey) || formStore.activeFields
     const field = fieldsList.find((_: any, idx: number) => idx === index) || null
-    setActiveField(field)
     setActiveStepConfig(null)
     setActiveTabConfig(null)
+    setActiveField(field)
   }
 
   function onMouseOverAtFormElement(field: any) {
@@ -467,8 +467,9 @@ export function useFormBuilderDnd(formStore: any) {
 
   function startResize(evt: MouseEvent, field: any) {
     const canonicalField = field?.name ? formStore.getFieldByName?.(field.name) : null
-    setActiveField(canonicalField || field)
     setActiveStepConfig(null)
+    setActiveTabConfig(null)
+    setActiveField(canonicalField || field)
     isDragging.value = true
     startX.value = evt.clientX
     document.addEventListener('mousemove', throttleResize)

@@ -163,6 +163,9 @@ function onSubmit(_data: any, node: FormKitNode) {
 
 const isPreviewEditing = computed(() => formStore.formSettings.previewMode === 'editing')
 const builderFields = computed(() => withStructureChildrenListForRender(formStore.getFields as unknown as ViewerField[]))
+const previewFormStyle = computed(() => ({
+  '--preview-content-width': `${getUserWidthInput.value}px`,
+}))
 
 function hasCondition(field: ViewerField) {
   return Object.keys(field).some(key => key.includes('hasCondition'))
@@ -190,8 +193,12 @@ function getFieldStyle(field: ViewerField) {
       <article ref="previewFormSectionRef" class="row items-start justify-center full-width">
         <q-card
           flat class="preview-form-container q-my-md"
-          :class="{ 'bg-dark': dark.isActive, 'bg-white': !dark.isActive }"
-          :style="{ 'max-width': formStore.formSettings.preview.isFullWidth ? 'calc(9999px + 5rem)' : `calc(100px + ${getUserWidthInput}px)` }"
+          :class="{
+            'bg-dark': dark.isActive,
+            'bg-white': !dark.isActive,
+            'preview-form-container--full': formStore.formSettings.preview.isFullWidth,
+          }"
+          :style="previewFormStyle"
         >
           <q-card-section class="my-form-wrapper no-padding">
             <FormKit
@@ -266,10 +273,17 @@ function getFieldStyle(field: ViewerField) {
 
 <style lang="scss">
 .preview-form-container {
-  margin-left: 4rem;
-  margin-right: 4rem;
+  --preview-container-padding: clamp(1rem, 4vw, 2.5rem);
+  --preview-container-extra: clamp(2rem, 8vw, 5rem);
+
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 100px;
-  padding: 3.125rem;
+  padding: var(--preview-container-padding);
+  width: min(100%, calc(var(--preview-content-width, 432px) + var(--preview-container-extra)));
+}
+
+.preview-form-container--full {
   width: 100%;
 }
 </style>

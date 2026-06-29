@@ -180,6 +180,93 @@ test('elements drawer search filters catalog items', async ({ page }) => {
   await expect(page.getByText('Nenhum elemento encontrado').first()).toBeVisible()
 })
 
+test('tree drawer shows the form root and syncs selection with the canvas', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-container',
+      name: 'container',
+      label: 'Container',
+      children: [
+        { $formkit: 'q-input', name: 'text', label: 'Texto', inputType: 'text' },
+        { $formkit: 'q-input', name: 'number', label: 'Número', inputType: 'number' },
+      ],
+    },
+  ])
+
+  await page.getByRole('tab', { name: 'Árvore' }).click()
+  const treePanel = page.locator('.tree-drawer-panel')
+  await expect(treePanel).toContainText('Meu Formulário')
+  await expect(treePanel).toContainText('container')
+  await expect(treePanel).toContainText('Container')
+  await expect(treePanel).toContainText('text')
+  await expect(treePanel).toContainText('Texto')
+  await expect(treePanel).not.toContainText('q-input')
+
+  await treePanel.getByRole('treeitem', { name: 'text Texto', exact: true }).click()
+  await expect(page.locator('[data-field-name="text"] .overlay-preview-element')).toHaveClass(/__active/)
+  await expect(treePanel.locator('.q-tree__node--selected')).toContainText('text')
+
+  await page.locator('[data-field-name="number"] .overlay-preview-element').click()
+  await expect(treePanel.locator('.q-tree__node--selected')).toContainText('number')
+})
+
+test('tree drawer represents an empty form and root-only steps without q wrappers', async ({ page }) => {
+  await loadBuilder(page, [])
+
+  await page.getByRole('tab', { name: 'Árvore' }).click()
+  const emptyTreePanel = page.locator('.tree-drawer-panel')
+  await expect(emptyTreePanel).toContainText('Meu Formulário')
+  await expect(emptyTreePanel).not.toContainText('Nenhum campo no formulário')
+
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-stepper',
+      name: 'stepper',
+      steps: [
+        { name: 'details', label: 'Detalhes', children: [{ $formkit: 'q-input', name: 'title', label: 'Título', inputType: 'text' }] },
+        { name: 'location', label: 'Localização', children: [] },
+      ],
+    },
+  ])
+
+  await page.getByRole('tab', { name: 'Árvore' }).click()
+  const stepTreePanel = page.locator('.tree-drawer-panel')
+  await expect(stepTreePanel).toContainText('Meu Formulário')
+  await expect(stepTreePanel).toContainText('Detalhes')
+  await expect(stepTreePanel).toContainText('Localização')
+  await expect(stepTreePanel).toContainText('title')
+  await expect(stepTreePanel).not.toContainText('q-stepper')
+  await expect(stepTreePanel).not.toContainText('stepper')
+})
+
+test('hidden input exposes data and attribute settings', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'hidden', label: 'Oculto', inputType: 'hidden' },
+  ])
+
+  await page.locator('[data-field-name="hidden"] .overlay-preview-element').click()
+  const drawer = page.locator('[data-drawer="right"]')
+  await expect(drawer).toContainText('Dados')
+  await expect(drawer).toContainText('Valor padrão')
+  await expect(drawer).toContainText('ID')
+  await expect(drawer).not.toContainText('Decorações')
+
+  await drawer.locator('.q-expansion-item').filter({ hasText: 'Dados' }).getByRole('textbox').fill('token')
+  await drawer.locator('.q-expansion-item').filter({ hasText: 'Atributos' }).getByRole('textbox').fill('hidden-token')
+
+  await expect.poll(async () => {
+    const fields = await readFields(page)
+    return {
+      defaultValue: fields[0].default,
+      id: fields[0].attrs?.id,
+    }
+  }).toEqual({ defaultValue: 'token', id: 'hidden-token' })
+
+  await page.locator('.q-tab').filter({ hasText: 'visibility' }).click()
+  await expect(page.locator('[data-field-name="hidden"] .hidden-input-marker')).toHaveCount(0)
+  await expect(page.locator('input[type="hidden"][id="hidden-token"]')).toHaveCount(1)
+})
+
 test('separator supports vertical configuration', async ({ page }) => {
   await loadBuilder(page, [
     { $formkit: 'q-separator', name: 'separator', vertical: true, color: 'primary', spaced: true },
@@ -198,13 +285,15 @@ test('matrix settings keep row and column values unique', async ({ page }) => {
   ])
 
   await page.locator('[data-field-name="matrix"] .overlay-preview-element').click()
-  await expect(page.getByText('Linhas e colunas')).toBeVisible()
+  await expect(page.locator('[data-drawer="right"]')).toContainText('Tipo padrão')
 
-  const valueInputs = page.locator('[data-drawer="right"] input[placeholder="valor"]')
-  await valueInputs.nth(1).fill('row_1')
-  await valueInputs.nth(1).blur()
-  await valueInputs.nth(3).fill('column_1')
-  await valueInputs.nth(3).blur()
+  const configItems = page.locator('[data-drawer="right"] .matrix-config-item')
+  await expect(configItems).toHaveCount(4)
+
+  await configItems.nth(1).locator('input').nth(1).fill('column_1')
+  await configItems.nth(1).locator('input').nth(1).blur()
+  await configItems.nth(3).locator('input').nth(1).fill('row_1')
+  await configItems.nth(3).locator('input').nth(1).blur()
 
   const fields = await readFields(page)
   expect(fields[0].rows.map((row: { value: string }) => row.value)).toEqual(['row_1', 'row_2'])
@@ -1335,6 +1424,172 @@ test('time field shows time-specific settings instead of date settings', async (
   await expect(drawer).toContainText('Botão agora')
   await expect(drawer).not.toContainText('Data mínima')
   await expect(drawer).not.toContainText('Datas desabilitadas')
+})
+
+test('quasar input settings propagate declared FormKit props to the rendered field', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      '$formkit': 'q-input',
+      'name': 'phone',
+      'label': 'Telefone',
+      'inputType': 'tel',
+      'outlined': true,
+      'rounded': true,
+      'dark': true,
+      'clearable': true,
+      'counter': true,
+      'loading': true,
+      'stackLabel': true,
+      'prefix': '+55',
+      'suffix': 'BR',
+      'mask': '##',
+      'fill-mask': true,
+      'reverse-fill-mask': true,
+      'unmasked-value': true,
+    },
+  ])
+
+  const field = page.locator('[data-field-name="phone"] .q-field').first()
+  await expect(field).toHaveClass(/q-field--outlined/)
+  await expect(field).toHaveClass(/q-field--rounded/)
+  await expect(field).toHaveClass(/q-field--dark/)
+  await expect(field).toContainText('+55')
+  await expect(field).toContainText('BR')
+  await expect(page.locator('[data-field-name="phone"] .q-spinner')).toBeVisible()
+})
+
+test('matrix table renders themed dividers and supports dynamic rows', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-matrix',
+      name: 'matrixTable',
+      label: 'Tabela matriz',
+      matrixView: 'table',
+      table: true,
+      rowsMode: 'dynamic',
+      initialRows: 1,
+      minRows: 1,
+      maxRows: 2,
+      canAddRows: true,
+      canRemoveRows: true,
+      columnsConfig: [
+        { label: 'Texto', value: 'text', type: 'text', width: 160 },
+        { label: 'Ativo', value: 'active', type: 'checkbox', width: 90 },
+      ],
+    },
+  ])
+
+  const matrix = page.locator('[data-field-name="matrixTable"] .matrix-field')
+  await expect(matrix).toContainText('Texto')
+  await expect(matrix).toContainText('Ativo')
+  await expect(matrix.locator('tbody tr')).toHaveCount(1)
+
+  await matrix.getByRole('button', { name: '+ Adicionar' }).evaluate((button: HTMLButtonElement) => button.click())
+  await expect(matrix.locator('tbody tr')).toHaveCount(2)
+  await expect(matrix.getByRole('button', { name: '+ Adicionar' })).toBeDisabled()
+
+  const styles = await matrix.evaluate((element) => {
+    const header = element.querySelector('.matrix-field__column-label')!
+    const row = element.querySelector('.matrix-field__row-label')!
+    const cell = element.querySelector('.matrix-field__cell')!
+    return {
+      headerBackground: getComputedStyle(header).backgroundColor,
+      rowBackground: getComputedStyle(row).backgroundColor,
+      cellBorderTop: getComputedStyle(cell).borderTopWidth,
+      cellBorderLeft: getComputedStyle(cell).borderLeftWidth,
+    }
+  })
+
+  expect(styles.headerBackground).not.toBe('rgba(0, 0, 0, 0)')
+  expect(styles.rowBackground).not.toBe('rgba(0, 0, 0, 0)')
+  expect(styles.cellBorderTop).toBe('1px')
+  expect(styles.cellBorderLeft).toBe('1px')
+})
+
+test('matrix default column type is editable and inherited by default columns', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-matrix',
+      name: 'matrix',
+      label: 'Matriz',
+      matrixView: 'table',
+      defaultColumnType: 'time',
+      rows,
+      columnsConfig: [
+        { label: 'Coluna 1', value: 'column_1', type: 'default' },
+        { label: 'Coluna 2', value: 'column_2', type: 'default' },
+      ],
+    },
+  ])
+
+  const matrix = page.locator('[data-field-name="matrix"] .matrix-field')
+  await expect(matrix.locator('input[type="time"]')).toHaveCount(4)
+
+  await page.locator('[data-field-name="matrix"] .overlay-preview-element').click()
+  const drawer = page.locator('[data-drawer="right"]')
+  await expect(drawer).toContainText('Tipo padrão')
+
+  await drawer.locator('.q-select').first().click()
+  await page.getByRole('option', { name: 'Toggle' }).click()
+
+  const fields = await readFields(page)
+  expect(fields[0].defaultColumnType).toBe('toggle')
+  await expect(matrix.locator('.q-toggle')).toHaveCount(4)
+})
+
+test('matrix table with two columns fits the preview without horizontal scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 800 })
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-matrix',
+      name: 'matrix',
+      label: 'Tabela matriz',
+      matrixView: 'table',
+      rows,
+      columnsConfig: [
+        { label: 'Coluna 1', value: 'column_1', type: 'default' },
+        { label: 'Coluna 2', value: 'column_2', type: 'default' },
+      ],
+    },
+  ])
+
+  const hasOverflow = await page.locator('[data-field-name="matrix"] .matrix-field').evaluate((element) => {
+    return element.scrollWidth > element.clientWidth + 1
+  })
+
+  expect(hasOverflow).toBe(false)
+})
+
+test('preview form keeps a responsive Vueform-like content width', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 800 })
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'text', label: 'Texto', inputType: 'text' },
+  ])
+
+  const desktopMetrics = await page.locator('.preview-form-container').evaluate((element) => {
+    const container = element.getBoundingClientRect()
+    const content = element.querySelector('.my-form-wrapper')!.getBoundingClientRect()
+    return {
+      containerWidth: container.width,
+      contentWidth: content.width,
+      pageOverflows: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    }
+  })
+
+  expect(desktopMetrics.containerWidth).toBeGreaterThanOrEqual(500)
+  expect(desktopMetrics.containerWidth).toBeLessThanOrEqual(520)
+  expect(desktopMetrics.contentWidth).toBeGreaterThanOrEqual(420)
+  expect(desktopMetrics.contentWidth).toBeLessThanOrEqual(440)
+  expect(desktopMetrics.pageOverflows).toBe(false)
+
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.waitForTimeout(300)
+
+  const mobileOverflows = await page.locator('.preview-form-container').evaluate(() => {
+    return document.documentElement.scrollWidth > document.documentElement.clientWidth
+  })
+
+  expect(mobileOverflows).toBe(false)
 })
 
 test('drop indicator shows a single horizontal line', async ({ page }) => {

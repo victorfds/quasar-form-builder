@@ -32,7 +32,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
 </script>
 
 <template>
-  <q-card flat>
+  <q-card flat class="input-options-card">
     <q-card-section>
       <div class="column q-gutter-sm">
         <div class="row align-center items-center justify-between">
@@ -207,3 +207,27 @@ function onClickLabel(refElement: HTMLInputElement | null) {
     </q-card-section>
   </q-card>
 </template>
+
+<style scoped>
+.input-options-card .row.align-center.items-center.justify-between {
+  display: grid;
+  gap: .75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(108px, 128px);
+}
+
+.input-options-card .mw-200 {
+  max-width: 128px;
+  width: 128px;
+}
+
+@media (max-width: 340px) {
+  .input-options-card .row.align-center.items-center.justify-between {
+    grid-template-columns: 1fr;
+  }
+
+  .input-options-card .mw-200 {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+</style>

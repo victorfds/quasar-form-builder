@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
+const { dark } = useQuasar()
 
 const elementStates = reactive({
   fieldStyle: formStore.activeField?.outlined
@@ -14,6 +15,9 @@ const elementStates = reactive({
   square: Boolean(formStore.activeField?.square),
   dark: Boolean(formStore.activeField?.dark),
 })
+
+const styleToggleColor = computed(() => dark.isActive ? 'grey-10' : 'blue-grey-1')
+const styleToggleTextColor = computed(() => dark.isActive ? 'white' : 'blue-grey-10')
 
 function updateFieldStyle(value: string) {
   elementStates.fieldStyle = value
@@ -44,8 +48,8 @@ function updateBooleanProp(propName: 'rounded' | 'square' | 'dark', value: boole
           dense
           no-caps
           toggle-color="primary"
-          color="grey-10"
-          text-color="white"
+          :color="styleToggleColor"
+          :text-color="styleToggleTextColor"
           :options="[
             { label: 'Filled', value: 'filled' },
             { label: 'Outlined', value: 'outlined' },

@@ -78,8 +78,20 @@ export const useFormStore = defineStore('formStore', () => {
     field: FormKitSchemaDefinition
   }
 
+  interface BuilderSelectionChangeDetail {
+    fieldName?: string | null
+    stepName?: string | null
+    tabsFieldName?: string | null
+    tabName?: string | null
+  }
+
   type FieldWithColumns = FormKitSchemaDefinition & {
     columns?: ColumnsType & Record<string, any>
+  }
+
+  function dispatchBuilderSelectionChange(detail: BuilderSelectionChangeDetail) {
+    if (!import.meta.client) return
+    window.dispatchEvent(new CustomEvent('builder:selection-change', { detail }))
   }
 
   function isStructureField(field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
@@ -1178,6 +1190,9 @@ export const useFormStore = defineStore('formStore', () => {
 
   function setActiveField(newField: ActiveFieldType) {
     activeField.value = newField
+    dispatchBuilderSelectionChange({
+      fieldName: newField?.name || null,
+    })
   }
 
   const updateNameField = (oldName?: string, newName?: string) => {
@@ -1234,10 +1249,12 @@ export const useFormStore = defineStore('formStore', () => {
     const updatedPropValue = (propName === 'validation' && newPropValue) || (propName === 'disable' && Object.keys(newPropValue).length)
       ? handleValidationUpdate(fieldElement, propName, newPropValue)
       : propName === 'attrs' && newPropValue
-        ? {
-            ...fieldElement[propName],
-            ...Object.fromEntries([newPropValue.split(':').map(part => part.trim())]),
-          }
+        ? typeof newPropValue === 'string'
+          ? {
+              ...fieldElement[propName],
+              ...Object.fromEntries([newPropValue.split(':').map(part => part.trim())]),
+            }
+          : newPropValue
         : newPropValue
 
     updateFieldProperties(propName, updatedPropValue, fieldElement.name)
@@ -1378,9 +1395,17 @@ export const useFormStore = defineStore('formStore', () => {
     const validationConditionNames = allFields.value
       .filter(formField => formField.validation && formField.validation.if && formField.validation.if.includes(field.name))
       .map(fieldForm => fieldForm.name)
+    const disableConditionNames = allFields.value
+      .filter(formField => formField.disable && formField.disable.if && formField.disable.if.includes(field.name))
+      .map(fieldForm => fieldForm.name)
+    const readonlyConditionNames = allFields.value
+      .filter(formField => formField.readonly && formField.readonly.if && formField.readonly.if.includes(field.name))
+      .map(fieldForm => fieldForm.name)
 
     ifConditionNames.forEach(name => deleteFieldPropertyByName('if', name))
     validationConditionNames.forEach(name => deleteFieldPropertyByName('validation', name))
+    disableConditionNames.forEach(name => deleteFieldPropertyByName('disable', name))
+    readonlyConditionNames.forEach(name => deleteFieldPropertyByName('readonly', name))
   }
 
   function shouldDeleteProperty(newPropValue: any, propName?: string) {
@@ -1425,6 +1450,7 @@ export const useFormStore = defineStore('formStore', () => {
       activeTabsFieldName.value = null
       activeTabConfigName.value = null
     }
+    dispatchBuilderSelectionChange({ stepName })
   }
 
   const requestStepLabelFocus = () => {
@@ -1437,6 +1463,7 @@ export const useFormStore = defineStore('formStore', () => {
     if (!tabsFieldName || !tabName || !getTabByName(tabsFieldName, tabName)) {
       activeTabsFieldName.value = null
       activeTabConfigName.value = null
+      dispatchBuilderSelectionChange({})
       return
     }
 
@@ -1444,6 +1471,19 @@ export const useFormStore = defineStore('formStore', () => {
     activeTabConfigName.value = tabName
     activeStepConfigName.value = null
     activeField.value = null
+    dispatchBuilderSelectionChange({ tabsFieldName, tabName })
+  }
+
+  const setActiveTab = (tabsFieldName: string | null, tabName: string | null = null) => {
+    if (!tabsFieldName || !tabName || !getTabByName(tabsFieldName, tabName)) {
+      activeTabsFieldName.value = null
+      activeTabConfigName.value = null
+      return
+    }
+
+    activeTabsFieldName.value = tabsFieldName
+    activeTabConfigName.value = tabName
+    activeStepConfigName.value = null
   }
 
   const requestTabLabelFocus = () => {
@@ -1677,7 +1717,7 @@ export const useFormStore = defineStore('formStore', () => {
     cacheFormFields()
   }
 
-  const onEnteredProp = (propName: string, propValue?: string | number | boolean | null | ColumnsType | { if: string },
+  const onEnteredProp = (propName: string, propValue?: unknown,
   ) => {
     if (!propName) return
 
@@ -1727,6 +1767,7 @@ export const useFormStore = defineStore('formStore', () => {
     setActiveStepConfig,
     requestStepLabelFocus,
     setActiveTabConfig,
+    setActiveTab,
     requestTabLabelFocus,
     addTab,
     duplicateTab,

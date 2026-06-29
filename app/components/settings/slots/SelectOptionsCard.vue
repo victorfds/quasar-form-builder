@@ -37,10 +37,30 @@ const inputDebounceInputRef = ref<HTMLInputElement | null>(null)
 function onClickLabel(refElement: HTMLInputElement | null) {
   refElement?.focus()
 }
+
+function updateUseInput(value: boolean) {
+  elementStates.useInput = value
+  onEnteredProp('useInput', value)
+
+  if (!value && elementStates.newValueMode) {
+    elementStates.newValueMode = ''
+    onEnteredProp('newValueMode', '')
+  }
+}
+
+function updateNewValueMode(value: string) {
+  elementStates.newValueMode = value
+  onEnteredProp('newValueMode', value)
+
+  if (value && !elementStates.useInput) {
+    elementStates.useInput = true
+    onEnteredProp('useInput', true)
+  }
+}
 </script>
 
 <template>
-  <q-card flat>
+  <q-card flat class="select-options-card">
     <q-card-section>
       <div class="column q-gutter-sm">
         <div class="row align-center items-center justify-between">
@@ -87,7 +107,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
             id="select-use-input"
             :model-value="elementStates.useInput"
             color="primary"
-            @update:model-value="val => { elementStates.useInput = val; onEnteredProp('useInput', val) }"
+            @update:model-value="updateUseInput"
           />
         </div>
 
@@ -166,7 +186,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
             class="mw-200"
             color="cyan-8"
             dense
-            @update:model-value="val => { elementStates.newValueMode = String(val || ''); onEnteredProp('newValueMode', elementStates.newValueMode) }"
+            @update:model-value="val => updateNewValueMode(String(val || ''))"
           />
         </div>
 
@@ -229,3 +249,27 @@ function onClickLabel(refElement: HTMLInputElement | null) {
     </q-card-section>
   </q-card>
 </template>
+
+<style scoped>
+.select-options-card .row.align-center.items-center.justify-between {
+  display: grid;
+  gap: .75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(108px, 128px);
+}
+
+.select-options-card .mw-200 {
+  max-width: 128px;
+  width: 128px;
+}
+
+@media (max-width: 340px) {
+  .select-options-card .row.align-center.items-center.justify-between {
+    grid-template-columns: 1fr;
+  }
+
+  .select-options-card .mw-200 {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+</style>

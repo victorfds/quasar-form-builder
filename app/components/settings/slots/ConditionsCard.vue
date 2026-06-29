@@ -7,6 +7,7 @@ const props = defineProps<{
   noConditionsMessage?: string
   conditionsDialogSubtitle?: string
   saveTo?: 'if' | 'validation' | 'disable' | 'readonly'
+  mode?: 'summary' | 'icon'
   element?: Record<string, any> | null
   updateProp?: (prop: 'if' | 'validation' | 'disable' | 'readonly', value: any) => void
 }>()
@@ -23,6 +24,7 @@ const elementStates = reactive<{ logicFields: LogicField[] }>({
 
 const conditionDialog = ref<boolean>(false)
 const showConditionsForm = ref<boolean>(false)
+const compactMode = computed(() => props.mode === 'icon')
 
 const getFieldList = computed(() => {
   const cannotSelectList = ['q-btn', 'hr'].concat(htmlTypes.map(htmlType => htmlType.value))
@@ -67,8 +69,17 @@ function getOperators(field: LogicField) {
 
   if (!originalField) return []
 
-  if (originalField?.$formkit && originalField.$formkit === 'q-checkbox') return checkboxOperators
+  if (['q-checkbox', 'q-toggle'].includes(String(originalField.$formkit))) return checkboxOperators
   if (['q-date', 'q-date-multiple', 'q-date-range', 'q-datetime'].includes(originalField?.$formkit as string)) return dateOperators
+  if (['q-select', 'q-option-group', 'q-btn-toggle'].includes(String(originalField.$formkit))) {
+    return operators.filter(operator => ['empty', 'notEmpty', 'equals', 'notEquals'].includes(operator.value))
+  }
+  if (originalField.$formkit === 'q-input' && originalField.inputType === 'number') {
+    return operators.filter(operator => operator.value !== 'contains')
+  }
+  if (['q-slider', 'q-range'].includes(String(originalField.$formkit))) {
+    return operators.filter(operator => ['empty', 'notEmpty', 'equals', 'notEquals', 'greaterThan', 'greaterOrEqualsThan', 'lessThan', 'lessOrEqualsThan'].includes(operator.value))
+  }
 
   if (field.name) return operators
 
@@ -92,11 +103,18 @@ function getSavedLogicString(): string {
   if (!active) return ''
   if (props.saveTo === 'validation') return active?.validation?.if || ''
   if (props.saveTo === 'disable') return active?.disable?.if || ''
+  if (props.saveTo === 'readonly') return active?.readonly?.if || ''
   return active?.if || ''
 }
 
 function hasSavedLogic(): boolean {
   return Boolean(getSavedLogicString())
+}
+
+function getConditionCount() {
+  return parseLogic(getSavedLogicString())
+    .filter(field => field.name && field.operator)
+    .reduce((count, field) => count + 1 + (field.or?.filter(orField => orField.name && orField.operator).length || 0), 0)
 }
 
 function shouldShowNoConditionsSummary(): boolean {
@@ -140,7 +158,23 @@ function hasSubtitle(): boolean {
 </script>
 
 <template>
-  <q-card flat>
+  <q-btn
+    v-if="compactMode"
+    dense
+    unelevated
+    no-caps
+    color="primary"
+    class="condition-icon-button"
+    aria-label="Editar condições"
+    @click="toggleConditionDialog"
+  >
+    []
+    <q-badge v-if="getConditionCount()" color="grey-2" text-color="blue-grey-10" floating rounded>
+      {{ getConditionCount() }}
+    </q-badge>
+  </q-btn>
+
+  <q-card v-else flat>
     <q-card-section>
       <div
         class="row align-center items-center justify-between q-pa-sm rounded-borders"
@@ -469,5 +503,10 @@ function hasSubtitle(): boolean {
     top: -1rem;
     bottom: 0;
   }
+}
+
+.condition-icon-button {
+  min-height: 36px;
+  min-width: 36px;
 }
 </style>

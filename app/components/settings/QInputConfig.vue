@@ -1,18 +1,32 @@
+<script setup lang="ts">
+const formStore = useFormStore()
+const isHiddenInput = computed(() => formStore.activeField?.inputType === 'hidden')
+</script>
+
 <template>
   <SettingsExpansionBaseWrapper>
     <template #properties>
-      <SettingsSlotsPropertiesCard has-input-type has-placeholder has-description />
+      <SettingsSlotsPropertiesCard
+        v-if="!isHiddenInput"
+        has-input-type
+        has-placeholder
+        has-description
+      />
+      <SettingsSlotsPropertiesCard v-else />
     </template>
-    <template #decorators>
+    <template v-if="isHiddenInput" #data>
+      <SettingsSlotsHiddenDataCard />
+    </template>
+    <template v-if="!isHiddenInput" #decorators>
       <SettingsSlotsFieldDesignCard />
     </template>
-    <template #options>
+    <template v-if="!isHiddenInput" #options>
       <SettingsSlotsInputOptionsCard />
     </template>
-    <template #layout>
+    <template v-if="!isHiddenInput" #layout>
       <SettingsSlotsLayoutCard show-dense />
     </template>
-    <template #validation>
+    <template v-if="!isHiddenInput" #validation>
       <SettingsSlotsValidationCard show-length />
     </template>
     <template #conditions>
