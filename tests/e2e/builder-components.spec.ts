@@ -201,9 +201,19 @@ test('tree drawer shows the form root and syncs selection with the canvas', asyn
   await expect(treePanel).toContainText('text')
   await expect(treePanel).toContainText('Texto')
   await expect(treePanel).not.toContainText('q-input')
+  await expect(treePanel.locator('.tree-node__icon').first()).toBeVisible()
+  await expect(treePanel.locator('.tree-node__icon').first()).toHaveClass(/rounded-borders/)
+  await expect(treePanel.locator('.tree-node__label').first()).toHaveCSS('font-weight', '400')
 
-  await treePanel.getByRole('treeitem', { name: 'text Texto', exact: true }).click()
+  const textTreeItem = treePanel.getByRole('treeitem', { name: 'text Texto', exact: true })
+  await textTreeItem.click()
   await expect(page.locator('[data-field-name="text"] .overlay-preview-element')).toHaveClass(/__active/)
+  const selectedTreeNode = treePanel.locator('.q-tree__node--selected').first()
+  await expect(selectedTreeNode).toContainText('text')
+  const selectedTreeNodeHeader = treePanel.locator('.q-tree__node-header.q-tree__node--selected, .q-tree__node--selected > .q-tree__node-header').first()
+  await expect(selectedTreeNodeHeader).toHaveCSS('color', 'rgb(41, 128, 185)')
+  await expect(selectedTreeNode.locator('.tree-node__icon').first()).toHaveCSS('color', 'rgb(41, 128, 185)')
+  await textTreeItem.click()
   await expect(treePanel.locator('.q-tree__node--selected')).toContainText('text')
 
   await page.locator('[data-field-name="number"] .overlay-preview-element').click()
@@ -244,7 +254,13 @@ test('hidden input exposes data and attribute settings', async ({ page }) => {
     { $formkit: 'q-input', name: 'hidden', label: 'Oculto', inputType: 'hidden' },
   ])
 
+  const hiddenMarker = page.locator('[data-field-name="hidden"] .hidden-input-marker')
+  await expect(hiddenMarker).toContainText('(oculto)')
+  await expect(hiddenMarker).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
+  await expect(page.locator('[data-field-name="hidden"] .overlay-preview-element')).not.toHaveClass(/__active/)
+
   await page.locator('[data-field-name="hidden"] .overlay-preview-element').click()
+  await expect(page.locator('[data-field-name="hidden"] .overlay-preview-element')).toHaveClass(/__active/)
   const drawer = page.locator('[data-drawer="right"]')
   await expect(drawer).toContainText('Dados')
   await expect(drawer).toContainText('Valor padrão')
@@ -285,9 +301,11 @@ test('matrix settings keep row and column values unique', async ({ page }) => {
   ])
 
   await page.locator('[data-field-name="matrix"] .overlay-preview-element').click()
-  await expect(page.locator('[data-drawer="right"]')).toContainText('Tipo padrão')
+  const drawer = page.locator('[data-drawer="right"]')
+  await expect(drawer).toContainText('Tipo padrão')
+  await expect(drawer.locator('.condition-icon-button').first()).toContainText('[ ]')
 
-  const configItems = page.locator('[data-drawer="right"] .matrix-config-item')
+  const configItems = drawer.locator('.matrix-config-item')
   await expect(configItems).toHaveCount(4)
 
   await configItems.nth(1).locator('input').nth(1).fill('column_1')
