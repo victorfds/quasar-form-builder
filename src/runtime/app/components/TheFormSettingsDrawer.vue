@@ -65,6 +65,15 @@ const activeConfigKey = computed(() => [
   formStore.activeTabConfig?.name,
 ].filter(Boolean).join(':') || 'empty')
 
+const drawerSlotProps = computed(() => ({
+  formStore,
+  activeField: formStore.activeField,
+  activeStepConfig: formStore.activeStepConfig,
+  activeTabConfig: formStore.activeTabConfig,
+  previewMode: formStore.formSettings.previewMode,
+  values: formStore.values,
+}))
+
 function onClickLabelFormName() {
   formNameInputRef.value?.focus()
 }
@@ -73,6 +82,7 @@ function onClickLabelFormName() {
 <template>
   <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="right" :width="340" data-drawer="right">
     <q-scroll-area class="fit" visible>
+      <slot name="before" v-bind="drawerSlotProps" />
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
         <component :is="getComponentSettings" :key="activeConfigKey" />
         <div v-if="isDevelopment" v-html="useHighlight(formStore.activeField, dark.isActive)" />
@@ -100,7 +110,7 @@ function onClickLabelFormName() {
                     </label>
                     <q-input
                       id="form-name" ref="formNameInputRef" v-model.trim="formStore.formSettings.formName" filled
-                      color="cyan-8" dense type="text"
+                      color="primary" dense type="text"
                     />
                   </div>
 
@@ -114,7 +124,7 @@ function onClickLabelFormName() {
                     </div>
                     <q-input
                       v-if="!formStore.formSettings.preview.isFullWidth"
-                      :model-value="formStore.formSettings.preview.width" suffix="px" filled color="cyan-8" dense
+                      :model-value="formStore.formSettings.preview.width" suffix="px" filled color="primary" dense
                       type="number" style="max-width: 100px;" @update:model-value="changePreviewWidth"
                     />
                   </div>
@@ -140,7 +150,8 @@ function onClickLabelFormName() {
           </q-card>
         </q-list>
       </div>
-      <slot />
+      <slot v-bind="drawerSlotProps" />
+      <slot name="after" v-bind="drawerSlotProps" />
     </q-scroll-area>
   </q-drawer>
 </template>

@@ -1,10 +1,10 @@
 :root {
   --line-color: grey;
   --description-separator-color: #424242;
-  --overlay-accent-color: #2980b9;
-  --overlay-accent-color-rgba: rgba(41, 128, 185, .2);
-  --builder-drop-zone-bg: rgba(41, 128, 185, .12);
-  --builder-drop-zone-active-bg: rgba(41, 128, 185, .18);
+  --overlay-accent-color: var(--q-primary, #2980b9);
+  --overlay-accent-color-rgba: color-mix(in srgb, var(--overlay-accent-color) 20%, transparent);
+  --builder-drop-zone-bg: color-mix(in srgb, var(--overlay-accent-color) 12%, transparent);
+  --builder-drop-zone-active-bg: color-mix(in srgb, var(--overlay-accent-color) 18%, transparent);
   --builder-drop-zone-color: var(--overlay-accent-color);
   --builder-drop-zone-muted-color: #5b7f95;
 }
@@ -12,17 +12,17 @@
 .body--dark {
   --line-color: #424242;
   --description-separator-color: #424242;
-  --builder-drop-zone-bg: rgba(41, 128, 185, .16);
-  --builder-drop-zone-active-bg: rgba(41, 128, 185, .24);
-  --builder-drop-zone-color: #74b9e7;
+  --builder-drop-zone-bg: color-mix(in srgb, var(--overlay-accent-color) 16%, transparent);
+  --builder-drop-zone-active-bg: color-mix(in srgb, var(--overlay-accent-color) 24%, transparent);
+  --builder-drop-zone-color: var(--overlay-accent-color);
   --builder-drop-zone-muted-color: #8aaec2;
 }
 
 .body--light {
   --line-color: #b0bec5;
   --description-separator-color: #90a4ae;
-  --builder-drop-zone-bg: rgba(41, 128, 185, .1);
-  --builder-drop-zone-active-bg: rgba(41, 128, 185, .16);
+  --builder-drop-zone-bg: color-mix(in srgb, var(--overlay-accent-color) 10%, transparent);
+  --builder-drop-zone-active-bg: color-mix(in srgb, var(--overlay-accent-color) 16%, transparent);
   --builder-drop-zone-color: var(--overlay-accent-color);
   --builder-drop-zone-muted-color: #5b7f95;
 }

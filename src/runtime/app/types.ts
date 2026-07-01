@@ -51,6 +51,43 @@ export interface FormSettingsType {
   columns: FormViewportType
 }
 
+export type BuilderClassValue = string | string[] | Record<string, boolean>
+
+export interface FormBuilderLayoutConfig {
+  showHeader?: boolean
+  showThemeToggle?: boolean
+  showFloatingControls?: boolean
+  showLeftDrawer?: boolean
+  showRightDrawer?: boolean
+}
+
+export interface FormBuilderLabelsConfig {
+  edit?: string
+  preview?: string
+  undo?: string
+  redo?: string
+  openLeftDrawer?: string
+  closeLeftDrawer?: string
+  openRightDrawer?: string
+  closeRightDrawer?: string
+  clearForm?: string
+}
+
+export interface FormBuilderShellUiConfig {
+  layout?: BuilderClassValue
+  header?: BuilderClassValue
+  headerTitle?: BuilderClassValue
+  page?: BuilderClassValue
+  floatingControls?: BuilderClassValue
+}
+
+export interface FormBuilderAppConfig {
+  title?: string
+  layout?: FormBuilderLayoutConfig
+  labels?: FormBuilderLabelsConfig
+  ui?: FormBuilderShellUiConfig
+}
+
 export interface BuilderSelectionChangeDetail {
   fieldName?: string | null
   stepName?: string | null

@@ -493,6 +493,16 @@ const treeNodes = computed<BuilderTreeNode[]>(() => {
   }]
 })
 
+const drawerSlotProps = computed(() => ({
+  formStore,
+  tab: tab.value,
+  elementsTypes: elementsTypes.value,
+  searchTerm: searchTerm.value,
+  treeSearchTerm: treeSearchTerm.value,
+  filteredTools: filteredTools.value,
+  filteredToolsByCategory: filteredToolsByCategory.value,
+}))
+
 function findTreeNode(nodes: BuilderTreeNode[], key: string): BuilderTreeNode | null {
   for (const node of nodes) {
     if (node.key === key) return node
@@ -631,6 +641,7 @@ onBeforeUnmount(() => {
 
 <template>
   <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="left" data-drawer="left">
+    <slot name="before" v-bind="drawerSlotProps" />
     <q-tabs
       :model-value="tab"
       narrow-indicator
@@ -654,7 +665,7 @@ onBeforeUnmount(() => {
             hide-bottom-space
             placeholder="Buscar elementos"
             clearable
-            color="cyan-8"
+            color="primary"
             @update:model-value="val => { searchTerm = String(val || '') }"
             @clear="searchTerm = ''"
           >
@@ -703,7 +714,9 @@ onBeforeUnmount(() => {
               class="elements-drawer-empty text-caption q-pa-sm"
               :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'"
             >
-              Nenhum elemento encontrado
+              <slot name="empty" v-bind="drawerSlotProps">
+                Nenhum elemento encontrado
+              </slot>
             </div>
           </div>
 
@@ -773,7 +786,9 @@ onBeforeUnmount(() => {
                 class="elements-drawer-empty text-caption q-pa-sm"
                 :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'"
               >
-                Nenhum elemento encontrado
+                <slot name="empty" v-bind="drawerSlotProps">
+                  Nenhum elemento encontrado
+                </slot>
               </div>
             </q-tab-panel>
           </q-tab-panels>
@@ -788,7 +803,7 @@ onBeforeUnmount(() => {
             hide-bottom-space
             placeholder="Procurar na árvore"
             clearable
-            color="cyan-8"
+            color="primary"
             @update:model-value="val => { treeSearchTerm = String(val || '') }"
             @clear="treeSearchTerm = ''"
           >
@@ -841,6 +856,7 @@ onBeforeUnmount(() => {
         </q-tab-panel>
       </q-tab-panels>
     </div>
+    <slot name="after" v-bind="drawerSlotProps" />
   </q-drawer>
 </template>
 

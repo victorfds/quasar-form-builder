@@ -1,6 +1,13 @@
 import { addComponent, addComponentsDir, addImports, addImportsDir, addPlugin, addTypeTemplate, createResolver, defineNuxtModule } from '@nuxt/kit'
 import { defu } from 'defu'
 
+export type {
+  FormBuilderAppConfig,
+  FormBuilderLabelsConfig,
+  FormBuilderLayoutConfig,
+  FormBuilderShellUiConfig,
+} from './runtime/app/types'
+
 export interface ModuleOptions {
   /**
    * Registers a ready-to-use builder page when set.
@@ -15,6 +22,11 @@ export interface ModuleOptions {
    * Includes the builder global CSS utilities and Quasar/FormKit fixes.
    */
   includeCss?: boolean
+  /**
+   * Registers public component aliases for Nuxt auto import.
+   * Internal runtime components stay registered so the ready-made route works.
+   */
+  autoImport?: boolean
   storage?: {
     formFieldsKey?: string
     themeCookieName?: string
@@ -66,6 +78,7 @@ export default defineNuxtModule<ModuleOptions>({
     route: false,
     prefix: 'Qfb',
     includeCss: true,
+    autoImport: true,
     storage: {
       formFieldsKey: 'form-fields',
       themeCookieName: 'theme',
@@ -110,18 +123,28 @@ export default defineNuxtModule<ModuleOptions>({
       src: resolver.resolve('./runtime/app/plugins/formkit'),
     })
 
-    addComponent({
-      name: `${prefix}BuilderShell`,
-      filePath: resolver.resolve('./runtime/app/components/BuilderShell.vue'),
-    })
-    addComponent({
-      name: `${prefix}FormBuilder`,
-      filePath: resolver.resolve('./runtime/app/components/FormBuilder.vue'),
-    })
-    addComponent({
-      name: `${prefix}FormViewer`,
-      filePath: resolver.resolve('./runtime/app/components/FormViewer.vue'),
-    })
+    if (options.autoImport !== false) {
+      addComponent({
+        name: `${prefix}BuilderShell`,
+        filePath: resolver.resolve('./runtime/app/components/BuilderShell.vue'),
+      })
+      addComponent({
+        name: `${prefix}FormBuilder`,
+        filePath: resolver.resolve('./runtime/app/components/FormBuilder.vue'),
+      })
+      addComponent({
+        name: `${prefix}FormViewer`,
+        filePath: resolver.resolve('./runtime/app/components/FormViewer.vue'),
+      })
+      addComponent({
+        name: `${prefix}ElementsDrawer`,
+        filePath: resolver.resolve('./runtime/app/components/TheElementsDrawer.vue'),
+      })
+      addComponent({
+        name: `${prefix}PropertiesDrawer`,
+        filePath: resolver.resolve('./runtime/app/components/TheFormSettingsDrawer.vue'),
+      })
+    }
 
     addImportsDir(runtimeComposablesDir)
     addImportsDir(runtimeUtilsDir)
@@ -165,6 +188,15 @@ declare module '@nuxt/schema' {
   }
   interface NuxtOptions {
     formBuilder?: import('nuxt-quasar-form-builder').ModuleOptions
+  }
+  interface CustomAppConfig {
+    formBuilder?: import('nuxt-quasar-form-builder').FormBuilderAppConfig
+  }
+}
+
+declare module 'nuxt/schema' {
+  interface CustomAppConfig {
+    formBuilder?: import('nuxt-quasar-form-builder').FormBuilderAppConfig
   }
 }
 

@@ -253,6 +253,41 @@ test('theme preference is stored in a cookie and restored before the builder hyd
   await expect(page.locator('header')).toHaveClass(/bg-white/)
 })
 
+test('builder shell supports title props and extension slots', async ({ page }) => {
+  await page.goto('/custom-shell')
+
+  await expect(page.locator('header')).toContainText('Editor de Contratos')
+  await expect(page.getByTestId('back-button')).toBeVisible()
+  await expect(page.getByTestId('save-button')).toBeVisible()
+  await expect(page.locator('header').locator('.q-toggle')).toHaveCount(0)
+  await expect(page.getByTestId('right-drawer-extra')).toHaveText('Campos no formulário: 0')
+  await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 10000 })
+
+  await page.getByTestId('save-button').click()
+  await expect(page.getByTestId('save-status')).toHaveText('Salvo: 0')
+})
+
+test('builder shell can hide the header and default floating controls', async ({ page }) => {
+  await page.goto('/minimal-shell')
+
+  await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('header')).toHaveCount(0)
+  await expect(page.locator('.q-page-sticky')).toHaveCount(0)
+})
+
+test('public drawer and builder components compose in a custom layout', async ({ page }) => {
+  await page.goto('/custom-layout')
+
+  await expect(page.locator('header')).toContainText('Layout próprio')
+  await expect(page.getByTestId('left-drawer-extra')).toBeVisible()
+  await expect(page.getByTestId('properties-extra')).toContainText('Meu Formulário')
+  await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByTestId('preview-mode')).toHaveText('editing')
+
+  await page.getByTestId('custom-preview').click()
+  await expect(page.getByTestId('preview-mode')).toHaveText('previewing')
+})
+
 test.describe('builder component parity smoke', () => {
   for (const item of componentSchemas) {
     test(`${item.group}: mounts ${item.schema.name}`, async ({ page }) => {
