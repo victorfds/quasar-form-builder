@@ -6,12 +6,13 @@ O módulo registra Quasar, Pinia, FormKit, estilos globais, componentes público
 
 ## Recursos
 
-- Construtor visual de formulários com drawers de elementos, árvore e propriedades.
+- Construtor visual de formulários com painéis de elementos, árvore e propriedades.
 - Renderização final do formulário por schema FormKit.
 - Componentes Quasar registrados como inputs FormKit.
 - Estruturas de layout, como abas, passos, grid, tabela, container e lista.
 - Persistência de campos no navegador e tema claro/escuro em cookie compatível com SSR.
 - Rota pronta opcional para publicar o builder sem criar páginas extras.
+- Personalização do layout por propriedades, encaixes (`slots`) e `app.config.ts`.
 
 ## Requisitos
 
@@ -61,9 +62,11 @@ O prefixo padrão dos componentes é `Qfb`.
 
 | Componente | Uso |
 | --- | --- |
-| `QfbBuilderShell` | Interface completa do construtor, com layout, drawers, tema, histórico e pré-visualização. |
+| `QfbBuilderShell` | Interface completa do construtor, com layout, painéis laterais, tema, histórico e pré-visualização. |
 | `QfbFormBuilder` | Área de edição do formulário para uso dentro de uma página própria. |
 | `QfbFormViewer` | Renderização do formulário final a partir de um schema FormKit. |
+| `QfbElementsDrawer` | Painel esquerdo com catálogo de elementos e árvore do formulário. |
+| `QfbPropertiesDrawer` | Painel direito com propriedades do formulário e do item selecionado. |
 
 Você pode alterar o prefixo com a opção `prefix`.
 
@@ -77,7 +80,7 @@ export default defineNuxtConfig({
 })
 ```
 
-Com essa configuração, os componentes públicos passam a ser `AcmeBuilderShell`, `AcmeFormBuilder` e `AcmeFormViewer`.
+Com essa configuração, os componentes públicos passam a ser `AcmeBuilderShell`, `AcmeFormBuilder`, `AcmeFormViewer`, `AcmeElementsDrawer` e `AcmePropertiesDrawer`.
 
 ## Criar Uma Página Própria
 
@@ -91,7 +94,7 @@ Use `QfbBuilderShell` diretamente para montar a experiência padrão em uma pág
 
 O shell já protege a área de edição com `ClientOnly`, porque o builder usa APIs do navegador para drag and drop, `localStorage` e histórico local.
 
-Quando você precisa controlar o conteúdo central do shell, use o slot padrão:
+Quando você precisa controlar o conteúdo central do shell, use o encaixe (`slot`) padrão:
 
 ```vue
 <template>
@@ -103,9 +106,94 @@ Quando você precisa controlar o conteúdo central do shell, use o slot padrão:
 </template>
 ```
 
+O shell também aceita propriedades para ajustar o layout pronto:
+
+```vue
+<template>
+  <QfbBuilderShell
+    title="Editor de Cadastros"
+    :show-header="true"
+    :show-theme-toggle="false"
+    :show-floating-controls="true"
+  />
+</template>
+```
+
+Use os encaixes nomeados para adicionar ações sem recriar todo o layout:
+
+```vue
+<script setup lang="ts">
+const controls = useQfbBuilderControls()
+
+async function saveForm() {
+  await $fetch('/api/forms', {
+    method: 'POST',
+    body: controls.formStore.formFields,
+  })
+}
+</script>
+
+<template>
+  <QfbBuilderShell title="Meu construtor">
+    <template #header-before>
+      <q-btn flat dense icon="arrow_back" label="Voltar" @click="$router.back()" />
+    </template>
+
+    <template #header-after>
+      <q-btn color="primary" label="Salvar" @click="saveForm" />
+    </template>
+
+    <template #right-drawer-after="{ formFields }">
+      <div class="q-pa-md text-caption">
+        Campos no formulário: {{ formFields.length }}
+      </div>
+    </template>
+  </QfbBuilderShell>
+</template>
+```
+
+Os encaixes disponíveis no shell são: `header`, `header-before`, `header-title`, `header-after`, `center`, `left-drawer-before`, `left-drawer-after`, `left-drawer-empty`, `right-drawer-before`, `right-drawer-after` e `floating-controls`.
+
+## Criar Um Layout Próprio
+
+Use os componentes públicos separadamente quando o projeto precisar controlar toda a tela. O exemplo abaixo mantém o painel esquerdo, o editor central e o painel direito, mas coloca o cabeçalho e os botões no layout da aplicação.
+
+```vue
+<script setup lang="ts">
+const controls = useQfbBuilderControls()
+const leftDrawer = controls.isElementsDrawerOpened
+const rightDrawer = controls.isPropertiesDrawerOpened
+</script>
+
+<template>
+  <q-layout view="hHh lpR fFf">
+    <q-header bordered class="bg-dark text-white">
+      <q-toolbar>
+        <q-btn flat dense icon="arrow_back" @click="$router.back()" />
+        <q-toolbar-title>Layout do projeto</q-toolbar-title>
+        <q-btn color="primary" label="Salvar" />
+      </q-toolbar>
+    </q-header>
+
+    <QfbElementsDrawer v-model="leftDrawer" />
+    <QfbPropertiesDrawer v-model="rightDrawer" />
+
+    <q-page-container>
+      <q-page>
+        <ClientOnly>
+          <QfbFormBuilder />
+        </ClientOnly>
+      </q-page>
+    </q-page-container>
+  </q-layout>
+</template>
+```
+
+O composable `useQfbBuilderControls()` expõe os controles usados pelo layout pronto: tema, modo de edição ou pré-visualização, abertura dos painéis, campos do formulário, desfazer, refazer e limpar formulário.
+
 ## Exibir Um Formulário
 
-Use `QfbFormViewer` para exibir o formulário final com mepaamento de valores e função de submissão.
+Use `QfbFormViewer` para exibir o formulário final com mapeamento de valores e função de submissão.
 
 ```vue
 <script setup lang="ts">
@@ -124,16 +212,33 @@ const formFields = [
 function submitForm(data: unknown) {
   console.log(data)
 }
+
+function saveDraft(payload: { values: Record<string, unknown> }) {
+  localStorage.setItem('formulario-rascunho', JSON.stringify(payload.values))
+}
 </script>
 
 <template>
   <QfbFormViewer
     v-model="values"
     :form-fields="formFields"
+    @update-model-values="saveDraft"
     @submit="submitForm"
   />
 </template>
 ```
+
+`QfbFormViewer` não grava dados automaticamente. Use os eventos do componente para salvar os valores no local mais adequado ao projeto, como armazenamento local do navegador, IndexedDB, Pinia ou uma API própria.
+
+Eventos disponíveis:
+
+| Evento | Quando acontece | Dados enviados |
+| --- | --- | --- |
+| `@update-model-values` | Sempre que os valores do formulário mudam. | Valores atuais, valores anteriores, campos alterados e horário da atualização. |
+| `@field-change` | Para cada campo de primeiro nível alterado em uma atualização. | Nome do campo, valor atual, valor anterior, valores completos e horário da atualização. |
+| `@viewer-ready` | Uma vez, depois que o visualizador é montado. | Valores iniciais, quantidade de itens renderizados e horário da montagem. |
+| `@submit-invalid` | Quando o usuário tenta enviar um formulário inválido. | Valores atuais, nó FormKit do formulário e horário da tentativa. |
+| `@submit` | Quando o formulário é enviado com sucesso. | Valores finais do formulário. |
 
 Use a prop `readonly` para exibir os campos sem permitir edição ou submissão.
 
@@ -159,6 +264,7 @@ export default defineNuxtConfig({
     route: '/form-builder',
     prefix: 'Qfb',
     includeCss: true,
+    autoImport: true,
     storage: {
       formFieldsKey: 'form-fields',
       themeCookieName: 'theme',
@@ -172,8 +278,39 @@ export default defineNuxtConfig({
 | `route` | `false \| string` | `false` | Registra uma página pronta do construtor quando recebe uma rota. |
 | `prefix` | `string` | `Qfb` | Define o prefixo dos componentes públicos exportados pelo módulo. |
 | `includeCss` | `boolean` | `true` | Inclui os estilos globais do builder, ajustes do Quasar e estilos dos campos. |
+| `autoImport` | `boolean` | `true` | Registra os apelidos públicos dos componentes. Mantenha ligado quando usar `QfbBuilderShell`, `QfbFormBuilder`, `QfbFormViewer`, `QfbElementsDrawer` ou `QfbPropertiesDrawer` direto nas páginas. |
 | `storage.formFieldsKey` | `string` | `form-fields` | Define a chave usada para persistir os campos do formulário no `localStorage`. |
 | `storage.themeCookieName` | `string` | `theme` | Define o nome do cookie usado pelo tema claro/escuro. |
+
+## Aparência Padrão
+
+Configure a aparência padrão em `app.config.ts`. Essa configuração é reativa durante o desenvolvimento e pode ser sobrescrita por propriedades no `QfbBuilderShell`.
+
+```ts
+export default defineAppConfig({
+  formBuilder: {
+    title: 'Construtor interno',
+    layout: {
+      showHeader: true,
+      showThemeToggle: true,
+      showFloatingControls: true,
+      showLeftDrawer: true,
+      showRightDrawer: true,
+    },
+    labels: {
+      clearForm: 'Limpar tudo',
+      undo: 'Desfazer',
+      redo: 'Refazer',
+    },
+    ui: {
+      header: 'minha-classe-de-cabecalho',
+      page: 'minha-classe-de-pagina',
+    },
+  },
+})
+```
+
+O módulo usa a cor primária do Quasar (`primary`) sempre que possível. Se o projeto consumidor define sua própria paleta primária, os botões, abas ativas e destaques do construtor acompanham essa configuração.
 
 ## SSR E Persistência
 
