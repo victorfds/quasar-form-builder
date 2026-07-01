@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { LogicField } from '#qfb/types'
 import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 
@@ -55,163 +54,9 @@ const dndState = computed(() => ({
   hasStepper: formStore.hasStepper,
 }))
 
-function normalizeLiteral(raw: string) {
-  const trimmed = raw.trim()
-  if (!trimmed) return ''
-  const unquoted = trimmed.replace(/^['"]|['"]$/g, '')
-  if (unquoted === 'true') return true
-  if (unquoted === 'false') return false
-  const asNumber = Number(unquoted)
-  if (!Number.isNaN(asNumber) && unquoted !== '') return asNumber
-  return unquoted
-}
-
-function isEmptyValue(value: any) {
-  const emptyFn = schemaValues.value?.empty
-  if (typeof emptyFn === 'function') return emptyFn(value)
-  if (Array.isArray(value)) return value.length === 0
-  return value === '' || value === null || value === undefined
-}
-
-function isPlainRecord(value: unknown): value is Record<string, any> {
-  if (!value || typeof value !== 'object') return false
-  if (Array.isArray(value)) return false
-  return Object.prototype.toString.call(value) === '[object Object]'
-}
-
-function getPathValue(source: unknown, path: string) {
-  if (!path) return { found: false, value: undefined }
-  const segments = path.split('.').filter(Boolean)
-  let current: any = source
-
-  for (const segment of segments) {
-    if (!isPlainRecord(current) || !Object.prototype.hasOwnProperty.call(current, segment)) {
-      return { found: false, value: undefined }
-    }
-    const next = current[segment]
-    if (typeof next === 'function') return { found: false, value: undefined }
-    current = next
-  }
-
-  return { found: true, value: current }
-}
-
-function findNestedValue(source: unknown, targetKey: string, visited = new WeakSet<object>()) {
-  if (Array.isArray(source)) {
-    for (const item of source) {
-      if (isPlainRecord(item) || Array.isArray(item)) {
-        const result = findNestedValue(item, targetKey, visited)
-        if (result.found) return result
-      }
-    }
-    return { found: false, value: undefined }
-  }
-
-  if (!isPlainRecord(source)) return { found: false, value: undefined }
-  if (visited.has(source)) return { found: false, value: undefined }
-  visited.add(source)
-
-  if (Object.prototype.hasOwnProperty.call(source, targetKey)) {
-    const direct = source[targetKey]
-    if (typeof direct !== 'function') return { found: true, value: direct }
-  }
-
-  for (const key of Object.keys(source)) {
-    const value = source[key]
-    if (typeof value === 'function') continue
-    if (isPlainRecord(value) || Array.isArray(value)) {
-      const result = findNestedValue(value, targetKey, visited)
-      if (result.found) return result
-    }
-  }
-
-  return { found: false, value: undefined }
-}
-
-function getConditionValue(fieldName: string) {
-  if (!fieldName) return undefined
-  const source = schemaValues.value
-  if (!source) return undefined
-
-  if (fieldName.includes('.')) {
-    const pathResult = getPathValue(source, fieldName)
-    if (pathResult.found) return pathResult.value
-  }
-
-  if (isPlainRecord(source) && Object.prototype.hasOwnProperty.call(source, fieldName)) {
-    const direct = source[fieldName]
-    if (typeof direct !== 'function') return direct
-  }
-
-  const nestedResult = findNestedValue(source, fieldName)
-  return nestedResult.found ? nestedResult.value : undefined
-}
-
-function evaluateSingleCondition(condition: LogicField) {
-  const value = getConditionValue(condition.name)
-  const operator = condition.operator
-
-  if (operator === 'empty') return isEmptyValue(value)
-  if (operator === 'notEmpty') return !isEmptyValue(value)
-  if (operator === 'isTrue') return value === true
-  if (operator === 'isFalse') return value === false
-
-  if (operator === 'contains') {
-    const containsFn = schemaValues.value?.contains
-    if (typeof containsFn === 'function') {
-      return containsFn(value, normalizeLiteral(condition.value))
-    }
-    return Array.isArray(value) ? value.includes(condition.value) : String(value || '').includes(String(condition.value))
-  }
-
-  if (operator.startsWith('is')) {
-    const fn = schemaValues.value?.[operator]
-    if (typeof fn === 'function') return fn(value)
-  }
-
-  const normalizeValues = (list: string[]) => list.map(item => normalizeLiteral(item))
-  if (operator === 'equals') {
-    if (condition.values?.length) {
-      const targets = normalizeValues(condition.values)
-      return targets.includes(value)
-    }
-    return value === normalizeLiteral(condition.value)
-  }
-
-  if (operator === 'notEquals') {
-    if (condition.values?.length) {
-      const targets = normalizeValues(condition.values)
-      return targets.every(target => value !== target)
-    }
-    return value !== normalizeLiteral(condition.value)
-  }
-
-  const left = Number(value)
-  const right = Number(normalizeLiteral(condition.value))
-  if (Number.isNaN(left) || Number.isNaN(right)) return false
-
-  if (operator === 'greaterThan') return left > right
-  if (operator === 'greaterOrEqualsThan') return left >= right
-  if (operator === 'lessThan') return left < right
-  if (operator === 'lessOrEqualsThan') return left <= right
-
-  return true
-}
-
-function evaluateStepCondition(condition?: string) {
-  if (!condition) return true
-  const parsed = parseLogic(condition).filter(entry => entry.name && entry.operator)
-  if (!parsed.length) return true
-  return parsed.every((entry) => {
-    const orFields = [entry].concat(entry.or || []).filter(orEntry => orEntry.name && orEntry.operator)
-    if (!orFields.length) return true
-    return orFields.some(orEntry => evaluateSingleCondition(orEntry))
-  })
-}
-
 const visibleSteps = computed(() => {
   if (isPreviewEditing.value) return steps.value
-  return steps.value.filter(step => evaluateStepCondition(step.if))
+  return steps.value.filter(step => evaluateLogicString(step.if, schemaValues.value))
 })
 
 const renderedSteps = computed(() => (isPreviewEditing.value ? steps.value : visibleSteps.value))
@@ -265,6 +110,16 @@ function selectStep(stepName: string, { openDrawer = true }: { openDrawer?: bool
   if (openDrawer) {
     isFormSettingsDrawerOpened.value = true
   }
+  refreshStepperUi()
+}
+
+function handleStepperModelUpdate(stepName: string | number) {
+  const normalizedStepName = String(stepName)
+  if (isEditing.value) {
+    selectStep(normalizedStepName)
+    return
+  }
+  setCurrentStep(normalizedStepName)
 }
 
 function isClickInsideActiveStepArea(ev: MouseEvent) {
@@ -272,6 +127,7 @@ function isClickInsideActiveStepArea(ev: MouseEvent) {
   const overlayWrapper = headerOverlayWrapperRef.value
   const target = ev.target as Node | null
   if (!target) return false
+  if (target instanceof HTMLElement && target.closest('.q-stepper__header, .q-stepper__tab')) return true
   if (activeCanvas?.contains(target)) return true
   if (overlayWrapper?.contains(target)) return true
   return false
@@ -406,6 +262,28 @@ const headerOverlayStyle = computed(() => {
     height: `${height}px`,
   }
 })
+const selectedStepOverlayName = computed(() => selectedStepName.value ? `step:${selectedStepName.value}` : '')
+const selectedStepOverlayField = computed(() => {
+  if (!selectedStepOverlayName.value) return null
+  return {
+    $formkit: 'q-step-item',
+    name: selectedStepOverlayName.value,
+  } as FormKitSchemaDefinition & { name: string }
+})
+const selectedStepOverlayState = computed(() => ({
+  activeNames: selectedStepOverlayName.value ? [selectedStepOverlayName.value] : [],
+}))
+const rootOnlyGuideActive = computed(() =>
+  dndState.value.dragInIndicator?.listKey === 'root'
+  && dndState.value.dragInIndicator?.placement === 'top'
+  && dndState.value.dragInIndicator?.index === 0,
+)
+const showRootOnlyStructureGuide = computed(() =>
+  isEditing.value
+  && dndState.value.isDraggingRootOnlyStructure
+  && dndState.value.isUserDraggingOver
+  && rootOnlyGuideActive.value,
+)
 
 let stopStepperClick: (() => void) | undefined
 let stepperUiRefreshScheduled = false
@@ -483,7 +361,11 @@ function goToStep(delta: number, stepName: string) {
   if (index < 0) return
   const target = stepOrder.value[index + delta]
   if (!target) return
-  selectStep(target)
+  if (isEditing.value) {
+    selectStep(target)
+    return
+  }
+  setCurrentStep(target)
 }
 
 function goToNext(stepName: string) {
@@ -578,10 +460,31 @@ function removeSelectedStep() {
   if (!selectedStepName.value) return
   formStore.removeStep(selectedStepName.value)
 }
+
+function handleRootOnlyWrapperDragover(ev: DragEvent) {
+  if (!isEditing.value) return
+  builderDnd?.handleDragover?.(ev)
+  if (!dndState.value.isDraggingRootOnlyStructure) return
+  ev.preventDefault()
+  ev.stopPropagation()
+  builderDnd?.onDragEnterInDropArea?.(ev, props.context.node.name, 0, 'top', 'root')
+}
+
+function handleRootOnlyWrapperDrop(ev: DragEvent) {
+  if (!isEditing.value || !dndState.value.isDraggingRootOnlyStructure) return
+  ev.preventDefault()
+  ev.stopPropagation()
+  builderDnd?.onDrop?.(ev, 'root')
+}
 </script>
 
 <template>
-  <div ref="stepperWrapperRef" class="steps-wrapper">
+  <div
+    ref="stepperWrapperRef"
+    class="steps-wrapper"
+    @dragover="handleRootOnlyWrapperDragover"
+    @drop="handleRootOnlyWrapperDrop"
+  >
     <div v-if="isEditing" class="steps-header-actions">
       <q-btn
         round flat icon="add" size="sm" class="steps-header-action steps-header-action--add" color="grey-6"
@@ -593,6 +496,10 @@ function removeSelectedStep() {
       />
     </div>
 
+    <div v-if="showRootOnlyStructureGuide" class="steps-root-drop-guide" aria-hidden="true">
+      <span class="steps-root-drop-guide__label">Arraste aqui</span>
+    </div>
+
     <q-stepper
       :model-value="activeStep"
       :vertical="isSmallScreen"
@@ -601,7 +508,7 @@ function removeSelectedStep() {
       keep-alive
       flat
       class="bg-transparent"
-      @update:model-value="stepName => setCurrentStep(String(stepName))"
+      @update:model-value="handleStepperModelUpdate"
     >
       <q-step
         v-for="step in renderedSteps"
@@ -616,7 +523,9 @@ function removeSelectedStep() {
             v-model:root-ref="stepCanvasRefs[step.name]"
             :droppable="canDrag"
             :empty="canDrag && !getDisplayFields(step).length"
-            :highlight-empty="canDrag ? dndState.highlightDropArea : false"
+            empty-text=""
+            :data-structure-list-key="`step:${step.name}`"
+            :highlight-empty="canDrag && !dndState.isDraggingRootOnlyStructure ? dndState.highlightDropArea : false"
             @drop="(ev) => builderDnd?.onDrop?.(ev, `step:${step.name}`)"
             @dragover="builderDnd?.handleDragover"
             @dragenter="(ev) => { builderDnd?.onDragEnterContainer?.(`step:${step.name}`); builderDnd?.onDragEnterFormSectionArea?.(ev) }"
@@ -699,7 +608,15 @@ function removeSelectedStep() {
       class="stepper-header-overlay-wrapper"
       :style="headerOverlayStyle"
     >
-      <div class="stepper-header-overlay stepper-header-overlay--active" />
+      <BuilderFieldOverlay
+        v-if="selectedStepOverlayField"
+        selection-only
+        :field="selectedStepOverlayField"
+        :index="0"
+        :state="selectedStepOverlayState"
+        :preview-mode-editing="isEditing"
+        @click="selectedStepName ? selectStep(selectedStepName) : undefined"
+      />
       <q-icon
         name="o_edit" class="stepper-header-action stepper-header-action--left cursor-pointer"
         @click.stop="focusSelectedStepLabel"
@@ -754,25 +671,34 @@ function removeSelectedStep() {
   right: -2.5rem;
 }
 
+.steps-root-drop-guide {
+  background-color: var(--overlay-accent-color, #2980b9);
+  border-radius: 9999px;
+  height: .1875rem;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: -.75rem;
+  z-index: 4;
+}
+
+.steps-root-drop-guide__label {
+  background-color: var(--overlay-accent-color, #2980b9);
+  border-radius: 9999px;
+  color: white;
+  font-size: .75rem;
+  left: 50%;
+  line-height: .875rem;
+  padding: .125rem .5rem;
+  position: absolute;
+  text-wrap: nowrap;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .steps-title {
   position: relative;
-}
-
-.stepper-header-overlay {
-  border-color: transparent;
-  border-style: solid;
-  border-width: 1px;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.stepper-header-overlay--active {
-  border-color: var(--overlay-accent-color, #2980b9);
 }
 
 .stepper-header-action {

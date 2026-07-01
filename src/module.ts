@@ -48,7 +48,7 @@ const quasarDefaults = {
   },
   config: {
     brand: {
-      primary: '#FFA726',
+      primary: '#2980b9',
     },
   },
   sassVariables: true,

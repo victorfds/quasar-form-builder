@@ -2,7 +2,6 @@
 import type { ColumnsType } from '#qfb/types'
 import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
-import { empty, eq } from '@formkit/utils'
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string
@@ -19,17 +18,7 @@ const emit = defineEmits<{
   (e: 'submit', data: any): void
 }>()
 const values = defineModel<any>({ default: () => ({}) })
-const data = computed(() => ({
-  ...values.value,
-  empty,
-  eq,
-  contains,
-  isToday,
-  isTomorrow,
-  isYesterday,
-  isDayAfterTomorrow,
-  isDayBeforeYesterday,
-}))
+const data = computed(() => createFormSchemaData(props.formFields, values.value))
 
 provide(builderModeKey, false)
 provide(schemaDataKey, data)
@@ -98,7 +87,8 @@ const { getGridColumnStyle, getAlignClass } = useFieldLayout()
 <style lang="scss">
 /* When inputs are invalid (after being touched or submit), make the control more evident */
 .formkit-outer[data-invalid="true"] .q-field__control {
-  box-shadow: 0 0 0 1px #e53935 inset;
+  outline: 1px solid #e53935;
+  outline-offset: -1px;
 }
 
 /* Show asterisk only when invalid is visible (blurred or after submit) */

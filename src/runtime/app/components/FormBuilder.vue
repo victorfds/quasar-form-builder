@@ -2,7 +2,6 @@
 import type { ColumnsType } from '#qfb/types'
 import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
-import { empty, eq } from '@formkit/utils'
 import { clearErrors, reset } from '@formkit/vue'
 
 type ViewerField = FormKitSchemaDefinition & {
@@ -99,11 +98,17 @@ const scrollAreaContentStyle = { display: 'flex', justifyContent: 'center' }
 const offset = useState('offset')
 
 // unsubscribe from listeners
-let stopFormAreaClick: (() => void) | undefined
+let stopDocumentClick: (() => void) | undefined
 let stopPreviewModeChange: (() => void) | undefined
 
-function clearActiveField() {
+function hasActiveSelection() {
+  return Boolean(formStore.activeField || formStore.activeStepConfigName || formStore.activeTabConfigName)
+}
+
+function clearActiveSelection() {
   formStore.setActiveField(null)
+  formStore.setActiveStepConfig(null)
+  formStore.setActiveTabConfig(null)
 }
 
 function isClickInsideActiveField(ev: MouseEvent, activeName?: string | null) {
@@ -114,11 +119,30 @@ function isClickInsideActiveField(ev: MouseEvent, activeName?: string | null) {
   })
 }
 
-function handleFormAreaClick(ev: MouseEvent) {
-  const activeName = formStore.activeField?.name
-  if (!activeName) return
-  if (isClickInsideActiveField(ev, activeName)) return
-  clearActiveField()
+function isClickInsideBuilderSelection(ev: MouseEvent) {
+  if (isClickInsideActiveField(ev, formStore.activeField?.name)) return true
+
+  return ev.composedPath().some((node) => {
+    if (!(node instanceof HTMLElement)) return false
+    return Boolean(node.closest(
+      [
+        '[data-drawer="right"]',
+        '[data-keep-active]',
+        '.q-menu',
+        '.q-dialog',
+        '.structure-tabs__tab',
+        '.q-stepper__header',
+        '.q-stepper__tab',
+        '.stepper-header-overlay-wrapper',
+      ].join(','),
+    ))
+  })
+}
+
+function handleDocumentClick(ev: MouseEvent) {
+  if (!hasActiveSelection()) return
+  if (isClickInsideBuilderSelection(ev)) return
+  clearActiveSelection()
 }
 
 function resetPreviewForm() {
@@ -133,27 +157,16 @@ onBeforeUnmount(() => {
 
 onMounted(() => {
   formStore.hydrateFromStorage()
-  stopFormAreaClick = useEventListener(previewFormSectionRef, 'click', handleFormAreaClick, { capture: true })
+  stopDocumentClick = useEventListener(document, 'click', handleDocumentClick, { capture: true })
   stopPreviewModeChange = useEventListener(window, 'builder:preview-mode-change', resetPreviewForm)
 })
 
 onUnmounted(() => {
-  if (stopFormAreaClick)
-    stopFormAreaClick()
+  stopDocumentClick?.()
   stopPreviewModeChange?.()
 })
 
-const data = computed(() => ({
-  ...formStore.values,
-  empty,
-  eq,
-  contains,
-  isToday,
-  isTomorrow,
-  isYesterday,
-  isDayAfterTomorrow,
-  isDayBeforeYesterday,
-}))
+const data = computed(() => createFormSchemaData(formStore.formFields, formStore.values))
 
 provide(schemaDataKey, data)
 
@@ -171,10 +184,15 @@ function hasCondition(field: ViewerField) {
   return Object.keys(field).some(key => key.includes('hasCondition'))
 }
 
+function isHiddenInputField(field: ViewerField) {
+  return field?.$formkit === 'q-input' && field.inputType === 'hidden'
+}
+
 function getFieldClasses(field: ViewerField) {
   return [
     fieldUi.getAlignClass(field as any),
     hasCondition(field) && isPreviewEditing.value ? 'opacity-50' : '',
+    isHiddenInputField(field) && !isPreviewEditing.value ? 'form-field--hidden-preview' : '',
   ]
 }
 

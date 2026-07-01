@@ -20,7 +20,7 @@ const props = withDefaults(defineProps<{
   emptyText?: string
 }>(), {
   fields: () => [],
-  emptyText: 'Arraste e solte aqui',
+  emptyText: '',
 })
 
 const formStore = useFormStore()
@@ -28,6 +28,7 @@ const fieldUi = useFieldUi()
 const schemaData = inject(schemaDataKey, computed(() => ({})))
 const builderMode = inject(builderModeKey, false)
 const builderDnd = inject(formBuilderDndKey, null) as Record<string, any> | null
+const isLocalDragOver = shallowRef(false)
 
 const isPreviewEditing = computed(() => builderMode && formStore.formSettings.previewMode === 'editing')
 const canDrag = computed(() => Boolean(isPreviewEditing.value && builderDnd))
@@ -60,10 +61,15 @@ function hasCondition(field: BuilderStructureField) {
   return Boolean(field?.hasCondition)
 }
 
+function isHiddenInputField(field: BuilderStructureField) {
+  return field?.$formkit === 'q-input' && field.inputType === 'hidden'
+}
+
 function getFieldClasses(field: BuilderStructureField) {
   return [
     fieldUi.getAlignClass(field as any),
     hasCondition(field) && isPreviewEditing.value ? 'opacity-50' : '',
+    isHiddenInputField(field) && !isPreviewEditing.value ? 'form-field--hidden-preview' : '',
   ]
 }
 
@@ -73,20 +79,28 @@ function getFieldStyle(field: BuilderStructureField) {
 
 const isDraggingRootOnlyStructure = computed(() => Boolean(dndState.value.isDraggingRootOnlyStructure))
 const isCellList = computed(() => props.listKey.startsWith('cell:'))
-const isOccupiedCell = computed(() => isCellList.value && displayFields.value.length > 0)
-const isDropZoneActive = computed(() =>
+const hasFields = computed(() => displayFields.value.length > 0)
+const isOccupiedCell = computed(() => isCellList.value && hasFields.value)
+const isEmptySurfaceActive = computed(() =>
   canDrag.value
   && !isDraggingRootOnlyStructure.value
   && !isOccupiedCell.value
-  && dndState.value.targetListKey === props.listKey
+  && !hasFields.value
+  && (dndState.value.targetListKey === props.listKey || isLocalDragOver.value)
   && !dndState.value.dragInIndicator?.placement,
 )
-const showStructureDropZone = computed(() =>
+const showEmptySurface = computed(() =>
   canDrag.value
-  && !isDraggingRootOnlyStructure.value
   && !isOccupiedCell.value
-  && (dndState.value.isUserDraggingOver || isDropZoneActive.value),
+  && !hasFields.value,
 )
+const highlightEmptySurface = computed(() => isEmptySurfaceActive.value)
+
+watch(() => dndState.value.isUserDraggingOver, (isDraggingOver) => {
+  if (!isDraggingOver) {
+    isLocalDragOver.value = false
+  }
+})
 
 function refreshDragState(ev: DragEvent) {
   builderDnd?.handleDragover?.(ev)
@@ -106,9 +120,25 @@ function activateOccupiedCellReplacement(ev: DragEvent) {
   return true
 }
 
+function hasOccupiedCellReplacementIndicator() {
+  return isOccupiedCell.value
+    && dndState.value.dragInIndicator?.listKey === props.listKey
+    && Boolean(dndState.value.dragInIndicator?.name && dndState.value.dragInIndicator?.placement)
+}
+
+function hasExplicitInsertionIndicator() {
+  return dndState.value.dragInIndicator?.listKey === props.listKey
+    && Boolean(dndState.value.dragInIndicator?.name && dndState.value.dragInIndicator?.placement)
+}
+
 function onDragenter(ev: DragEvent) {
   refreshDragState(ev)
   if (!canAcceptDrop()) return
+  if (isDraggingRootOnlyStructure.value) {
+    isLocalDragOver.value = false
+    return
+  }
+  isLocalDragOver.value = true
   builderDnd?.onDragEnterContainer?.(props.listKey)
   if (activateOccupiedCellReplacement(ev)) return
   builderDnd?.onDragEnterFormSectionArea?.(ev)
@@ -117,15 +147,39 @@ function onDragenter(ev: DragEvent) {
 function onDragover(ev: DragEvent) {
   refreshDragState(ev)
   if (!canAcceptDrop()) return
+  if (isDraggingRootOnlyStructure.value) {
+    isLocalDragOver.value = false
+    return
+  }
+  isLocalDragOver.value = true
   if (activateOccupiedCellReplacement(ev)) return
   builderDnd?.onDragOverDropArea?.(ev, props.listKey)
 }
 
+function onDragleave(ev: DragEvent) {
+  const target = ev.currentTarget
+  if (target instanceof HTMLElement) {
+    const rect = target.getBoundingClientRect()
+    const isStillInside = ev.clientX >= rect.left
+      && ev.clientX <= rect.right
+      && ev.clientY >= rect.top
+      && ev.clientY <= rect.bottom
+    if (isStillInside) return
+  }
+
+  isLocalDragOver.value = false
+  builderDnd?.onDragLeaveFormSectionArea?.()
+}
+
 function onDrop(ev: DragEvent) {
   refreshDragState(ev)
+  isLocalDragOver.value = false
   if (!canAcceptDrop()) {
     builderDnd?.resetDragState?.()
     return
+  }
+  if (!hasOccupiedCellReplacementIndicator() && !hasExplicitInsertionIndicator()) {
+    builderDnd?.onDragEnterContainer?.(props.listKey)
   }
   builderDnd?.onDrop?.(ev, props.listKey)
 }
@@ -134,14 +188,16 @@ function onDrop(ev: DragEvent) {
 <template>
   <FormCanvas
     :droppable="canDrag"
-    :empty="false"
+    :empty="showEmptySurface"
+    :compact-empty="isCellList"
+    :highlight-empty="highlightEmptySurface"
     :data-structure-list-key="listKey"
     :class="{ 'form-canvas--cell-list': isCellList }"
     :empty-text="emptyText"
     @drop="onDrop"
     @dragover="onDragover"
     @dragenter="onDragenter"
-    @dragleave="builderDnd?.onDragLeaveFormSectionArea"
+    @dragleave="onDragleave"
   >
     <div
       v-for="(field, index) in displayFields"
@@ -183,83 +239,5 @@ function onDrop(ev: DragEvent) {
         @resize-start="({ ev, field: f }) => builderDnd?.startResize?.(ev, f)"
       />
     </div>
-
-    <div
-      v-if="canDrag"
-      class="structure-drop-zone span-12"
-      :class="{
-        'structure-drop-zone--visible': showStructureDropZone,
-        'structure-drop-zone--interactive': dndState.isUserDraggingOver || isDropZoneActive,
-        'structure-drop-zone--empty': !displayFields.length,
-        'structure-drop-zone--active': isDropZoneActive,
-      }"
-      @dragenter.prevent.stop="onDragenter"
-      @dragover.prevent.stop="onDragover"
-      @drop.prevent.stop="onDrop"
-    >
-      <div class="structure-drop-zone__label" aria-hidden="true" />
-    </div>
   </FormCanvas>
 </template>
-
-<style scoped>
-.structure-drop-zone {
-  align-items: center;
-  background: rgba(129, 212, 250, .18);
-  border: 1px dashed rgba(69, 140, 163, .5);
-  border-radius: 6px;
-  box-sizing: border-box;
-  color: #5a9eb0;
-  display: flex;
-  grid-column: 1 / -1;
-  height: 0;
-  justify-content: center;
-  margin: 0;
-  max-width: 100%;
-  min-height: 0;
-  min-width: 0;
-  opacity: 0;
-  overflow: visible;
-  padding: 0;
-  pointer-events: none;
-  position: relative;
-  transition: opacity .12s ease, min-height .12s ease, margin .12s ease, padding .12s ease;
-  visibility: hidden;
-  z-index: 8;
-}
-
-.structure-drop-zone--visible {
-  height: auto;
-  margin: .25rem 0;
-  min-height: 2.75rem;
-  opacity: 1;
-  padding: .5rem;
-  visibility: visible;
-}
-
-.structure-drop-zone--interactive {
-  pointer-events: auto;
-}
-
-.structure-drop-zone--visible.structure-drop-zone--empty {
-  min-height: 5rem;
-}
-
-.structure-drop-zone--active {
-  background: rgba(168, 36, 84, .1);
-  border-color: #a82454;
-  color: #a82454;
-}
-
-.structure-drop-zone__label {
-  background: #a82454;
-  border-radius: 9999px;
-  box-sizing: border-box;
-  height: .1875rem;
-  width: 2.5rem;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 0;
-  pointer-events: none;
-}
-</style>

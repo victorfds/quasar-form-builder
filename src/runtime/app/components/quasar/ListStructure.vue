@@ -6,8 +6,10 @@ const props = defineProps<{
   context: FormKitFrameworkContext & {
     children?: FormKitSchemaDefinition[]
     structureChildren?: FormKitSchemaDefinition[]
+    description?: string
     nested?: boolean
     attrs: {
+      label?: string
       structureChildren?: FormKitSchemaDefinition[]
       children?: FormKitSchemaDefinition[]
       description?: string
@@ -28,6 +30,14 @@ const children = computed(() => firstFilledArray<FormKitSchemaDefinition>(
 ))
 const listKey = computed(() => `children:${props.context.node.name}` as const)
 const isNested = computed(() => props.context.attrs.nested ?? props.context.nested)
+
+function getContextText(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
+const defaultLabel = computed(() => isNested.value ? 'Lista aninhada' : 'Lista')
+const structureLabel = computed(() => getContextText(props.context.label) || getContextText(props.context.attrs.label) || defaultLabel.value)
+const structureDescription = computed(() => getContextText(props.context.attrs.description) || getContextText(props.context.description))
 </script>
 
 <template>
@@ -41,15 +51,15 @@ const isNested = computed(() => props.context.attrs.nested ?? props.context.nest
   >
     <q-card-section>
       <div class="text-subtitle2">
-        {{ context.label || (isNested ? 'Lista aninhada' : 'Lista') }}
+        {{ structureLabel }}
       </div>
-      <div v-if="context.attrs.description" class="text-caption text-grey-7">
-        {{ context.attrs.description }}
+      <div v-if="structureDescription" class="text-caption text-grey-7">
+        {{ structureDescription }}
       </div>
     </q-card-section>
     <q-separator v-if="isEditing" />
     <q-card-section>
-      <BuilderStructureCanvas :fields="children" :list-key="listKey" empty-text="Item repetível vazio" />
+      <BuilderStructureCanvas :fields="children" :list-key="listKey" />
     </q-card-section>
   </q-card>
 </template>

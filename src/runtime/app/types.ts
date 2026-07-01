@@ -51,6 +51,28 @@ export interface FormSettingsType {
   columns: FormViewportType
 }
 
+export interface BuilderSelectionChangeDetail {
+  fieldName?: string | null
+  stepName?: string | null
+  tabsFieldName?: string | null
+  tabName?: string | null
+}
+
+export interface BuilderPreviewModeChangeDetail {
+  mode: FormSettingsType['previewMode']
+}
+
+export interface BuilderEventMap {
+  'builder:selection-change': CustomEvent<BuilderSelectionChangeDetail>
+  'builder:preview-mode-change': CustomEvent<BuilderPreviewModeChangeDetail>
+  'builder:focus-step-label': CustomEvent<void>
+  'builder:focus-tab-label': CustomEvent<void>
+}
+
+declare global {
+  interface WindowEventMap extends BuilderEventMap {}
+}
+
 export type ActiveFieldType = FormKitSchemaNode & { columns: ColumnsType } | null
 
 export type FormViewportType = 'default' | 'sm' | 'lg'
@@ -128,6 +150,35 @@ export interface LogicField {
   value: string
   values: string[]
   or?: LogicField[] | null
+}
+
+export type ExtractedFormItemKind = 'field' | 'static' | 'structure'
+
+export interface ExtractedFormItem {
+  kind: ExtractedFormItemKind
+  name?: string
+  label?: string
+  type?: string
+  path: string[]
+  value?: unknown
+  displayValue?: string
+  children?: ExtractedFormItem[]
+}
+
+export interface ExtractedFormAnswer {
+  name: string
+  label: string
+  type?: string
+  path: string[]
+  value: unknown
+  displayValue: string
+}
+
+export interface ExtractedFormData {
+  items: ExtractedFormItem[]
+  flatItems: ExtractedFormItem[]
+  answers: ExtractedFormAnswer[]
+  valuesByName: Record<string, unknown>
 }
 
 export type ComponentsTypes

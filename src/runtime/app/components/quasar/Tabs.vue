@@ -39,6 +39,7 @@ const visibleTabs = computed(() => {
   return tabs.value.filter(tab => evaluateLogicString(tab.if, schemaValues.value))
 })
 const renderedTabs = computed(() => (isEditing.value ? tabs.value : visibleTabs.value))
+const activeRenderedTab = computed(() => renderedTabs.value.find(tab => tab.name === activeTab.value) || null)
 
 function getTabListKey(tabName: string): BuilderFieldListKey {
   return `tab:${tabsFieldName.value}:${tabName}`
@@ -76,6 +77,24 @@ function selectTab(tabName: string) {
 
 function isSelectedTab(tabName: string) {
   return isEditing.value && selectedTabName.value === tabName
+}
+
+function getTabOverlayName(tabName: string) {
+  return `${tabsFieldName.value}:${tabName}`
+}
+
+function getTabOverlayField(tabName: string) {
+  return {
+    $formkit: 'q-tab-item',
+    name: getTabOverlayName(tabName),
+  } as FormKitSchemaDefinition & { name: string }
+}
+
+function getTabOverlayState(tabName: string) {
+  const overlayName = getTabOverlayName(tabName)
+  return {
+    activeNames: isSelectedTab(tabName) ? [overlayName] : [],
+  }
 }
 
 function onTabDragenter(ev: DragEvent, tabName: string) {
@@ -133,21 +152,40 @@ onUpdated(() => {
         v-for="tab in renderedTabs"
         :key="tab.name"
         :name="tab.name"
-        :label="tab.label || tab.name"
         :class="{ 'structure-tabs__tab--selected': isSelectedTab(tab.name) }"
+        class="structure-tabs__tab relative-position"
         no-caps
         @click="selectTab(tab.name)"
         @dragenter.prevent="(ev) => onTabDragenter(ev, tab.name)"
         @dragover.prevent="(ev) => onTabDragenter(ev, tab.name)"
         @drop.prevent="(ev) => onTabDrop(ev, tab.name)"
-      />
+      >
+        <span class="structure-tabs__tab-label">
+          {{ tab.label || tab.name }}
+        </span>
+        <BuilderFieldOverlay
+          v-if="isEditing"
+          selection-only
+          :field="getTabOverlayField(tab.name)"
+          :index="0"
+          :state="getTabOverlayState(tab.name)"
+          :preview-mode-editing="isEditing"
+          @click="selectTab(tab.name)"
+        />
+      </q-tab>
     </q-tabs>
     <q-separator />
-    <q-tab-panels :model-value="activeTab" :animated="!isEditing" @update:model-value="tabName => setActiveTab(String(tabName))">
-      <q-tab-panel v-for="tab in renderedTabs" :key="tab.name" :name="tab.name" class="q-px-none">
-        <BuilderStructureCanvas :fields="tab.children || []" :list-key="getTabListKey(tab.name)" empty-text="Aba vazia" />
-      </q-tab-panel>
-    </q-tab-panels>
+    <div
+      v-if="activeRenderedTab"
+      :key="activeRenderedTab.name"
+      class="structure-tabs__panel q-px-none"
+      role="tabpanel"
+    >
+      <BuilderStructureCanvas
+        :fields="activeRenderedTab.children || []"
+        :list-key="getTabListKey(activeRenderedTab.name)"
+      />
+    </div>
   </div>
 </template>
 
@@ -179,8 +217,12 @@ onUpdated(() => {
   right: 0;
 }
 
-.structure-tabs__tab--selected {
-  outline: 1px solid var(--overlay-accent-color, #2980b9);
-  outline-offset: -1px;
+.structure-tabs__tab :deep(.q-tab__content) {
+  position: static;
+}
+
+.structure-tabs__tab-label {
+  position: relative;
+  z-index: 2;
 }
 </style>

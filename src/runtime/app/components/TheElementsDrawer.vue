@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { BuilderCatalogCategory, BuilderCatalogItem, BuilderFieldListKey, StructureCell } from '#qfb/types'
+import type { BuilderCatalogCategory, BuilderCatalogItem, BuilderEventMap, BuilderFieldListKey, StructureCell } from '#qfb/types'
 import type { FormKitSchemaDefinition } from '@formkit/core'
 import { getBuilderCatalogByCategory } from '#qfb/constants/fieldCatalog'
+import { clearBuilderDragActive, markBuilderDragType } from '#qfb/utils/builderDrag'
 
 const model = defineModel<boolean>()
 const { dark } = useQuasar()
@@ -25,13 +26,6 @@ interface BuilderTreeNode {
   tabsFieldName?: string
   tabName?: string
   children?: BuilderTreeNode[]
-}
-
-interface BuilderSelectionChangeDetail {
-  fieldName?: string | null
-  stepName?: string | null
-  tabsFieldName?: string | null
-  tabName?: string | null
 }
 
 const catalogTabs: { name: BuilderCatalogCategory, label: string }[] = [
@@ -112,8 +106,253 @@ function cloneSchema(schema: FormKitSchemaDefinition): FormKitSchemaDefinition {
   return JSON.parse(JSON.stringify(schema))
 }
 
-function onDragStart(ev: DragEvent, tool: FormKitSchemaDefinition) {
-  ev.dataTransfer?.setData('text', JSON.stringify(cloneSchema(tool)))
+interface CatalogPointerDragState {
+  tool: BuilderCatalogItem
+  dataTransfer: DataTransfer
+  pointerId: number
+  startX: number
+  startY: number
+  dragging: boolean
+  currentTarget: Element | null
+  ghost: HTMLElement | null
+  sourceElement: HTMLElement | null
+}
+
+const catalogDragThreshold = 6
+const catalogDroppableSelector = [
+  '.preview-element-area-top',
+  '.preview-element-area-bottom',
+  '.preview-element-area-left',
+  '.preview-element-area-right',
+  '.overlay-preview-element',
+  '.overlay-drop-here',
+  '.form-canvas',
+  '.structure-tabs__tab',
+  '.q-stepper__tab',
+  '.stepper-header-overlay-wrapper',
+  '.steps-root-drop-guide',
+  '[data-structure-list-key]',
+  '.structure-grid__cell',
+  '.structure-table__cell',
+].join(',')
+let catalogPointerDrag: CatalogPointerDragState | null = null
+
+function setCatalogDragData(dataTransfer: DataTransfer, schema: FormKitSchemaDefinition) {
+  const clonedSchema = cloneSchema(schema)
+  const schemaData = JSON.stringify(clonedSchema)
+
+  dataTransfer.effectAllowed = 'copy'
+  dataTransfer.dropEffect = 'copy'
+  dataTransfer.setData('text', schemaData)
+  dataTransfer.setData('text/plain', schemaData)
+  markBuilderDragType(dataTransfer, clonedSchema as Record<string, unknown>)
+}
+
+function createCatalogDragEvent(type: string, state: CatalogPointerDragState, ev?: PointerEvent) {
+  return new DragEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    dataTransfer: state.dataTransfer,
+    clientX: ev?.clientX,
+    clientY: ev?.clientY,
+    screenX: ev?.screenX,
+    screenY: ev?.screenY,
+    ctrlKey: ev?.ctrlKey,
+    shiftKey: ev?.shiftKey,
+    altKey: ev?.altKey,
+    metaKey: ev?.metaKey,
+  })
+}
+
+function getCatalogPointerTarget(ev: PointerEvent) {
+  if (typeof document === 'undefined') return null
+  const stackedElements = document.elementsFromPoint(ev.clientX, ev.clientY)
+  for (const element of stackedElements) {
+    if (element.matches(catalogDroppableSelector)) return element
+    const droppableElement = element.closest(catalogDroppableSelector)
+    if (droppableElement) return droppableElement
+  }
+  const geometricTarget = Array.from(document.querySelectorAll(catalogDroppableSelector)).find((element) => {
+    const rect = element.getBoundingClientRect()
+    return ev.clientX >= rect.left
+      && ev.clientX <= rect.right
+      && ev.clientY >= rect.top
+      && ev.clientY <= rect.bottom
+  })
+  if (geometricTarget) return geometricTarget
+  return stackedElements[0] || null
+}
+
+function createCatalogDragGhost(tool: BuilderCatalogItem, sourceElement: HTMLElement | null) {
+  const ghost = document.createElement('div')
+  ghost.className = `tool-item-drag-ghost ${dark.isActive ? 'tool-item-drag-ghost--dark' : 'tool-item-drag-ghost--light'}`
+  ghost.setAttribute('aria-hidden', 'true')
+
+  const clonedContent = sourceElement?.querySelector('.tool-item__content')?.cloneNode(true)
+  if (clonedContent instanceof HTMLElement) {
+    clonedContent.classList.remove('q-mb-lg')
+    clonedContent.classList.add('tool-item-drag-ghost__content')
+    ghost.appendChild(clonedContent)
+  }
+  else {
+    const avatar = document.createElement('div')
+    avatar.className = 'tool-item-drag-ghost__fallback-avatar'
+    avatar.textContent = tool.icon
+
+    const textWrapper = document.createElement('div')
+    textWrapper.className = 'tool-item-drag-ghost__fallback-text'
+
+    const title = document.createElement('div')
+    title.className = 'tool-title text-weight-semibold text-subtitle2'
+    title.textContent = tool.title
+
+    const description = document.createElement('div')
+    description.className = 'tool-description text-caption'
+    description.textContent = tool.description
+
+    textWrapper.append(title, description)
+    ghost.append(avatar, textWrapper)
+  }
+
+  document.body.appendChild(ghost)
+  return ghost
+}
+
+function updateCatalogDragGhost(state: CatalogPointerDragState, ev: PointerEvent) {
+  if (!state.ghost) return
+  state.ghost.style.transform = `translate3d(${ev.clientX + 12}px, ${ev.clientY + 12}px, 0)`
+}
+
+function startCatalogPointerDrag(state: CatalogPointerDragState, ev: PointerEvent) {
+  state.dragging = true
+  state.sourceElement?.classList.add('tool-item--dragging')
+  setCatalogDragData(state.dataTransfer, state.tool.schema)
+  state.ghost = createCatalogDragGhost(state.tool, state.sourceElement)
+  updateCatalogDragGhost(state, ev)
+  state.sourceElement?.dispatchEvent(createCatalogDragEvent('dragstart', state, ev))
+}
+
+function dispatchCatalogDragMove(state: CatalogPointerDragState, ev: PointerEvent) {
+  const target = getCatalogPointerTarget(ev)
+
+  if (state.currentTarget && state.currentTarget !== target) {
+    state.currentTarget.dispatchEvent(createCatalogDragEvent('dragleave', state, ev))
+  }
+
+  if (!target) {
+    state.currentTarget = null
+    return
+  }
+
+  if (state.currentTarget !== target) {
+    target.dispatchEvent(createCatalogDragEvent('dragenter', state, ev))
+    state.currentTarget = target
+  }
+
+  target.dispatchEvent(createCatalogDragEvent('dragover', state, ev))
+}
+
+function removeCatalogPointerListeners() {
+  if (typeof window === 'undefined') return
+  window.removeEventListener('pointermove', onCatalogPointerMove)
+  window.removeEventListener('pointerup', onCatalogPointerUp)
+  window.removeEventListener('pointercancel', onCatalogPointerCancel)
+  window.removeEventListener('blur', onCatalogPointerCancel)
+  window.removeEventListener('keydown', onCatalogPointerKeydown)
+}
+
+function finishCatalogPointerDrag() {
+  const state = catalogPointerDrag
+  if (!state) return
+
+  removeCatalogPointerListeners()
+  state.sourceElement?.classList.remove('tool-item--dragging')
+  if (state.sourceElement?.hasPointerCapture?.(state.pointerId)) {
+    state.sourceElement.releasePointerCapture(state.pointerId)
+  }
+  state.ghost?.remove()
+  if (state.dragging) {
+    state.sourceElement?.dispatchEvent(createCatalogDragEvent('dragend', state))
+  }
+  clearBuilderDragActive()
+  catalogPointerDrag = null
+}
+
+function onCatalogPointerMove(ev: PointerEvent) {
+  const state = catalogPointerDrag
+  if (!state || ev.pointerId !== state.pointerId) return
+
+  const distanceX = ev.clientX - state.startX
+  const distanceY = ev.clientY - state.startY
+  const distance = Math.hypot(distanceX, distanceY)
+
+  if (!state.dragging) {
+    if (distance < catalogDragThreshold) return
+    startCatalogPointerDrag(state, ev)
+  }
+
+  ev.preventDefault()
+  updateCatalogDragGhost(state, ev)
+  dispatchCatalogDragMove(state, ev)
+}
+
+function onCatalogPointerUp(ev: PointerEvent) {
+  const state = catalogPointerDrag
+  if (!state || ev.pointerId !== state.pointerId) return
+
+  if (state.dragging) {
+    ev.preventDefault()
+    const target = getCatalogPointerTarget(ev)
+    if (target) {
+      target.dispatchEvent(createCatalogDragEvent('dragenter', state, ev))
+      target.dispatchEvent(createCatalogDragEvent('dragover', state, ev))
+      target.dispatchEvent(createCatalogDragEvent('drop', state, ev))
+    }
+  }
+
+  finishCatalogPointerDrag()
+}
+
+function onCatalogPointerCancel() {
+  finishCatalogPointerDrag()
+}
+
+function onCatalogPointerKeydown(ev: KeyboardEvent) {
+  if (ev.key !== 'Escape') return
+  ev.preventDefault()
+  finishCatalogPointerDrag()
+}
+
+function addCatalogPointerListeners() {
+  window.addEventListener('pointermove', onCatalogPointerMove, { passive: false })
+  window.addEventListener('pointerup', onCatalogPointerUp)
+  window.addEventListener('pointercancel', onCatalogPointerCancel)
+  window.addEventListener('blur', onCatalogPointerCancel)
+  window.addEventListener('keydown', onCatalogPointerKeydown)
+}
+
+function onCatalogPointerDown(ev: PointerEvent, tool: BuilderCatalogItem) {
+  if (typeof window === 'undefined' || typeof DataTransfer === 'undefined') return
+  if (!ev.isPrimary || ev.button !== 0) return
+
+  finishCatalogPointerDrag()
+
+  const sourceElement = ev.currentTarget instanceof HTMLElement ? ev.currentTarget : null
+  catalogPointerDrag = {
+    tool,
+    dataTransfer: new DataTransfer(),
+    pointerId: ev.pointerId,
+    startX: ev.clientX,
+    startY: ev.clientY,
+    dragging: false,
+    currentTarget: null,
+    ghost: null,
+    sourceElement,
+  }
+
+  sourceElement?.setPointerCapture?.(ev.pointerId)
+  addCatalogPointerListeners()
 }
 
 function getStringValue(value: unknown) {
@@ -274,7 +513,7 @@ function findTreeNodeByPredicate(nodes: BuilderTreeNode[], predicate: (node: Bui
   return null
 }
 
-function getSelectionNode(detail: BuilderSelectionChangeDetail) {
+function getSelectionNode(detail: BuilderEventMap['builder:selection-change']['detail']) {
   if (detail.fieldName) {
     return findTreeNodeByPredicate(treeNodes.value, node => node.fieldName === detail.fieldName)
   }
@@ -293,7 +532,7 @@ function getSelectionNode(detail: BuilderSelectionChangeDetail) {
   return null
 }
 
-function syncTreeSelection(detail: BuilderSelectionChangeDetail) {
+function syncTreeSelection(detail: BuilderEventMap['builder:selection-change']['detail']) {
   const node = getSelectionNode(detail)
   selectedTreeNode.value = node?.key || ''
 }
@@ -307,8 +546,8 @@ function syncTreeSelectionFromStore() {
   })
 }
 
-function onBuilderSelectionChange(event: Event) {
-  syncTreeSelection((event as CustomEvent<BuilderSelectionChangeDetail>).detail || {})
+function onBuilderSelectionChange(event: BuilderEventMap['builder:selection-change']) {
+  syncTreeSelection(event.detail || {})
 }
 
 function setDrawerTab(nextTab: string | number) {
@@ -324,6 +563,30 @@ function filterTreeNode(node: BuilderTreeNode, filter: string) {
     .join(' ')
     .toLocaleLowerCase()
     .includes(term)
+}
+
+function isSelectedTreeNode(key?: string) {
+  return Boolean(key && selectedTreeNode.value === key)
+}
+
+function getTreeIconColor(key?: string) {
+  if (isSelectedTreeNode(key)) return 'primary'
+  return dark.isActive ? 'grey-9' : 'blue-grey-2'
+}
+
+function getTreeIconTextColor(key?: string) {
+  if (isSelectedTreeNode(key)) return 'white'
+  return dark.isActive ? 'grey-5' : 'blue-grey-8'
+}
+
+function getTreeLabelClass(key?: string) {
+  if (isSelectedTreeNode(key)) return 'text-primary'
+  return dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'
+}
+
+function getTreeCaptionClass(key?: string) {
+  if (isSelectedTreeNode(key)) return 'text-primary'
+  return dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'
 }
 
 function selectTreeNode(key: string | null) {
@@ -361,6 +624,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  finishCatalogPointerDrag()
   window.removeEventListener('builder:selection-change', onBuilderSelectionChange)
 })
 </script>
@@ -379,7 +643,7 @@ onBeforeUnmount(() => {
       <q-tab name="elements" label="Elementos" no-caps />
       <q-tab name="tree" label="Árvore" no-caps />
     </q-tabs>
-    <q-scroll-area class="fit elements-drawer-scroll" visible>
+    <div class="fit elements-drawer-scroll">
       <q-tab-panels v-model="tab" animated>
         <q-tab-panel name="elements">
           <q-input
@@ -404,10 +668,12 @@ onBeforeUnmount(() => {
               v-for="tool in filteredTools"
               :key="`${tool.category}:${tool.name}`"
               class="tool-item"
-              draggable="true"
-              @dragstart="(event) => onDragStart(event, tool.schema)"
+              :data-catalog-category="tool.category"
+              :data-catalog-name="tool.name"
+              draggable="false"
+              @pointerdown="(event) => onCatalogPointerDown(event, tool)"
             >
-              <div class="row items-start no-wrap q-mb-lg">
+              <div class="tool-item__content row items-start no-wrap q-mb-lg">
                 <q-avatar
                   rounded
                   size="md"
@@ -415,7 +681,7 @@ onBeforeUnmount(() => {
                   :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
                   :icon="tool.icon"
                 />
-                <div class="q-ml-sm">
+                <div class="tool-item__text q-ml-sm">
                   <div
                     class="tool-title text-weight-semibold text-subtitle2"
                     :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'"
@@ -444,6 +710,7 @@ onBeforeUnmount(() => {
           <q-tabs
             v-if="!hasSearchTerm"
             v-model="elementsTypes"
+            class="elements-drawer-type-tabs"
             narrow-indicator
             dense
             :class="dark.isActive ? 'bg-transparent' : 'bg-blue-grey-1'"
@@ -471,10 +738,12 @@ onBeforeUnmount(() => {
                 v-for="tool in filteredToolsByCategory[catalogTab.name]"
                 :key="tool.name"
                 class="tool-item"
-                draggable="true"
-                @dragstart="(event) => onDragStart(event, tool.schema)"
+                :data-catalog-category="tool.category"
+                :data-catalog-name="tool.name"
+                draggable="false"
+                @pointerdown="(event) => onCatalogPointerDown(event, tool)"
               >
-                <div class="row items-start no-wrap q-mb-lg">
+                <div class="tool-item__content row items-start no-wrap q-mb-lg">
                   <q-avatar
                     rounded
                     size="md"
@@ -482,7 +751,7 @@ onBeforeUnmount(() => {
                     :text-color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
                     :icon="tool.icon"
                   />
-                  <div class="q-ml-sm">
+                  <div class="tool-item__text q-ml-sm">
                     <div
                       class="tool-title text-weight-semibold text-subtitle2"
                       :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'"
@@ -537,6 +806,8 @@ onBeforeUnmount(() => {
             dense
             default-expand-all
             no-transition
+            no-selection-unset
+            selected-color="primary"
             @update:selected="selectTreeNode"
           >
             <template #default-header="prop">
@@ -545,19 +816,21 @@ onBeforeUnmount(() => {
                   rounded
                   size="xs"
                   :icon="prop.node.icon || 'widgets'"
+                  :color="getTreeIconColor(prop.node.key)"
+                  :text-color="getTreeIconTextColor(prop.node.key)"
                   class="tree-node__icon q-mr-sm"
                 />
                 <div class="tree-node__content">
                   <div
                     class="tree-node__label text-caption"
-                    :class="dark.isActive ? 'text-grey-11' : 'text-blue-grey-10'"
+                    :class="getTreeLabelClass(prop.node.key)"
                   >
                     {{ prop.node.label }}
                   </div>
                   <div
                     v-if="prop.node.caption"
                     class="tree-node__caption text-caption"
-                    :class="dark.isActive ? 'text-grey-6' : 'text-blue-grey-6'"
+                    :class="getTreeCaptionClass(prop.node.key)"
                   >
                     {{ prop.node.caption }}
                   </div>
@@ -567,21 +840,51 @@ onBeforeUnmount(() => {
           </q-tree>
         </q-tab-panel>
       </q-tab-panels>
-    </q-scroll-area>
+    </div>
   </q-drawer>
 </template>
 
 <style lang="scss">
 .tool-item {
+  box-sizing: border-box;
   cursor: grab;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+  user-select: none;
+}
+
+.tool-item__content {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  pointer-events: none;
+  width: 100%;
+}
+
+.tool-item__content .q-avatar {
+  flex: 0 0 auto;
+}
+
+.tool-item__text {
+  flex: 1 1 0;
+  max-width: calc(100% - 2.5rem);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .tool-title {
   line-height: 1rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .tool-description {
   line-height: 1rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .tool-item:active {
@@ -589,12 +892,106 @@ onBeforeUnmount(() => {
   opacity: 0.4;
 }
 
+.tool-item--dragging {
+  cursor: grabbing;
+  opacity: 0.4;
+}
+
+.tool-item-drag-ghost {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: .25rem;
+  display: flex;
+  font-size: .875rem;
+  left: 0;
+  line-height: 1rem;
+  max-width: 280px;
+  min-width: 220px;
+  overflow: hidden;
+  padding: .625rem .75rem;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  z-index: 10000;
+}
+
+.tool-item-drag-ghost--light {
+  background: transparent;
+  border-color: rgba(38, 50, 56, .1);
+}
+
+.tool-item-drag-ghost--dark {
+  background: transparent;
+  border-color: rgba(255, 255, 255, .1);
+}
+
+.tool-item-drag-ghost__content {
+  margin-bottom: 0 !important;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.tool-item-drag-ghost__fallback-avatar {
+  align-items: center;
+  background: rgba(120, 144, 156, .24);
+  border-radius: .25rem;
+  display: flex;
+  flex: 0 0 2rem;
+  height: 2rem;
+  justify-content: center;
+  margin-right: .5rem;
+  overflow: hidden;
+  width: 2rem;
+}
+
+.tool-item-drag-ghost__fallback-text {
+  min-width: 0;
+}
+
 .elements-drawer-panel {
+  max-width: 100%;
+  min-width: 0;
   padding-bottom: 4rem !important;
+}
+
+.elements-drawer-scroll {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  width: 100%;
 }
 
 .elements-drawer-search {
   max-width: 100%;
+}
+
+[data-drawer="left"],
+[data-drawer="left"] .q-drawer__content,
+.elements-drawer-scroll .q-tab-panels,
+.elements-drawer-scroll .q-panel,
+.elements-drawer-scroll .q-tab-panel {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.elements-drawer-type-tabs {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.elements-drawer-type-tabs .q-tab {
+  min-width: 0;
+  padding-left: .5rem;
+  padding-right: .5rem;
+}
+
+.elements-drawer-type-tabs .q-tab__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .elements-drawer-empty {
@@ -610,7 +1007,6 @@ onBeforeUnmount(() => {
 }
 
 .tree-node__icon {
-  color: var(--tree-icon-color);
   flex: 0 0 auto;
 }
 
@@ -624,47 +1020,15 @@ onBeforeUnmount(() => {
 }
 
 .tree-drawer-panel {
-  --tree-icon-bg: #263238;
-  --tree-icon-color: #b0bec5;
-  --tree-label-color: #eceff1;
-  --tree-caption-color: #9e9e9e;
-  --tree-selection-color: var(--overlay-accent-color, var(--q-primary));
   --tree-selection-color-rgba: var(--overlay-accent-color-rgba, rgba(41, 128, 185, .2));
-}
-
-body.body--light .tree-drawer-panel {
-  --tree-icon-bg: #eceff1;
-  --tree-icon-color: #455a64;
-  --tree-label-color: #263238;
-  --tree-caption-color: #607d8b;
 }
 
 .tree-drawer-panel .q-tree__node-header {
   border-radius: .25rem;
-  color: var(--tree-label-color);
-}
-
-.tree-drawer-panel .tree-node__icon {
-  background: var(--tree-icon-bg) !important;
-  color: var(--tree-icon-color) !important;
 }
 
 .tree-drawer-panel .q-tree__node-header.q-tree__node--selected,
 .tree-drawer-panel .q-tree__node--selected > .q-tree__node-header {
   background: var(--tree-selection-color-rgba);
-  color: var(--tree-selection-color);
-}
-
-.tree-drawer-panel .q-tree__node-header.q-tree__node--selected .tree-node__icon,
-.tree-drawer-panel .q-tree__node--selected > .q-tree__node-header .tree-node__icon {
-  background: var(--tree-selection-color-rgba) !important;
-  color: var(--tree-selection-color) !important;
-}
-
-.tree-drawer-panel .q-tree__node-header.q-tree__node--selected .tree-node__label,
-.tree-drawer-panel .q-tree__node-header.q-tree__node--selected .tree-node__caption,
-.tree-drawer-panel .q-tree__node--selected > .q-tree__node-header .tree-node__label,
-.tree-drawer-panel .q-tree__node--selected > .q-tree__node-header .tree-node__caption {
-  color: var(--tree-selection-color) !important;
 }
 </style>

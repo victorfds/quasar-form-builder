@@ -80,7 +80,7 @@ function handleGoForward() {
           <q-tabs
             :model-value="formStore.formSettings.previewMode" vertical dense shrink class="rounded-borders"
             :class="isDark ? 'bg-dark text-white' : 'bg-white text-blue-grey-10'" indicator-color="transparent"
-            active-bg-color="secondary" active-color="blue-grey-1" style="max-height: 4.5rem;"
+            active-bg-color="primary" active-color="blue-grey-1" style="max-height: 4.5rem;"
             @update:model-value="updatePreviewMode"
           >
             <q-tab name="editing">

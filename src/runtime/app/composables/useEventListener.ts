@@ -1,3 +1,5 @@
+import type { BuilderEventMap } from '#qfb/types'
+
 /**
  * A composable for adding and removing an event listener.
  *
@@ -22,9 +24,11 @@
  */
 type EventTargetRef = Ref<EventTarget | null> | EventTarget | null
 
+type KnownEventMap = WindowEventMap & DocumentEventMap & HTMLElementEventMap & GlobalEventHandlersEventMap & BuilderEventMap
+
 export function useEventListener<
-  E extends keyof GlobalEventHandlersEventMap,
-  Fn extends (e: GlobalEventHandlersEventMap[E]) => void,
+  E extends keyof KnownEventMap,
+  Fn extends (e: KnownEventMap[E]) => void,
 >(
   target: EventTargetRef,
   eventType: E,
@@ -33,7 +37,7 @@ export function useEventListener<
 ): () => void {
   const element = unref(target)
 
-  const eventHandler = (e: GlobalEventHandlersEventMap[E]) => {
+  const eventHandler = (e: KnownEventMap[E]) => {
     handler(e)
   }
 

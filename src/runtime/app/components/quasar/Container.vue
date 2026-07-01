@@ -6,7 +6,9 @@ const props = defineProps<{
   context: FormKitFrameworkContext & {
     children?: FormKitSchemaDefinition[]
     structureChildren?: FormKitSchemaDefinition[]
+    description?: string
     attrs: {
+      label?: string
       structureChildren?: FormKitSchemaDefinition[]
       children?: FormKitSchemaDefinition[]
       description?: string
@@ -25,6 +27,14 @@ const children = computed(() => firstFilledArray<FormKitSchemaDefinition>(
   props.context.attrs.children,
 ))
 const listKey = computed(() => `children:${props.context.node.name}` as const)
+
+function getContextText(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
+const structureLabel = computed(() => getContextText(props.context.label) || getContextText(props.context.attrs.label))
+const structureDescription = computed(() => getContextText(props.context.attrs.description) || getContextText(props.context.description))
+const hasStructureHeader = computed(() => Boolean(structureLabel.value || structureDescription.value))
 </script>
 
 <template>
@@ -36,16 +46,16 @@ const listKey = computed(() => `children:${props.context.node.name}` as const)
       'structure-container--dark': dark.isActive,
     }"
   >
-    <q-card-section v-if="context.label || context.attrs.description" class="q-pb-none">
-      <div v-if="context.label" class="text-subtitle2">
-        {{ context.label }}
+    <q-card-section v-if="hasStructureHeader" class="q-pb-none">
+      <div v-if="structureLabel" class="text-subtitle2">
+        {{ structureLabel }}
       </div>
-      <div v-if="context.attrs.description" class="text-caption text-grey-7">
-        {{ context.attrs.description }}
+      <div v-if="structureDescription" class="text-caption text-grey-7">
+        {{ structureDescription }}
       </div>
     </q-card-section>
     <q-card-section>
-      <BuilderStructureCanvas :fields="children" :list-key="listKey" empty-text="Container vazio" />
+      <BuilderStructureCanvas :fields="children" :list-key="listKey" />
     </q-card-section>
   </q-card>
 </template>

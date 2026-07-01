@@ -61,7 +61,7 @@ const quasarInputs = {
   'q-tabs': quasarInput(QuasarTabs, ['columns', 'tabs'], 'group'),
   'q-grid': quasarInput(QuasarGrid, ['columns', 'columnsCount', 'rowsCount', 'structureChildren', 'cells'], 'group'),
   'q-table-structure': quasarInput(QuasarTableStructure, ['columns', 'rows', 'columnsConfig', 'cells'], 'group'),
-  'q-list-structure': quasarInput(QuasarListStructure, ['columns', 'structureChildren', 'nested'], 'list'),
+  'q-list-structure': quasarInput(QuasarListStructure, ['columns', 'structureChildren', 'nested'], 'group'),
 }
 
 function quasarPlugin() {}

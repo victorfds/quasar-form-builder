@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BuilderDragPlacement } from '#qfb/types'
 import type { FormKitSchemaDefinition } from '@formkit/core'
+import { builderDragMime, hasRootOnlyBuilderDrag, markBuilderDragType } from '#qfb/utils/builderDrag'
 
 interface OverlayState {
   // active and hover are based on field names for simplicity
@@ -20,6 +21,7 @@ const props = defineProps<{
   index: number
   state: OverlayState
   previewModeEditing: boolean
+  selectionOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -36,32 +38,50 @@ const emit = defineEmits<{
   (e: 'resizeStart', payload: { ev: MouseEvent, field: any }): void
 }>()
 
-const isLatest = computed(() => !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && props.state.activeNames.at(-1) === (props.field?.name || ''))
+const isLatest = computed(() => !props.selectionOnly && !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && props.state.activeNames.at(-1) === (props.field?.name || ''))
 const isActive = computed(() => !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && props.state.activeNames?.includes(props.field?.name || ''))
 const isDragging = computed(() => (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || ''))
 const isHover = computed(() => !isActive.value && props.state.hoverName === (props.field?.name || ''))
 const isTabsHost = computed(() => props.field?.$formkit === 'q-tabs')
 const isRootOnlyHost = computed(() => ['q-tabs', 'q-stepper'].includes(String(props.field?.$formkit || '')))
 const isCellField = computed(() => props.state.listKey?.startsWith('cell:') === true)
-const showControls = computed(() => !isTabsHost.value && props.previewModeEditing && (!props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index) && (isActive.value || isHover.value))
+const isRootList = computed(() => props.state.listKey === 'root')
+const showControls = computed(() => !props.selectionOnly && !isTabsHost.value && props.previewModeEditing && (!props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index) && (isActive.value || isHover.value))
+const formStore = useFormStore()
+const fieldUi = useFieldUi()
+const columnSpan = computed(() => fieldUi.getColumnSpan(props.field, formStore.formSettings.columns))
+const showColumnSpan = computed(() => !props.selectionOnly && !isTabsHost.value && props.previewModeEditing && (isActive.value || isHover.value))
 const showCopyAction = computed(() => showControls.value && !isCellField.value)
 const ignoreDropAreas = computed(() =>
-  (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || '')
+  props.selectionOnly
+  || (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || '')
   || (props.state.isDraggingRootOnlyStructure && props.state.listKey !== 'root'),
 )
 const hideDropAreas = computed(() => ignoreDropAreas.value || !props.state.isUserDraggingOver)
 const isStructureHost = computed(() => ['q-container', 'q-tabs', 'q-grid', 'q-table-structure', 'q-list-structure'].includes(String(props.field?.$formkit || '')))
-const showRootOnlyTop = computed(() => props.state.isDraggingRootOnlyStructure === true)
+const showRootOnlyTop = computed(() =>
+  props.state.isDraggingRootOnlyStructure === true
+  && props.state.dragInIndicator?.listKey === 'root'
+  && props.state.dragInIndicator?.placement === 'top'
+  && props.state.dragInIndicator?.index === 0,
+)
+const blocksRootOnlyHostDropAreas = computed(() =>
+  isRootList.value
+  && isRootOnlyHost.value
+  && !showRootOnlyTop.value,
+)
 const showTopDropArea = computed(() => {
   if (isCellField.value) return false
   if (showRootOnlyTop.value) {
     return props.index === 0 && props.state.listKey === 'root' && props.state.isUserDraggingOver
   }
+  if (blocksRootOnlyHostDropAreas.value) return false
   return !hideDropAreas.value
 })
 const showBottomDropArea = computed(() => {
   if (isCellField.value) return false
   if (showRootOnlyTop.value) return false
+  if (blocksRootOnlyHostDropAreas.value) return false
   return !hideDropAreas.value
 })
 const canRouteSideDrop = computed(() => !showRootOnlyTop.value && !ignoreDropAreas.value && !isRootOnlyHost.value && !isCellField.value)
@@ -85,21 +105,66 @@ const showCellReplacementIndicator = computed(() =>
 const sideDropEdgeMaxPx = 24
 const sideDropEdgeRatio = 0.16
 
+function isRootOnlyDragEvent(ev: DragEvent) {
+  if (props.state.isDraggingRootOnlyStructure) return true
+  if (hasRootOnlyBuilderDrag(ev.dataTransfer)) return true
+
+  const draggedField = props.state.elementBeingDragged?.field as any
+  if (draggedField && ['q-stepper', 'q-tabs'].includes(String(draggedField.$formkit || ''))) return true
+
+  const toolData = ev.dataTransfer?.getData('text')
+  if (!toolData) return false
+
+  try {
+    const tool = JSON.parse(toolData)
+    return ['q-stepper', 'q-tabs'].includes(String(tool?.$formkit || ''))
+  }
+  catch {
+    return false
+  }
+}
+
 function onDragEnterTop(ev: DragEvent) {
+  if (isRootOnlyDragEvent(ev)) {
+    emit('dragover', ev)
+    return
+  }
+  if (blocksRootOnlyHostDropAreas.value) return
   emit('dragEnterTop', { name: props.field?.name, index: props.index, ev, placement: 'top' })
 }
 function onDragEnterBottom(ev: DragEvent) {
+  if (isRootOnlyDragEvent(ev)) {
+    emit('dragover', ev)
+    return
+  }
+  if (blocksRootOnlyHostDropAreas.value) return
   emit('dragEnterBottom', { name: props.field?.name, index: props.index + 1, ev, placement: 'bottom' })
 }
 function onDragEnterLeft(ev: DragEvent) {
+  if (isRootOnlyDragEvent(ev)) {
+    emit('dragover', ev)
+    return
+  }
   emit('dragEnterLeft', { name: props.field?.name, index: props.index, ev, placement: 'left' })
 }
 function onDragEnterRight(ev: DragEvent) {
+  if (isRootOnlyDragEvent(ev)) {
+    emit('dragover', ev)
+    return
+  }
   emit('dragEnterRight', { name: props.field?.name, index: props.index + 1, ev, placement: 'right' })
 }
 
 function onOverlayDragOver(ev: DragEvent) {
-  if (ignoreDropAreas.value) return
+  if (isRootOnlyDragEvent(ev)) {
+    emit('dragover', ev)
+    return
+  }
+
+  if (ignoreDropAreas.value) {
+    emit('dragover', ev)
+    return
+  }
 
   if (isCellField.value) {
     onDragEnterBottom(ev)
@@ -136,7 +201,12 @@ function onOverlayDragOver(ev: DragEvent) {
 }
 
 function onOverlayDragStart(ev: DragEvent) {
-  ev.dataTransfer?.setData('application/x-builder-field', props.field?.name || '')
+  if (props.selectionOnly) {
+    ev.preventDefault()
+    return
+  }
+  ev.dataTransfer?.setData(builderDragMime.fieldName, props.field?.name || '')
+  markBuilderDragType(ev.dataTransfer, props.field)
   emit('dragstart', { field: props.field, index: props.index, ev })
 }
 </script>
@@ -153,7 +223,7 @@ function onOverlayDragStart(ev: DragEvent) {
       '__structure-host': isStructureHost,
       '__tabs-host': isTabsHost,
       'hidden': !previewModeEditing,
-    }" draggable="true" @click.stop="emit('click', index)"
+    }" :draggable="!selectionOnly" @click.stop="emit('click', index)"
     @dragstart="onOverlayDragStart" @dragend="emit('dragend', index)"
     @dragenter.prevent.stop="onOverlayDragOver"
     @dragover.prevent.stop="onOverlayDragOver"
@@ -162,16 +232,6 @@ function onOverlayDragStart(ev: DragEvent) {
   <div v-if="showCellReplacementIndicator" class="preview-cell-replace-indicator" aria-hidden="true">
     <q-icon name="sync_alt" size="md" />
   </div>
-
-  <button
-    v-if="isStructureHost && !isTabsHost && previewModeEditing"
-    type="button"
-    class="preview-structure-select-handle"
-    aria-label="Selecionar estrutura"
-    @click.stop="emit('click', index)"
-  >
-    <q-icon name="select_all" size="xs" />
-  </button>
 
   <!-- Top drop area -->
   <div
@@ -183,7 +243,7 @@ function onOverlayDragStart(ev: DragEvent) {
       :class="{ hidden: !showTopIndicator || showCellReplacementIndicator }"
     >
       <div class="preview-element-label">
-        Drag it here
+        Arraste aqui
       </div>
     </div>
   </div>
@@ -197,7 +257,7 @@ function onOverlayDragStart(ev: DragEvent) {
       :class="{ hidden: !showBottomIndicator || showCellReplacementIndicator }"
     >
       <div class="preview-element-label">
-        Drag it here
+        Arraste aqui
       </div>
     </div>
   </div>
@@ -212,7 +272,7 @@ function onOverlayDragStart(ev: DragEvent) {
       :class="{ hidden: !showLeftIndicator || showCellReplacementIndicator }"
     >
       <div class="preview-element-label preview-element-label--side">
-        Drag it here
+        Arraste aqui
       </div>
     </div>
   </div>
@@ -227,7 +287,7 @@ function onOverlayDragStart(ev: DragEvent) {
       :class="{ hidden: !showRightIndicator || showCellReplacementIndicator }"
     >
       <div class="preview-element-label preview-element-label--side">
-        Drag it here
+        Arraste aqui
       </div>
     </div>
   </div>
@@ -244,7 +304,7 @@ function onOverlayDragStart(ev: DragEvent) {
       class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
       self="bottom middle" :offset="[4, 4]"
     >
-      Clone
+      Clonar
     </q-tooltip>
   </q-icon>
   <q-icon
@@ -255,16 +315,13 @@ function onOverlayDragStart(ev: DragEvent) {
       class="bg-dark" transition-show="fade" transition-hide="fade" anchor="top middle"
       self="bottom middle" :offset="[4, 4]"
     >
-      Remove
+      Excluir
     </q-tooltip>
   </q-icon>
   <div v-if="showControls" class="preview-element-resizer-icon" />
   <div v-if="showControls" class="preview-element-resizer" @mousedown.stop="(ev: MouseEvent) => emit('resizeStart', { ev, field })" />
-  <div v-if="showControls && state.elementBeingDragged?.field?.name === field?.name" class="preview-element-columns-display">
-    <span class="text-caption text-weight-semibold q-pa-xs">{{
-      // @ts-expect-error store enriches columns
-      (field?.columns?.container || field?.columns?.default?.container || 12) || 12
-    }}</span>
+  <div v-if="showColumnSpan" class="preview-element-columns-display">
+    <span class="text-caption text-weight-semibold q-pa-xs">{{ columnSpan }}</span>
   </div>
 </template>
 
@@ -313,6 +370,14 @@ function onOverlayDragStart(ev: DragEvent) {
   &.__tabs-host {
     pointer-events: none;
   }
+}
+
+:global(body.qfb-builder-dragging) .overlay-preview-element.__structure-host:not(.__dragging):not(.__replace-target) {
+  pointer-events: none;
+}
+
+:global(body.qfb-builder-dragging .q-notification) {
+  pointer-events: none;
 }
 
 .preview-cell-replace-indicator {
@@ -376,8 +441,7 @@ function onOverlayDragStart(ev: DragEvent) {
   position: absolute;
   height: .1875rem;
   border-radius: 9999px;
-  background-color: #a82454;
-  box-shadow: 0 0 0 2px rgba(168, 36, 84, .14);
+  background-color: var(--overlay-accent-color, #2980b9);
   z-index: 6;
 
   &__bottom {
@@ -411,7 +475,7 @@ function onOverlayDragStart(ev: DragEvent) {
   }
 
   .preview-element-label {
-    background-color: #a82454;
+    background-color: var(--overlay-accent-color, #2980b9);
     border-radius: 9999px;
     color: white;
     font-size: .75rem;
@@ -443,31 +507,6 @@ function onOverlayDragStart(ev: DragEvent) {
   left: auto;
   right: 0;
   transform: translateY(-50%);
-}
-
-.preview-structure-select-handle {
-  align-items: center;
-  background-color: var(--overlay-accent-color, #2980b9);
-  border: 0;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  height: 1.375rem;
-  justify-content: center;
-  left: .25rem;
-  opacity: .72;
-  padding: 0;
-  position: absolute;
-  top: .25rem;
-  width: 1.375rem;
-  z-index: 7;
-
-  &:hover,
-  &:focus-visible {
-    opacity: 1;
-    outline: 1px solid white;
-    outline-offset: -2px;
-  }
 }
 
 .preview-form-name {
@@ -537,20 +576,24 @@ function onOverlayDragStart(ev: DragEvent) {
 }
 
 .preview-element-columns-display {
-  position: absolute;
+  align-items: center;
   background-color: white;
   border: 1px solid #546e7a;
   border-radius: .125rem;
   bottom: 0;
   color: #212121;
-  top: 50%;
+  display: flex;
   left: 0;
   font-size: .875rem;
-  pointer-events: none;
-  translate: -50% -50%;
   height: 1rem;
+  justify-content: center;
   line-height: 1;
+  min-width: 1.125rem;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
   width: auto;
-  z-index: 1;
+  z-index: 6;
 }
 </style>

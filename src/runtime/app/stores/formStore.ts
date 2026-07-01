@@ -1,6 +1,7 @@
-import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, ColumnsType, FormSettingsType, FormViewportType, StructureCell } from '#qfb/types'
+import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, BuilderSelectionChangeDetail, ColumnsType, FormSettingsType, FormViewportType, StructureCell } from '#qfb/types'
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import { getBrowserJsonItem, setBrowserStorageItem } from '#qfb/utils/browserStorage'
+import { dispatchBuilderEvent } from '#qfb/utils/builderEvents'
 import { getFormBuilderStorageConfig } from '#qfb/utils/storageConfig'
 
 export const useFormStore = defineStore('formStore', () => {
@@ -79,20 +80,12 @@ export const useFormStore = defineStore('formStore', () => {
     field: FormKitSchemaDefinition
   }
 
-  interface BuilderSelectionChangeDetail {
-    fieldName?: string | null
-    stepName?: string | null
-    tabsFieldName?: string | null
-    tabName?: string | null
-  }
-
   type FieldWithColumns = FormKitSchemaDefinition & {
     columns?: ColumnsType & Record<string, any>
   }
 
   function dispatchBuilderSelectionChange(detail: BuilderSelectionChangeDetail) {
-    if (!import.meta.client) return
-    window.dispatchEvent(new CustomEvent('builder:selection-change', { detail }))
+    dispatchBuilderEvent('builder:selection-change', detail)
   }
 
   function isStructureField(field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
@@ -765,6 +758,22 @@ export const useFormStore = defineStore('formStore', () => {
     return true
   }
 
+  function getRootOnlyStructureContentListKey(): BuilderFieldListKey | null {
+    const rootOnlyStructure = getRootOnlyStructure()
+    if (!rootOnlyStructure?.name) return null
+    return getDefaultStructureListKey(rootOnlyStructure.name)
+  }
+
+  function resolveRootInsertionListKey(
+    field: FormKitSchemaDefinition | FormKitSchemaNode,
+    targetListKey: BuilderFieldListKey,
+  ): BuilderFieldListKey {
+    if (targetListKey !== 'root') return targetListKey
+    if (!hasRootOnlyStructure.value) return targetListKey
+    if (isRootOnlyStructure(field)) return targetListKey
+    return getRootOnlyStructureContentListKey() || targetListKey
+  }
+
   const addField = (field: FormKitSchemaNode, pos?: number | null, listKey?: BuilderFieldListKey | null) => {
     if (!canPlaceRootOnlyStructure(field, pos, listKey)) return false
 
@@ -772,7 +781,7 @@ export const useFormStore = defineStore('formStore', () => {
       return replaceRootOnlyStructure(field)
     }
 
-    const targetListKey = listKey || getActiveListKey.value
+    const targetListKey = resolveRootInsertionListKey(field, listKey || getActiveListKey.value)
     if (!canPlaceFieldInList(field, targetListKey)) return false
 
     const fieldsList = resolveFieldList(targetListKey) || activeFields.value
@@ -856,8 +865,11 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   function moveFieldToList(fieldName: string, targetListKey?: BuilderFieldListKey | null, destinationIndex?: number | null) {
-    const destinationListKey = targetListKey || getActiveListKey.value
+    const requestedDestinationListKey = targetListKey || getActiveListKey.value
     const sourceLocation = getFieldLocationByName(fieldName)
+    const destinationListKey = sourceLocation
+      ? resolveRootInsertionListKey(sourceLocation.field, requestedDestinationListKey)
+      : requestedDestinationListKey
     const targetList = resolveFieldList(destinationListKey)
     if (!sourceLocation || !targetList) return
     if (!canMoveFieldToList(fieldName, destinationListKey)) return false
@@ -1436,9 +1448,7 @@ export const useFormStore = defineStore('formStore', () => {
     if (!['editing', 'previewing'].includes(mode)) return
     if (formSettings.value.previewMode === mode) return
     formSettings.value.previewMode = mode
-    if (import.meta.client) {
-      window.dispatchEvent(new CustomEvent('builder:preview-mode-change', { detail: { mode } }))
-    }
+    dispatchBuilderEvent('builder:preview-mode-change', { mode })
   }
 
   const setActiveStep = (stepName: string) => {
@@ -1455,9 +1465,7 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const requestStepLabelFocus = () => {
-    if (import.meta.client) {
-      window.dispatchEvent(new CustomEvent('builder:focus-step-label'))
-    }
+    dispatchBuilderEvent('builder:focus-step-label')
   }
 
   const setActiveTabConfig = (tabsFieldName: string | null, tabName: string | null = null) => {
@@ -1488,9 +1496,7 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   const requestTabLabelFocus = () => {
-    if (import.meta.client) {
-      window.dispatchEvent(new CustomEvent('builder:focus-tab-label'))
-    }
+    dispatchBuilderEvent('builder:focus-tab-label')
   }
 
   const generateTabName = (tabsField: TabsField) => {

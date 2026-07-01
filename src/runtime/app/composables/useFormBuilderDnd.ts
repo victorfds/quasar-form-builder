@@ -1,5 +1,6 @@
 import type { BuilderDragPlacement, BuilderFieldListKey } from '#qfb/types'
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import { builderDragMime, clearBuilderDragActive, getBuilderDragFormKitType, hasRootOnlyBuilderDrag, isRootOnlyBuilderType, markBuilderDragType } from '#qfb/utils/builderDrag'
 
 export function useFormBuilderDnd(formStore: any) {
   interface DragInIndicator { index?: number, name?: string, placement?: BuilderDragPlacement, listKey?: BuilderFieldListKey }
@@ -48,6 +49,7 @@ export function useFormBuilderDnd(formStore: any) {
   }
 
   function resetDragState() {
+    clearBuilderDragActive()
     originalFieldIndex.value = null
     originalStepName.value = null
     targetStepName.value = null
@@ -81,29 +83,61 @@ export function useFormBuilderDnd(formStore: any) {
     return Boolean(
       elementBeingDragged.value.field
       || originalFieldIndex.value !== null
+      || isUserDraggingOver.value
+      || dragInIndicator.value.placement
+      || targetListKey.value
       || eventTypes.includes('text')
-      || eventTypes.includes('application/x-builder-field'),
+      || eventTypes.includes(builderDragMime.fieldName)
+      || eventTypes.includes(builderDragMime.fieldType)
+      || eventTypes.includes(builderDragMime.rootOnly),
     )
   }
 
-  function isInsideBuilderSurface(ev: Event) {
+  const explicitDropTargetSelector = [
+    '.preview-element-area-top',
+    '.preview-element-area-bottom',
+    '.preview-element-area-left',
+    '.preview-element-area-right',
+    '.overlay-preview-element',
+    '.overlay-drop-here',
+    '.structure-tabs__tab',
+    '.q-stepper__tab',
+    '.stepper-header-overlay-wrapper',
+    '.steps-root-drop-guide',
+  ].join(',')
+  const structureDropSurfaceSelector = [
+    '[data-structure-list-key]',
+    '.form-canvas--cell-list',
+    '.structure-grid__cell',
+    '.structure-table__cell',
+  ].join(',')
+  const droppableSurfaceSelector = [
+    '.form-canvas',
+    '.steps-wrapper',
+    explicitDropTargetSelector,
+    structureDropSurfaceSelector,
+  ].join(',')
+
+  function getDragEventTargetElement(ev: Event) {
     const target = ev.target
-    if (!(target instanceof Node)) return false
-    const builderRoot = previewFormSectionRef.value
-    if (builderRoot?.contains(target)) return true
-    if (target instanceof HTMLElement && target.closest('[data-keep-active]')) return true
-    return false
+    if (target instanceof HTMLElement) return target
+    if (target instanceof SVGElement) return target.parentElement
+    return null
+  }
+
+  function isInsideDroppableSurface(ev: Event) {
+    return Boolean(getDragEventTargetElement(ev)?.closest(droppableSurfaceSelector))
   }
 
   function onGlobalDragover(ev: DragEvent) {
     if (!hasDragState(ev)) return
-    if (isInsideBuilderSurface(ev)) return
+    if (isInsideDroppableSurface(ev)) return
     clearDropTargetState()
   }
 
   function onGlobalDrop(ev: DragEvent) {
     if (!hasDragState(ev)) return
-    if (isInsideBuilderSurface(ev)) return
+    if (isInsideDroppableSurface(ev)) return
     resetDragState()
   }
 
@@ -115,8 +149,8 @@ export function useFormBuilderDnd(formStore: any) {
     if (ev.key === 'Escape') resetDragState()
   }
 
-  function getDropListKey(listKey?: BuilderFieldListKey | null) {
-    return targetListKey.value || listKey || formStore.getActiveListKey
+  function getDropListKey(ev?: DragEvent, listKey?: BuilderFieldListKey | null) {
+    return (ev ? getStructureCanvasListKey(ev) : null) || listKey || targetListKey.value || formStore.getActiveListKey
   }
 
   function getRootStructureLabel(tool?: FormKitSchemaNode | FormKitSchemaDefinition | null) {
@@ -125,6 +159,60 @@ export function useFormBuilderDnd(formStore: any) {
 
   function getRootFieldsList() {
     return formStore.resolveFieldList?.('root') || formStore.formFields || []
+  }
+
+  function getRootOnlyStructureChildListKey(): BuilderFieldListKey | null {
+    const rootOnlyStructure = formStore.getRootOnlyStructure?.()
+    if (!rootOnlyStructure?.name) return null
+    return formStore.getDefaultStructureListKey?.(rootOnlyStructure.name) || null
+  }
+
+  function resolveDropListKeyForField(dropListKey: BuilderFieldListKey, field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+    if (dropListKey !== 'root') return dropListKey
+    if (!formStore.hasRootOnlyStructure) return dropListKey
+    if (formStore.isRootOnlyStructure?.(field)) return dropListKey
+    return getRootOnlyStructureChildListKey() || dropListKey
+  }
+
+  function clearInsertionTarget() {
+    indexPointer.value = null
+    dragInIndicator.value = {}
+    targetListKey.value = originalListKey.value
+  }
+
+  function isExplicitDropTarget(ev: DragEvent) {
+    return Boolean(getDragEventTargetElement(ev)?.closest(explicitDropTargetSelector))
+  }
+
+  function getStructureCanvasListKey(ev: Event): BuilderFieldListKey | null {
+    const target = getDragEventTargetElement(ev)
+    const structureCanvas = target?.closest('[data-structure-list-key]')
+    const listKey = structureCanvas?.getAttribute('data-structure-list-key')
+    return listKey ? listKey as BuilderFieldListKey : null
+  }
+
+  function isEmptyStructureList(listKey: BuilderFieldListKey) {
+    const fieldsList = formStore.resolveFieldList(listKey) || []
+    return fieldsList.length === 0
+  }
+
+  function isInternalStructureDropSurface(ev: Event, listKey = getStructureCanvasListKey(ev)) {
+    if (!listKey) return false
+
+    const target = getDragEventTargetElement(ev)
+    if (!target?.closest(structureDropSurfaceSelector)) return false
+
+    if (listKey.startsWith('children:')) {
+      return isStructureBodyEvent(ev, listKey)
+    }
+
+    if (listKey.startsWith('cell:')) return true
+
+    if ((listKey.startsWith('tab:') || listKey.startsWith('step:')) && isEmptyStructureList(listKey)) {
+      return true
+    }
+
+    return false
   }
 
   function setRootOnlyDropTarget() {
@@ -137,6 +225,19 @@ export function useFormBuilderDnd(formStore: any) {
       placement: 'top',
       listKey: 'root',
     }
+  }
+
+  function activateRootOnlyDropTarget(ev?: DragEvent) {
+    if (ev && !isInsideDroppableSurface(ev)) {
+      clearInsertionTarget()
+      isUserDraggingOver.value = false
+      highlightDropArea.value = false
+      return false
+    }
+
+    setRootOnlyDropTarget()
+    isUserDraggingOver.value = true
+    return true
   }
 
   function placeRootOnlyStructure(tool: FormKitSchemaNode) {
@@ -184,30 +285,136 @@ export function useFormBuilderDnd(formStore: any) {
     return { placement, targetName }
   }
 
-  function moveInternalField(fieldName: string, dropListKey: BuilderFieldListKey) {
-    const sideDropTarget = getSideDropTarget()
-    if (sideDropTarget) {
-      return formStore.moveFieldBeside(fieldName, sideDropTarget.targetName, sideDropTarget.placement, dropListKey)
+  function hasActiveInsertionIndicator() {
+    return Boolean(dragInIndicator.value.placement)
+  }
+
+  function isEmptyListDropTarget(dropListKey: BuilderFieldListKey) {
+    if (targetListKey.value !== dropListKey) return false
+    const fieldsList = formStore.resolveFieldList(dropListKey) || []
+    return fieldsList.length === 0
+  }
+
+  function activateExplicitEmptyDropTarget(dropListKey: BuilderFieldListKey) {
+    const fieldsList = formStore.resolveFieldList(dropListKey) || []
+    if (fieldsList.length) return
+    indexPointer.value = null
+    targetListKey.value = dropListKey
+    dragInIndicator.value = {}
+  }
+
+  function isStructureBodyAppendTarget(dropListKey: BuilderFieldListKey) {
+    return dropListKey.startsWith('children:') && targetListKey.value === dropListKey
+  }
+
+  function getEventFieldName(ev: DragEvent) {
+    const target = ev.target
+    if (!(target instanceof HTMLElement)) return ''
+    return target.closest('[data-field-name]')?.getAttribute('data-field-name') || ''
+  }
+
+  function isDraggingOverOriginalField(ev: DragEvent) {
+    const draggedFieldName = (elementBeingDragged.value.field as any)?.name || ''
+    return Boolean(draggedFieldName && getEventFieldName(ev) === draggedFieldName)
+  }
+
+  function isStructureBodyEvent(ev: Event, dropListKey: BuilderFieldListKey) {
+    const target = getDragEventTargetElement(ev)
+    if (!target) return false
+
+    const structureCanvas = target.closest('[data-structure-list-key]')
+    if (structureCanvas?.getAttribute('data-structure-list-key') !== dropListKey) return false
+
+    const nestedField = target.closest('[data-field-name]')
+    return !nestedField || !structureCanvas.contains(nestedField)
+  }
+
+  function isAppendableStructureBodyEvent(ev: DragEvent, dropListKey: BuilderFieldListKey) {
+    return dropListKey.startsWith('children:') && isStructureBodyEvent(ev, dropListKey)
+  }
+
+  function activateStructureBodyAppendTarget(dropListKey: BuilderFieldListKey) {
+    indexPointer.value = null
+    targetListKey.value = dropListKey
+    dragInIndicator.value = {}
+  }
+
+  function hasOccupiedCellReplacementTarget(dropListKey: BuilderFieldListKey) {
+    return dropListKey.startsWith('cell:')
+      && dragInIndicator.value.listKey === dropListKey
+      && Boolean(dragInIndicator.value.name && dragInIndicator.value.placement)
+  }
+
+  function activateDropTargetFromEvent(ev: DragEvent, dropListKey: BuilderFieldListKey) {
+    if (hasOccupiedCellReplacementTarget(dropListKey)) return
+    if (!isInternalStructureDropSurface(ev, dropListKey)) return
+
+    activateStructureBodyAppendTarget(dropListKey)
+  }
+
+  function canUseCurrentDropTarget(dropListKey: BuilderFieldListKey, field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+    if (formStore.isRootOnlyStructure?.(field)) {
+      if (dropListKey !== 'root') return false
+      const rootFields = getRootFieldsList()
+      if (!rootFields.length) return isEmptyListDropTarget('root')
+      return dragInIndicator.value.listKey === 'root'
+        && dragInIndicator.value.placement === 'top'
+        && dragInIndicator.value.index === 0
     }
 
-    return formStore.moveFieldToList(fieldName, dropListKey, indexPointer.value)
+    if (hasActiveInsertionIndicator()) return true
+
+    const targetDropListKey = resolveDropListKeyForField(dropListKey, field)
+    return isEmptyListDropTarget(targetDropListKey) || isStructureBodyAppendTarget(targetDropListKey)
+  }
+
+  function moveInternalField(fieldName: string, dropListKey: BuilderFieldListKey) {
+    const field = formStore.getFieldByName?.(fieldName) || elementBeingDragged.value.field as FormKitSchemaDefinition | undefined
+    const targetDropListKey = resolveDropListKeyForField(dropListKey, field)
+    if (targetDropListKey !== dropListKey) {
+      clearInsertionTarget()
+    }
+
+    const sideDropTarget = getSideDropTarget()
+    if (sideDropTarget && targetDropListKey === dropListKey) {
+      return formStore.moveFieldBeside(fieldName, sideDropTarget.targetName, sideDropTarget.placement, targetDropListKey)
+    }
+
+    return formStore.moveFieldToList(fieldName, targetDropListKey, indexPointer.value)
   }
 
   function addCatalogField(tool: FormKitSchemaNode, dropListKey: BuilderFieldListKey) {
-    const sideDropTarget = getSideDropTarget()
-    if (sideDropTarget) {
-      return formStore.addFieldBeside(tool, sideDropTarget.targetName, sideDropTarget.placement, dropListKey)
+    const targetDropListKey = resolveDropListKeyForField(dropListKey, tool)
+    if (targetDropListKey !== dropListKey) {
+      clearInsertionTarget()
     }
 
-    return formStore.addField(tool, indexPointer.value, dropListKey)
+    const sideDropTarget = getSideDropTarget()
+    if (sideDropTarget && targetDropListKey === dropListKey) {
+      return formStore.addFieldBeside(tool, sideDropTarget.targetName, sideDropTarget.placement, targetDropListKey)
+    }
+
+    return formStore.addField(tool, indexPointer.value, targetDropListKey)
   }
 
   function onDrop(ev: DragEvent, listKey?: BuilderFieldListKey | null) {
     const toolData = ev.dataTransfer?.getData('text')
-    const internalFieldName = ev.dataTransfer?.getData('application/x-builder-field') || (elementBeingDragged.value.field as any)?.name
-    const dropListKey = getDropListKey(listKey)
+    const internalFieldName = ev.dataTransfer?.getData(builderDragMime.fieldName) || (elementBeingDragged.value.field as any)?.name
+    const dropListKey = getDropListKey(ev, listKey)
 
     if (!toolData && internalFieldName && dropListKey) {
+      const internalField = formStore.getFieldByName?.(internalFieldName) || elementBeingDragged.value.field as FormKitSchemaDefinition | undefined
+      if (!formStore.isRootOnlyStructure?.(internalField)) {
+        if (listKey) activateExplicitEmptyDropTarget(dropListKey)
+        activateDropTargetFromEvent(ev, dropListKey)
+      }
+      if (isAppendableStructureBodyEvent(ev, dropListKey)) {
+        activateStructureBodyAppendTarget(dropListKey)
+      }
+      if (!canUseCurrentDropTarget(dropListKey, internalField)) {
+        resetDragState()
+        return
+      }
       const moved = moveInternalField(internalFieldName, dropListKey)
       if (moved !== false) {
         clearFieldSelection()
@@ -220,10 +427,16 @@ export function useFormBuilderDnd(formStore: any) {
       try {
         const tool: FormKitSchemaNode = JSON.parse(toolData)
         if (formStore.isRootOnlyStructure?.(tool)) {
-          setRootOnlyDropTarget()
+          if (!canUseCurrentDropTarget('root', tool)) return
           placeRootOnlyStructure(tool)
           return
         }
+        if (listKey) activateExplicitEmptyDropTarget(dropListKey)
+        activateDropTargetFromEvent(ev, dropListKey)
+        if (isAppendableStructureBodyEvent(ev, dropListKey)) {
+          activateStructureBodyAppendTarget(dropListKey)
+        }
+        if (!canUseCurrentDropTarget(dropListKey, tool)) return
         addCatalogField(tool, dropListKey)
       }
       catch {
@@ -236,7 +449,8 @@ export function useFormBuilderDnd(formStore: any) {
   }
 
   function onDragStartField(field: any, index: number, ev?: DragEvent, listKey?: BuilderFieldListKey | null) {
-    ev?.dataTransfer?.setData('application/x-builder-field', field?.name || '')
+    ev?.dataTransfer?.setData(builderDragMime.fieldName, field?.name || '')
+    markBuilderDragType(ev?.dataTransfer, field)
     originalFieldIndex.value = index
     originalStepName.value = formStore.hasStepper ? formStore.activeStepName : null
     targetStepName.value = originalStepName.value
@@ -248,6 +462,20 @@ export function useFormBuilderDnd(formStore: any) {
   }
 
   function updateDraggingFlagsFromEvent(ev: DragEvent) {
+    if (hasRootOnlyBuilderDrag(ev.dataTransfer)) {
+      const markedType = getBuilderDragFormKitType(ev.dataTransfer)
+      isDraggingStepper.value = markedType === 'q-stepper'
+      isDraggingRootOnlyStructure.value = true
+      return
+    }
+
+    const markedType = getBuilderDragFormKitType(ev.dataTransfer)
+    if (markedType) {
+      isDraggingStepper.value = markedType === 'q-stepper'
+      isDraggingRootOnlyStructure.value = isRootOnlyBuilderType(markedType)
+      return
+    }
+
     const toolData = ev.dataTransfer?.getData('text')
     if (!toolData) {
       const draggedField = elementBeingDragged.value.field as any
@@ -269,6 +497,15 @@ export function useFormBuilderDnd(formStore: any) {
   function handleDragover(ev: DragEvent) {
     isUserDraggingOver.value = true
     updateDraggingFlagsFromEvent(ev)
+    if (isDraggingRootOnlyStructure.value) {
+      activateRootOnlyDropTarget(ev)
+      return
+    }
+    if (!isExplicitDropTarget(ev)) {
+      if (!isInternalStructureDropSurface(ev)) {
+        clearInsertionTarget()
+      }
+    }
   }
 
   function onDragEnterInDropArea(e: DragEvent, fieldName: string | undefined, index: number, placement: BuilderDragPlacement = 'top', listKey?: BuilderFieldListKey | null) {
@@ -278,7 +515,7 @@ export function useFormBuilderDnd(formStore: any) {
     const fieldsList = formStore.resolveFieldList(dropListKey) || []
 
     if (isDraggingRootOnlyStructure.value) {
-      setRootOnlyDropTarget()
+      activateRootOnlyDropTarget(e)
       return
     }
 
@@ -323,18 +560,27 @@ export function useFormBuilderDnd(formStore: any) {
   }
 
   function onDragOverDropArea(_e: DragEvent, listKey?: BuilderFieldListKey | null) {
+    updateDraggingFlagsFromEvent(_e)
     if (isDraggingRootOnlyStructure.value) {
-      setRootOnlyDropTarget()
+      activateRootOnlyDropTarget(_e)
+      return
+    }
+
+    if (isDraggingOverOriginalField(_e)) {
+      clearInsertionTarget()
+      return
+    }
+    const dropListKey = listKey || targetListKey.value || formStore.getActiveListKey
+    if (isAppendableStructureBodyEvent(_e, dropListKey)) {
+      activateStructureBodyAppendTarget(dropListKey)
+      return
+    }
+    if (!isExplicitDropTarget(_e) && !isInternalStructureDropSurface(_e, dropListKey)) {
+      clearInsertionTarget()
       return
     }
     if (isInsidePlacement(dragInIndicator.value.placement)) return
-    targetListKey.value = listKey || targetListKey.value || formStore.getActiveListKey
-    if (originalFieldIndex.value === null && !elementBeingDragged.value.field && elementBeingDragged.value.index === undefined) {
-      const fieldsList = formStore.resolveFieldList(targetListKey.value) || formStore.activeFields
-      elementBeingDragged.value.index = fieldsList.length
-      // keep last element name for UI purposes
-      elementBeingDragged.value.field = fieldsList.at(-1)?.name as unknown as FormKitSchemaDefinition
-    }
+    targetListKey.value = dropListKey
   }
 
   function onDragEnd(index: number) {
@@ -346,12 +592,17 @@ export function useFormBuilderDnd(formStore: any) {
     const draggedField = elementBeingDragged.value.field || formStore.activeFields[index]
     const fieldName = (draggedField as any)?.name
     const dropListKey = targetListKey.value || originalListKey.value || formStore.getActiveListKey
+    const hasValidDropTarget = hasActiveInsertionIndicator()
+      || isEmptyListDropTarget(dropListKey)
+      || isStructureBodyAppendTarget(dropListKey)
+
+    if (!hasValidDropTarget) {
+      resetDragState()
+      return
+    }
 
     if (fieldName && dropListKey && (originalListKey.value !== dropListKey || indexPointer.value !== null)) {
-      const sideDropTarget = getSideDropTarget()
-      const moved = sideDropTarget
-        ? formStore.moveFieldBeside(fieldName, sideDropTarget.targetName, sideDropTarget.placement, dropListKey)
-        : formStore.moveFieldToList(fieldName, dropListKey, indexPointer.value)
+      const moved = moveInternalField(fieldName, dropListKey)
       if (moved !== false) {
         clearFieldSelection()
       }
@@ -381,7 +632,7 @@ export function useFormBuilderDnd(formStore: any) {
 
   function onDragEnterStepHeader(stepName: string) {
     if (isDraggingRootOnlyStructure.value) {
-      setRootOnlyDropTarget()
+      activateRootOnlyDropTarget()
       isUserDraggingOver.value = true
       return
     }
@@ -412,8 +663,7 @@ export function useFormBuilderDnd(formStore: any) {
 
   function onDragEnterContainer(listKey: BuilderFieldListKey) {
     if (isDraggingRootOnlyStructure.value) {
-      setRootOnlyDropTarget()
-      isUserDraggingOver.value = true
+      activateRootOnlyDropTarget()
       return
     }
     targetListKey.value = listKey

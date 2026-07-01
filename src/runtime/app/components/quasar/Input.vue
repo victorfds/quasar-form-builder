@@ -29,6 +29,11 @@ const inputPropNames = [
   'disable',
   'disabled',
 ]
+const hiddenBlockedAttrNames = new Set([
+  ...inputPropNames,
+  'description',
+  'inputType',
+])
 
 const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(props.context?.node)
 const errorActive = computed(() => hasError.value || (props.context?.state?.submitted && props.context?.state?.valid === false) || (props.context?.state?.touched && props.context?.state?.valid === false))
@@ -48,20 +53,32 @@ const inputAttrs = computed(() => {
 
   return getQuasarFieldDesignAttrs(attrs)
 })
+const hiddenInputAttrs = computed(() => {
+  const {
+    columns: _columns,
+    description: _description,
+    inputType: _inputType,
+    ...attrs
+  } = props.context.attrs || {}
+  const nativeAttrs = Object.fromEntries(
+    Object.entries(attrs).filter(([name]) => !hiddenBlockedAttrNames.has(name)),
+  )
+
+  return cleanUndefinedAttrs({
+    ...nativeAttrs,
+    disabled: mergedAttrs.value.disable || mergedAttrs.value.disabled ? true : undefined,
+    readonly: mergedAttrs.value.readonly ? true : undefined,
+  })
+})
 </script>
 
 <template>
   <div v-if="isHiddenInput && isEditing" class="hidden-input-marker">
-    <div class="hidden-input-marker__label">
-      {{ context.name || context.label || 'hidden' }}
-    </div>
-    <div class="hidden-input-marker__value">
-      (oculto)
-    </div>
+    (oculto)
   </div>
   <input
     v-else-if="isHiddenInput"
-    v-bind="inputAttrs"
+    v-bind="hiddenInputAttrs"
     type="hidden"
     :name="context.name"
     :value="context.value == null ? '' : String(context.value)"
@@ -77,23 +94,13 @@ const inputAttrs = computed(() => {
 <style scoped>
 .hidden-input-marker {
   background: transparent;
-  border: 1px solid transparent;
-  color: inherit;
-  min-height: 2rem;
-  padding: .25rem 0;
-  width: 100%;
-}
-
-.hidden-input-marker__label {
-  color: inherit;
-  font-size: .875rem;
-  line-height: 1.25rem;
-  opacity: .74;
-}
-
-.hidden-input-marker__value {
+  border: 0;
+  color: var(--overlay-accent-color, #2980b9);
   font-style: italic;
   line-height: 1.25rem;
-  opacity: .62;
+  min-height: 1.25rem;
+  opacity: .82;
+  padding: 0;
+  width: 100%;
 }
 </style>

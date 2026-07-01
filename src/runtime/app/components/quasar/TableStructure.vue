@@ -10,10 +10,12 @@ interface MatrixOption {
 
 const props = defineProps<{
   context: FormKitFrameworkContext & {
+    description?: string
     rows?: MatrixOption[]
     columnsConfig?: MatrixOption[]
     cells?: StructureCell[]
     attrs: {
+      label?: string
       rows?: MatrixOption[]
       columnsConfig?: MatrixOption[]
       cells?: StructureCell[]
@@ -48,48 +50,69 @@ function getCell(row: string, column: string) {
 function getCellListKey(row: string, column: string): BuilderFieldListKey {
   return `cell:${props.context.node.name}:${getCellName(row, column)}`
 }
+
+function getContextText(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
+const structureLabel = computed(() => getContextText(props.context.label) || getContextText(props.context.attrs.label))
+const structureDescription = computed(() => getContextText(props.context.attrs.description) || getContextText(props.context.description))
+const hasStructureHeader = computed(() => Boolean(structureLabel.value || structureDescription.value))
 </script>
 
 <template>
-  <q-markup-table
-    dense
-    flat
-    class="structure-table full-width"
-    :class="{
-      'structure-table--editing': isEditing,
-      'structure-table--dark': dark.isActive,
-    }"
-  >
-    <thead>
-      <tr>
-        <th />
-        <th v-for="column in columns" :key="column.value" class="text-left">
-          {{ column.label }}
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="row in rows" :key="row.value">
-        <th class="text-left">
-          {{ row.label }}
-        </th>
-        <td v-for="column in columns" :key="column.value" class="structure-table__cell">
-          <BuilderStructureCanvas
-            :fields="getCell(row.value, column.value)?.children || []"
-            :list-key="getCellListKey(row.value, column.value)"
-            empty-text="Solte aqui"
-          />
-        </td>
-      </tr>
-    </tbody>
-  </q-markup-table>
+  <div class="structure-table-wrapper">
+    <div v-if="hasStructureHeader" class="structure-header q-mb-sm">
+      <div v-if="structureLabel" class="text-subtitle2">
+        {{ structureLabel }}
+      </div>
+      <div v-if="structureDescription" class="text-caption text-grey-7">
+        {{ structureDescription }}
+      </div>
+    </div>
+    <q-markup-table
+      dense
+      flat
+      class="structure-table full-width"
+      :class="{
+        'structure-table--editing': isEditing,
+        'structure-table--dark': dark.isActive,
+      }"
+    >
+      <thead>
+        <tr>
+          <th />
+          <th v-for="column in columns" :key="column.value" class="text-left">
+            {{ column.label }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="row in rows" :key="row.value">
+          <th class="text-left">
+            {{ row.label }}
+          </th>
+          <td v-for="column in columns" :key="column.value" class="structure-table__cell">
+            <BuilderStructureCanvas
+              :fields="getCell(row.value, column.value)?.children || []"
+              :list-key="getCellListKey(row.value, column.value)"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </q-markup-table>
+  </div>
 </template>
 
 <style scoped>
+.structure-table-wrapper {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .structure-table {
   background: transparent;
   border: 0;
-  box-shadow: none;
   table-layout: fixed;
 }
 

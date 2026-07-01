@@ -208,6 +208,18 @@ function normalizeLiteral(raw: string) {
   return unquoted
 }
 
+function normalizeConditionValue(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  return normalizeLiteral(value)
+}
+
+function conditionValueEquals(value: unknown, expected: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(item => conditionValueEquals(item, expected))
+  }
+  return normalizeConditionValue(value) === expected
+}
+
 function isEmptyConditionValue(value: any, source: Record<string, any>) {
   if (typeof source.empty === 'function') return source.empty(value)
   if (Array.isArray(value)) return value.length === 0
@@ -288,12 +300,13 @@ function getConditionValue(source: Record<string, any>, fieldName: string) {
 
 function evaluateSingleLogicCondition(condition: LogicField, source: Record<string, any>) {
   const value = getConditionValue(source, condition.name)
+  const normalizedValue = normalizeConditionValue(value)
   const operator = condition.operator
 
   if (operator === 'empty') return isEmptyConditionValue(value, source)
   if (operator === 'notEmpty') return !isEmptyConditionValue(value, source)
-  if (operator === 'isTrue') return value === true
-  if (operator === 'isFalse') return value === false
+  if (operator === 'isTrue') return normalizedValue === true
+  if (operator === 'isFalse') return normalizedValue === false
 
   if (operator === 'contains') {
     const containsFn = typeof source.contains === 'function' ? source.contains : contains
@@ -307,13 +320,13 @@ function evaluateSingleLogicCondition(condition: LogicField, source: Record<stri
 
   const normalizeValues = (list: string[]) => list.map(item => normalizeLiteral(item))
   if (operator === 'equals') {
-    if (condition.values?.length) return normalizeValues(condition.values).includes(value)
-    return value === normalizeLiteral(condition.value)
+    if (condition.values?.length) return normalizeValues(condition.values).some(target => conditionValueEquals(value, target))
+    return conditionValueEquals(value, normalizeLiteral(condition.value))
   }
 
   if (operator === 'notEquals') {
-    if (condition.values?.length) return normalizeValues(condition.values).every(target => value !== target)
-    return value !== normalizeLiteral(condition.value)
+    if (condition.values?.length) return normalizeValues(condition.values).every(target => !conditionValueEquals(value, target))
+    return !conditionValueEquals(value, normalizeLiteral(condition.value))
   }
 
   const left = Number(value)

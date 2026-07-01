@@ -6,18 +6,24 @@ type ContextWithAttrs = FormKitFrameworkContext & {
   [key: string]: any
 }
 
+export function cleanUndefinedAttrs(attrs: FieldDesignAttrs = {}) {
+  return Object.fromEntries(
+    Object.entries(attrs).filter(([, value]) => value !== undefined),
+  )
+}
+
 export function getFormKitContextAttrs(context: ContextWithAttrs, propNames: string[] = []) {
   const propsFromContext = propNames.reduce<FieldDesignAttrs>((acc, propName) => {
-    if (Object.prototype.hasOwnProperty.call(context, propName)) {
+    if (Object.prototype.hasOwnProperty.call(context, propName) && context[propName] !== undefined) {
       acc[propName] = context[propName]
     }
     return acc
   }, {})
 
-  return {
+  return cleanUndefinedAttrs({
     ...propsFromContext,
     ...(context.attrs || {}),
-  }
+  })
 }
 
 export function getQuasarFieldDesignAttrs(attrs: FieldDesignAttrs = {}) {
@@ -36,9 +42,9 @@ export function getQuasarFieldDesignAttrs(attrs: FieldDesignAttrs = {}) {
     disable: Boolean(disable ?? disabled),
   }
 
-  if (outlined) return { ...stateAttrs, outlined: true }
-  if (standout) return { ...stateAttrs, standout: true }
-  if (borderless) return { ...stateAttrs, borderless: true }
+  if (outlined) return cleanUndefinedAttrs({ ...stateAttrs, outlined: true })
+  if (standout) return cleanUndefinedAttrs({ ...stateAttrs, standout: true })
+  if (borderless) return cleanUndefinedAttrs({ ...stateAttrs, borderless: true })
 
-  return { ...stateAttrs, filled: true }
+  return cleanUndefinedAttrs({ ...stateAttrs, filled: true })
 }

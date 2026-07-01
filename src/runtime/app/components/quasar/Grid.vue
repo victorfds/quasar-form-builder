@@ -13,9 +13,11 @@ const props = defineProps<{
     children?: FormKitSchemaDefinition[]
     structureChildren?: FormKitSchemaDefinition[]
     columnsCount?: number
+    description?: string
     rowsCount?: number
     cells?: StructureCell[]
     attrs: {
+      label?: string
       structureChildren?: FormKitSchemaDefinition[]
       children?: FormKitSchemaDefinition[]
       columnsCount?: number
@@ -77,41 +79,63 @@ const gridCells = computed(() => {
 function getCellListKey(cellName: string): BuilderFieldListKey {
   return `cell:${props.context.node.name}:${cellName}`
 }
+
+function getContextText(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
+const structureLabel = computed(() => getContextText(props.context.label) || getContextText(props.context.attrs.label))
+const structureDescription = computed(() => getContextText(props.context.attrs.description) || getContextText(props.context.description))
+const hasStructureHeader = computed(() => Boolean(structureLabel.value || structureDescription.value))
 </script>
 
 <template>
-  <div
-    class="structure-grid"
-    :class="{
-      'structure-grid--editing': isEditing,
-      'structure-grid--dark': dark.isActive,
-    }"
-    :style="gridStyle"
-  >
+  <div class="structure-grid-wrapper">
+    <div v-if="hasStructureHeader" class="structure-header q-mb-sm">
+      <div v-if="structureLabel" class="text-subtitle2">
+        {{ structureLabel }}
+      </div>
+      <div v-if="structureDescription" class="text-caption text-grey-7">
+        {{ structureDescription }}
+      </div>
+    </div>
     <div
-      v-for="cell in gridCells"
-      :key="cell.name"
-      class="structure-grid__cell"
+      class="structure-grid"
       :class="{
-        'structure-grid__cell--last-row': cell.rowIndex === rowsCount - 1,
-        'structure-grid__cell--last-column': cell.columnIndex === columnsCount - 1,
+        'structure-grid--editing': isEditing,
+        'structure-grid--dark': dark.isActive,
       }"
+      :style="gridStyle"
     >
-      <BuilderStructureCanvas
-        :fields="cell.children"
-        :list-key="getCellListKey(cell.name)"
-        :empty-text="cell.label"
-      />
+      <div
+        v-for="cell in gridCells"
+        :key="cell.name"
+        class="structure-grid__cell"
+        :class="{
+          'structure-grid__cell--last-row': cell.rowIndex === rowsCount - 1,
+          'structure-grid__cell--last-column': cell.columnIndex === columnsCount - 1,
+        }"
+      >
+        <BuilderStructureCanvas
+          :fields="cell.children"
+          :list-key="getCellListKey(cell.name)"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.structure-grid-wrapper {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .structure-grid {
   border: 0;
   box-sizing: border-box;
   display: grid;
-  gap: 0;
+  gap: .75rem;
   overflow: visible;
   width: 100%;
 }
@@ -119,7 +143,6 @@ function getCellListKey(cellName: string): BuilderFieldListKey {
 .structure-grid--editing {
   background: rgba(225, 232, 238, .82);
   border-radius: 6px;
-  gap: .75rem;
   padding: .75rem;
 }
 
