@@ -6,6 +6,11 @@ export type {
   FormBuilderLabelsConfig,
   FormBuilderLayoutConfig,
   FormBuilderShellUiConfig,
+  FormViewerFieldChangePayload,
+  FormViewerReadyPayload,
+  FormViewerSubmitInvalidPayload,
+  FormViewerValues,
+  FormViewerValuesUpdatePayload,
 } from './runtime/app/types'
 
 export interface ModuleOptions {

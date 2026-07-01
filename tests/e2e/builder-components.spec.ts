@@ -288,6 +288,38 @@ test('public drawer and builder components compose in a custom layout', async ({
   await expect(page.getByTestId('preview-mode')).toHaveText('previewing')
 })
 
+test('form viewer emits value lifecycle and validation events for cache integrations', async ({ page }) => {
+  await page.goto('/viewer-events')
+
+  await expect(page.getByTestId('ready-count')).toHaveText('1')
+  await expect(page.getByTestId('ready-fields-count')).toHaveText('2')
+
+  await page.getByRole('button', { name: 'Finalizar' }).click()
+  await expect(page.getByTestId('invalid-count')).toHaveText('1')
+  await expect(page.getByTestId('submit-count')).toHaveText('0')
+
+  const updateCountBefore = Number(await page.getByTestId('update-count').textContent())
+  const fieldChangeCountBefore = Number(await page.getByTestId('field-change-count').textContent())
+
+  await page.getByLabel('Nome').fill('Maria')
+
+  await expect.poll(async () => Number(await page.getByTestId('update-count').textContent())).toBeGreaterThan(updateCountBefore)
+  await expect.poll(async () => Number(await page.getByTestId('field-change-count').textContent())).toBeGreaterThan(fieldChangeCountBefore)
+  await expect(page.getByTestId('latest-changed-fields')).toContainText('name')
+  await expect(page.getByTestId('latest-field-change')).toHaveText('name:Maria')
+  await expect.poll(async () => page.evaluate(() => {
+    const raw = localStorage.getItem('qfb-viewer-draft') || '{}'
+    return JSON.parse(raw).name
+  })).toBe('Maria')
+
+  await page.getByRole('button', { name: 'Finalizar' }).click()
+  await expect(page.getByTestId('submit-count')).toHaveText('1')
+  await expect.poll(async () => page.evaluate(() => {
+    const raw = localStorage.getItem('qfb-viewer-submit') || '{}'
+    return JSON.parse(raw).name
+  })).toBe('Maria')
+})
+
 test.describe('builder component parity smoke', () => {
   for (const item of componentSchemas) {
     test(`${item.group}: mounts ${item.schema.name}`, async ({ page }) => {

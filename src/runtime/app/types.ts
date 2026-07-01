@@ -1,4 +1,4 @@
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import type { FormKitNode, FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 
 export interface ElementType {
   type: string
@@ -86,6 +86,35 @@ export interface FormBuilderAppConfig {
   layout?: FormBuilderLayoutConfig
   labels?: FormBuilderLabelsConfig
   ui?: FormBuilderShellUiConfig
+}
+
+export type FormViewerValues = Record<string, unknown>
+
+export interface FormViewerValuesUpdatePayload<TValues = FormViewerValues> {
+  values: TValues
+  previousValues: TValues
+  changedFields: string[]
+  timestamp: number
+}
+
+export interface FormViewerFieldChangePayload<TValues = FormViewerValues> {
+  name: string
+  value: unknown
+  previousValue: unknown
+  values: TValues
+  timestamp: number
+}
+
+export interface FormViewerReadyPayload<TValues = FormViewerValues> {
+  values: TValues
+  fieldsCount: number
+  timestamp: number
+}
+
+export interface FormViewerSubmitInvalidPayload<TValues = FormViewerValues> {
+  values: TValues
+  node: FormKitNode
+  timestamp: number
 }
 
 export interface BuilderSelectionChangeDetail {
