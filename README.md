@@ -103,9 +103,9 @@ Quando você precisa controlar o conteúdo central do shell, use o slot padrão:
 </template>
 ```
 
-## Renderizar Um Formulário
+## Exibir Um Formulário
 
-Use `QfbFormViewer` para renderizar o formulário final em uma área pública ou administrativa.
+Use `QfbFormViewer` para exibir o formulário final com mepaamento de valores e função de submissão.
 
 ```vue
 <script setup lang="ts">
@@ -135,7 +135,7 @@ function submitForm(data: unknown) {
 </template>
 ```
 
-Use a prop `readonly` para renderizar os campos sem permitir edição ou submissão.
+Use a prop `readonly` para exibir os campos sem permitir edição ou submissão.
 
 ```vue
 <template>
@@ -191,7 +191,7 @@ Ao criar uma tela própria, proteja qualquer trecho que usa o editor visual:
 </template>
 ```
 
-`QfbFormViewer` pode renderizar em SSR quando recebe um schema estável por props.
+`QfbFormViewer` pode exibir em SSR quando recebe um schema estável por props.
 
 ## FormKit
 
