@@ -1,37 +1,61 @@
 {
-  "name": "form-builder-layer",
+  "name": "nuxt-quasar-form-builder",
   "type": "module",
   "version": "0.0.1",
-  "main": "./nuxt.config.ts",
+  "packageManager": "pnpm@10.2.0",
+  "description": "Nuxt module that provides a Quasar and FormKit based form builder.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/types.d.mts",
+      "import": "./dist/module.mjs"
+    }
+  },
+  "main": "./dist/module.mjs",
+  "files": [
+    "README.md",
+    "dist"
+  ],
   "scripts": {
     "dev": "nuxi dev .playground",
-    "dev:prepare": "nuxt prepare .playground",
+    "dev:prepare": "nuxt-module-build build --stub . && nuxi prepare .playground",
+    "build:module": "nuxt-module-build build",
+    "prepack": "nuxt-module-build build",
     "build": "nuxt build .playground",
     "generate": "nuxt generate .playground",
     "preview": "nuxt preview .playground",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test:e2e": "playwright test"
+  },
+  "peerDependencies": {
+    "nuxt": ">=4.0.0"
   },
   "dependencies": {
     "@formkit/core": "^1.7.2",
+    "@formkit/i18n": "^1.7.2",
     "@formkit/utils": "^1.7.2",
     "@formkit/vue": "^1.7.2",
-    "@quasar/extras": "^1.17.0",
-    "nuxt": "^4.2.2",
-    "quasar": "^2.18.6",
+    "@nuxt/kit": "^4.2.0",
+    "@pinia/nuxt": "^0.11.3",
+    "@quasar/extras": "^1.18.0",
+    "defu": "^6.1.4",
+    "nuxt-quasar-ui": "^2.1.13",
+    "pinia": "^3.0.4",
+    "quasar": "^2.20.1",
+    "shiki": "^3.23.0",
     "std-env": "^3.10.0",
-    "vue": "^3.5.26"
+    "vue": "^3.5.39"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
-    "@formkit/nuxt": "^1.7.2",
-    "@nuxt/eslint": "^1.12.1",
-    "@pinia/nuxt": "^0.11.3",
-    "eslint": "^9.39.2",
-    "nuxt-quasar-ui": "^2.1.13",
-    "sass": "^1.97.2",
-    "shiki": "^3.21.0",
-    "typescript": "^5.9.3"
-  },
-  "packageManager": "pnpm@10.2.0"
+    "@nuxt/eslint": "^1.16.0",
+    "@nuxt/module-builder": "^1.0.2",
+    "@playwright/test": "^1.61.1",
+    "eslint": "^9.39.4",
+    "nuxt": "^4.4.8",
+    "sass": "^1.101.0",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.8"
+  }
 }
