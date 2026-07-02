@@ -1,7 +1,7 @@
 {
   "name": "nuxt-quasar-form-builder",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "packageManager": "pnpm@10.2.0",
   "description": "Nuxt module that provides a Quasar and FormKit based form builder.",
   "license": "MIT",
@@ -32,30 +32,37 @@
     "nuxt": ">=4.0.0"
   },
   "dependencies": {
-    "@formkit/core": "^1.7.2",
-    "@formkit/i18n": "^1.7.2",
-    "@formkit/utils": "^1.7.2",
-    "@formkit/vue": "^1.7.2",
-    "@nuxt/kit": "^4.2.0",
+    "@formkit/core": "^2.1.0",
+    "@formkit/i18n": "^2.1.0",
+    "@formkit/utils": "^2.1.0",
+    "@formkit/vue": "^2.1.0",
+    "@nuxt/kit": "^4.4.8",
     "@pinia/nuxt": "^0.11.3",
     "@quasar/extras": "^1.18.0",
-    "defu": "^6.1.4",
-    "nuxt-quasar-ui": "^2.1.13",
+    "defu": "^6.1.7",
+    "nuxt-quasar-ui": "^3.0.1",
     "pinia": "^3.0.4",
-    "quasar": "^2.20.1",
-    "shiki": "^3.23.0",
-    "std-env": "^3.10.0",
+    "quasar": "^2.20.2",
+    "shiki": "^4.3.0",
+    "std-env": "^4.1.0",
     "vue": "^3.5.39"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^5.4.1",
+    "@antfu/eslint-config": "^9.1.0",
     "@nuxt/eslint": "^1.16.0",
     "@nuxt/module-builder": "^1.0.2",
     "@playwright/test": "^1.61.1",
-    "eslint": "^9.39.4",
+    "eslint": "^10.6.0",
     "nuxt": "^4.4.8",
     "sass": "^1.101.0",
     "typescript": "^5.9.3",
-    "vue-tsc": "^3.1.8"
+    "vue-tsc": "^3.3.6"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild",
+      "unrs-resolver"
+    ]
   }
 }

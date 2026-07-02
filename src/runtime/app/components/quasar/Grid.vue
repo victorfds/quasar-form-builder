@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BuilderFieldListKey, StructureCell } from '#qfb/types'
 import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
+import type { BuilderFieldListKey, StructureCell } from '#qfb/types'
 import { builderModeKey } from '#qfb/constants/injectionKeys'
 
 interface GridOption {

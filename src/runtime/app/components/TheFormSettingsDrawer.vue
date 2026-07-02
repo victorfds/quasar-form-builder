@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { htmlTypes } from '#qfb/constants'
 import { except } from '@formkit/utils'
 import { isDevelopment } from 'std-env'
+import { htmlTypes } from '#qfb/constants'
 
 const model = defineModel<boolean>()
 const { dark } = useQuasar()

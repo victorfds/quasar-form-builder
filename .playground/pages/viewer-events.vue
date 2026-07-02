@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { shallowRef } from 'vue'
-
 const storageKeys = [
   'qfb-viewer-draft',
   'qfb-viewer-ready',

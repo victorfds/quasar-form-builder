@@ -1,6 +1,6 @@
-import { defineNuxtPlugin } from '#imports'
 import { resetCount } from '@formkit/core'
 import { defaultConfig, plugin, ssrComplete } from '@formkit/vue'
+import { defineNuxtPlugin } from '#imports'
 import importedConfig from '../../formkit.config'
 
 export default defineNuxtPlugin((nuxtApp) => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig } from '#qfb/types'
 import type { FormKitFrameworkContext } from '@formkit/core'
+import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig } from '#qfb/types'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { getEffectiveMatrixColumnType, matrixColumnTypeUsesOptions } from '#qfb/constants/matrix'
 

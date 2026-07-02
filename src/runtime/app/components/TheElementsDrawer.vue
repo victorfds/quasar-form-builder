@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BuilderCatalogCategory, BuilderCatalogItem, BuilderEventMap, BuilderFieldListKey, StructureCell } from '#qfb/types'
 import type { FormKitSchemaDefinition } from '@formkit/core'
+import type { BuilderCatalogCategory, BuilderCatalogItem, BuilderEventMap, BuilderFieldListKey, StructureCell } from '#qfb/types'
 import { getBuilderCatalogByCategory } from '#qfb/constants/fieldCatalog'
 import { clearBuilderDragActive, markBuilderDragType } from '#qfb/utils/builderDrag'
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BuilderFieldListKey } from '#qfb/types'
 import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
+import type { BuilderFieldListKey } from '#qfb/types'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 
 interface TabDefinition {
