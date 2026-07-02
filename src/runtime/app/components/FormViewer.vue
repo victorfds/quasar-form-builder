@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
 import type {
   ColumnsType,
   FormViewerFieldChangePayload,
@@ -7,9 +8,7 @@ import type {
   FormViewerValues,
   FormViewerValuesUpdatePayload,
 } from '#qfb/types'
-import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
-import { computed, nextTick, onMounted, provide, toRaw } from 'vue'
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string
@@ -156,8 +155,8 @@ onMounted(async () => {
     >
       <FormCanvas>
         <div
-          v-for="(field, index) in renderFields"
-          :key="field.name || index"
+          v-for="field in renderFields"
+          :key="field.name"
           class="form-field form-field--responsive"
           :class="getAlignClass(field)"
           :style="getGridColumnStyle(field)"
@@ -166,10 +165,10 @@ onMounted(async () => {
             v-if="field.$el" :label="field.label" :info="field.info"
             :description="field.description"
           >
-            <FormKitSchema :schema="field" :data="data" />
+            <FormKitSchemaRenderer :schema="field" :data="data" />
           </WithLabelAndDescription>
 
-          <FormKitSchema v-else :schema="field" :data="data" :readonly="props.readonly" />
+          <FormKitSchemaRenderer v-else :schema="field" :data="data" :readonly="props.readonly" />
         </div>
       </FormCanvas>
     </FormKit>

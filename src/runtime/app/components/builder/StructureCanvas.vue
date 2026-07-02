@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BuilderFieldListKey, ColumnsType } from '#qfb/types'
 import type { FormKitSchemaDefinition } from '@formkit/core'
+import type { BuilderFieldListKey, ColumnsType } from '#qfb/types'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 
 type BuilderStructureField = FormKitSchemaDefinition & {
@@ -201,7 +201,7 @@ function onDrop(ev: DragEvent) {
   >
     <div
       v-for="(field, index) in displayFields"
-      :key="field?.name || index"
+      :key="field.name"
       class="form-field form-field--responsive"
       :data-field-name="field?.name"
       :class="getFieldClasses(field)"
@@ -215,10 +215,10 @@ function onDrop(ev: DragEvent) {
         :info="field.info"
         :description="field.description"
       >
-        <FormKitSchema :schema="field" :data="schemaData" />
+        <FormKitSchemaRenderer :schema="field" :data="schemaData" />
       </WithLabelAndDescription>
 
-      <FormKitSchema v-else :schema="field" :data="schemaData" />
+      <FormKitSchemaRenderer v-else :schema="field" :data="schemaData" />
 
       <BuilderFieldOverlay
         v-if="canDrag"

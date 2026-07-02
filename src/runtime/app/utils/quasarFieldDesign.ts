@@ -6,15 +6,43 @@ type ContextWithAttrs = FormKitFrameworkContext & {
   [key: string]: any
 }
 
+const quasarPropAliases: Record<string, string> = {
+  'fill-mask': 'fillMask',
+  'reverse-fill-mask': 'reverseFillMask',
+  'unmasked-value': 'unmaskedValue',
+  'stack-label': 'stackLabel',
+  'use-chips': 'useChips',
+  'use-input': 'useInput',
+  'fill-input': 'fillInput',
+  'hide-selected': 'hideSelected',
+  'options-dense': 'optionsDense',
+  'options-cover': 'optionsCover',
+  'new-value-mode': 'newValueMode',
+  'max-values': 'maxValues',
+  'input-debounce': 'inputDebounce',
+  'max-file-size': 'maxFileSize',
+  'max-total-size': 'maxTotalSize',
+  'max-files': 'maxFiles',
+}
+
 export function cleanUndefinedAttrs(attrs: FieldDesignAttrs = {}) {
   return Object.fromEntries(
     Object.entries(attrs).filter(([, value]) => value !== undefined),
   )
 }
 
+function normalizeQuasarPropAliases(attrs: FieldDesignAttrs = {}) {
+  return Object.entries(attrs).reduce<FieldDesignAttrs>((acc, [name, value]) => {
+    const propName = quasarPropAliases[name] || name
+    if (value === false && propName !== name) return acc
+    acc[propName] = value
+    return acc
+  }, {})
+}
+
 export function getFormKitContextAttrs(context: ContextWithAttrs, propNames: string[] = []) {
   const propsFromContext = propNames.reduce<FieldDesignAttrs>((acc, propName) => {
-    if (Object.prototype.hasOwnProperty.call(context, propName) && context[propName] !== undefined) {
+    if (Object.hasOwn(context, propName) && context[propName] !== undefined) {
       acc[propName] = context[propName]
     }
     return acc
@@ -27,6 +55,11 @@ export function getFormKitContextAttrs(context: ContextWithAttrs, propNames: str
 }
 
 export function getQuasarFieldDesignAttrs(attrs: FieldDesignAttrs = {}) {
+  const normalizedAttrs = normalizeQuasarPropAliases(attrs)
+  if (!normalizedAttrs.fillMask) {
+    delete normalizedAttrs.reverseFillMask
+  }
+
   const {
     filled: _filled,
     outlined,
@@ -35,7 +68,7 @@ export function getQuasarFieldDesignAttrs(attrs: FieldDesignAttrs = {}) {
     disabled,
     disable,
     ...rest
-  } = attrs
+  } = normalizedAttrs
 
   const stateAttrs = {
     ...rest,

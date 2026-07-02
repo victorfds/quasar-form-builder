@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { ColumnsType } from '#qfb/types'
 import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
-import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
+import type { ColumnsType } from '#qfb/types'
 import { clearErrors, reset } from '@formkit/vue'
+import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string
@@ -235,7 +235,7 @@ function getFieldStyle(field: ViewerField) {
                 @dragleave="onDragLeaveFormSectionArea"
               >
                 <div
-                  v-for="(field, index) in builderFields" :key="field?.name || index" class="form-field form-field--responsive"
+                  v-for="(field, index) in builderFields" :key="field.name" class="form-field form-field--responsive"
                   :data-field-name="field?.name"
                   :class="getFieldClasses(field)"
                   :style="getFieldStyle(field)"
@@ -246,10 +246,10 @@ function getFieldStyle(field: ViewerField) {
                     v-if="field.$el" :label="field.label" :info="field.info"
                     :description="field.description"
                   >
-                    <FormKitSchema :schema="field" :data="data" />
+                    <FormKitSchemaRenderer :schema="field" :data="data" />
                   </WithLabelAndDescription>
 
-                  <FormKitSchema v-else :schema="field" :data="data" />
+                  <FormKitSchemaRenderer v-else :schema="field" :data="data" />
 
                   <BuilderFieldOverlay
                     :field="field"
@@ -280,7 +280,7 @@ function getFieldStyle(field: ViewerField) {
                   />
                 </div>
               </FormCanvas>
-              <FormKitSchema v-else-if="stepperField" :schema="stepperField" :data="data" />
+              <FormKitSchemaRenderer v-else-if="stepperField" :schema="stepperField" :data="data" />
             </FormKit>
           </q-card-section>
         </q-card>

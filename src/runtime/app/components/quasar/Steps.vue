@@ -97,7 +97,7 @@ function ensureRenderableActiveStep() {
     return
   }
 
-  if (!newSteps.find(step => step.name === activeStep.value)) {
+  if (!newSteps.some(step => step.name === activeStep.value)) {
     setCurrentStep(newSteps[0].name)
   }
 }
@@ -533,7 +533,7 @@ function handleRootOnlyWrapperDrop(ev: DragEvent) {
           >
             <div
               v-for="(field, index) in getDisplayFields(step)"
-              :key="field?.name || index"
+              :key="field.name"
               class="form-field form-field--responsive"
               :data-field-name="field?.name"
               :class="getFieldClasses(field)"
@@ -545,10 +545,10 @@ function handleRootOnlyWrapperDrop(ev: DragEvent) {
                 v-if="field.$el" :label="field.label" :info="field.info"
                 :description="field.description"
               >
-                <FormKitSchema :schema="field" :data="schemaData" />
+                <FormKitSchemaRenderer :schema="field" :data="schemaData" />
               </WithLabelAndDescription>
 
-              <FormKitSchema v-else :schema="field" :data="schemaData" :readonly="context.attrs?.readonly" />
+              <FormKitSchemaRenderer v-else :schema="field" :data="schemaData" :readonly="context.attrs?.readonly" />
 
               <BuilderFieldOverlay
                 v-if="canDrag"

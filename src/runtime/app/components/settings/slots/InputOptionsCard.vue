@@ -29,6 +29,27 @@ const maskInputRef = ref<HTMLInputElement | null>(null)
 function onClickLabel(refElement: HTMLInputElement | null) {
   refElement?.focus()
 }
+
+function setFillMask(value: boolean) {
+  elementStates.fillMask = value
+  onEnteredProp('fill-mask', value)
+
+  if (!value && elementStates.reverseFillMask) {
+    elementStates.reverseFillMask = false
+    onEnteredProp('reverse-fill-mask', false)
+  }
+}
+
+function setReverseFillMask(value: boolean) {
+  elementStates.reverseFillMask = value
+
+  if (value && !elementStates.fillMask) {
+    elementStates.fillMask = true
+    onEnteredProp('fill-mask', true)
+  }
+
+  onEnteredProp('reverse-fill-mask', value)
+}
 </script>
 
 <template>
@@ -175,7 +196,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
               id="input-fill-mask"
               :model-value="elementStates.fillMask"
               color="primary"
-              @update:model-value="val => { elementStates.fillMask = val; onEnteredProp('fill-mask', val) }"
+              @update:model-value="setFillMask"
             />
           </div>
 
@@ -187,7 +208,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
               id="input-reverse-fill-mask"
               :model-value="elementStates.reverseFillMask"
               color="primary"
-              @update:model-value="val => { elementStates.reverseFillMask = val; onEnteredProp('reverse-fill-mask', val) }"
+              @update:model-value="setReverseFillMask"
             />
           </div>
 
