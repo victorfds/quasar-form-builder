@@ -19,5 +19,13 @@ export default defineNuxtConfig({
     },
   },
 
+  vite: {
+    build: {
+      modulePreload: {
+        polyfill: false,
+      },
+    },
+  },
+
   compatibilityDate: '2025-01-28',
 })
