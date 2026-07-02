@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QRangeProps } from 'quasar'
+import { computed } from 'vue'
+import { useValidationMessages } from '#qfb/composables/useValidationMessages'
 
 interface RangeValue {
   min: number

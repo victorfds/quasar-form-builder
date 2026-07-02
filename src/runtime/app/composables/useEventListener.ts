@@ -1,4 +1,6 @@
+import type { Ref } from 'vue'
 import type { BuilderEventMap } from '#qfb/types'
+import { unref } from 'vue'
 
 /**
  * A composable for adding and removing an event listener.

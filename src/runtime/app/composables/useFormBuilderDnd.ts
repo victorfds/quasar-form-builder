@@ -1,10 +1,19 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import type { BuilderDragPlacement, BuilderFieldListKey } from '#qfb/types'
+import { useQuasar } from 'quasar'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { builderDragMime, clearBuilderDragActive, getBuilderDragFormKitType, hasRootOnlyBuilderDrag, isRootOnlyBuilderType, markBuilderDragType } from '#qfb/utils/builderDrag'
 
-export function useFormBuilderDnd(formStore: any) {
-  interface DragInIndicator { index?: number, name?: string, placement?: BuilderDragPlacement, listKey?: BuilderFieldListKey }
+export interface FormBuilderDragInIndicator {
+  index?: number
+  name?: string
+  placement?: BuilderDragPlacement
+  listKey?: BuilderFieldListKey
+}
 
+export type FormBuilderDndControls = Record<string, any>
+
+export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
   const $q = useQuasar()
   const highlightDropArea = ref<boolean>(false)
   const previewFormSectionRef = ref<HTMLElement | null>(null)
@@ -22,7 +31,7 @@ export function useFormBuilderDnd(formStore: any) {
     active: formStore.activeField?.name ? [formStore.activeField.name] : [],
     hover: hoverName.value,
   }))
-  const dragInIndicator = ref<DragInIndicator>({})
+  const dragInIndicator = ref<FormBuilderDragInIndicator>({})
   const isUserDraggingOver = ref(false)
   const isDragging = ref(true)
   const isDraggingStepper = ref(false)

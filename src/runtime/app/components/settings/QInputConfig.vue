@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useFormStore } from '#qfb/stores/formStore'
+
 const formStore = useFormStore()
 const isHiddenInput = computed(() => formStore.activeField?.inputType === 'hidden')
 </script>

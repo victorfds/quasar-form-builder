@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QSeparatorProps } from 'quasar'
+import { computed } from 'vue'
 
 type SeparatorAttrs = QSeparatorProps & {
   columns?: unknown

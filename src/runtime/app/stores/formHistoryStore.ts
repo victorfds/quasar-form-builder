@@ -1,3 +1,6 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { useMemory } from '#qfb/composables/useMemory'
 import { getBrowserStorageItem } from '#qfb/utils/browserStorage'
 import { getFormBuilderStorageConfig } from '#qfb/utils/storageConfig'
 

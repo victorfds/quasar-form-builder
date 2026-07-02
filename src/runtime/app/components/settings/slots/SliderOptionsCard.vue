@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { reactive } from 'vue'
+import { useFormStore } from '#qfb/stores/formStore'
+
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
 

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QInputProps } from 'quasar'
+import { useQuasar } from 'quasar'
+import { computed } from 'vue'
+import { useValidationMessages } from '#qfb/composables/useValidationMessages'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QInputProps } }>()
 

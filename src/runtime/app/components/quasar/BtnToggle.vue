@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QBtnToggleProps } from 'quasar'
+import { computed } from 'vue'
+import { useValidationMessages } from '#qfb/composables/useValidationMessages'
 
 type BtnToggleContext = FormKitFrameworkContext & {
   attrs: QBtnToggleProps & { description?: string }

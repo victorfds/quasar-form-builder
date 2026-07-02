@@ -1,10 +1,13 @@
 import type { FormSettingsType } from '#qfb/types'
-import { computed, useState } from '#imports'
+import { computed } from 'vue'
+import { useState } from '#imports'
 import { useThemeMode } from '#qfb/composables/useThemeMode'
 import { useFormHistoryStore } from '#qfb/stores/formHistoryStore'
 import { useFormStore } from '#qfb/stores/formStore'
 
-export function useQfbBuilderControls() {
+export type QfbBuilderControls = Record<string, any>
+
+export function useQfbBuilderControls(): QfbBuilderControls {
   const formStore = useFormStore()
   const formHistoryStore = useFormHistoryStore()
   const themeMode = useThemeMode()

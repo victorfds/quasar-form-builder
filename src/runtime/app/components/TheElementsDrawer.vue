@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderCatalogCategory, BuilderCatalogItem, BuilderEventMap, BuilderFieldListKey, StructureCell } from '#qfb/types'
+import { useQuasar } from 'quasar'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { getBuilderCatalogByCategory } from '#qfb/constants/fieldCatalog'
+import { useFormStore } from '#qfb/stores/formStore'
 import { clearBuilderDragActive, markBuilderDragType } from '#qfb/utils/builderDrag'
 
 const model = defineModel<boolean>()

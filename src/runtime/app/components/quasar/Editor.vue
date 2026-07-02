@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QEditorProps } from 'quasar'
+import { computed } from 'vue'
+import { useValidationMessages } from '#qfb/composables/useValidationMessages'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QEditorProps } }>()
 const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(props.context?.node)

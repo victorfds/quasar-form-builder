@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useQuasar } from 'quasar'
+import { computed, reactive, ref } from 'vue'
+import { useFormStore } from '#qfb/stores/formStore'
+
 defineProps<{ showLength?: boolean }>()
 const { dark } = useQuasar()
 const formStore = useFormStore()

@@ -1,3 +1,6 @@
+import type { Ref } from 'vue'
+import { unref } from 'vue'
+import { useEventListener } from '#qfb/composables/useEventListener'
 /**
  * A composable for adding and removing an event listener on an outer element that triggers a handler function
  * when the specified event occurs outside the specified target element.

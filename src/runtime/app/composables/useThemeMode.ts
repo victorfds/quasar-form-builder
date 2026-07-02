@@ -1,3 +1,6 @@
+import { useQuasar } from 'quasar'
+import { computed } from 'vue'
+
 export type ThemeMode = 'light' | 'dark'
 
 function normalizeTheme(value: unknown): ThemeMode {

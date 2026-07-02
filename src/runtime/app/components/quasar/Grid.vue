@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderFieldListKey, StructureCell } from '#qfb/types'
+import { useQuasar } from 'quasar'
+import { computed, inject } from 'vue'
 import { builderModeKey } from '#qfb/constants/injectionKeys'
+import { useFormStore } from '#qfb/stores/formStore'
+import { firstFilledArray } from '#qfb/utils'
 
 interface GridOption {
   label: string

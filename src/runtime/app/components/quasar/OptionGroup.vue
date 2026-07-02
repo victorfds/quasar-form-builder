@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QOptionGroupProps } from 'quasar'
+import { computed } from 'vue'
+import { useValidationMessages } from '#qfb/composables/useValidationMessages'
 
 type OptionGroupAttrs = QOptionGroupProps & {
   groupType?: 'checkbox' | 'radio' | 'toggle'

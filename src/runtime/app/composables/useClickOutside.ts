@@ -1,3 +1,6 @@
+import type { Ref } from 'vue'
+import { unref } from 'vue'
+import { useEventListener } from '#qfb/composables/useEventListener'
 /**
  * Adds an event listener to the outer element that triggers a handler function
  * when a click occurs outside the specified target element.

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useQuasar } from 'quasar'
+import { computed, onMounted, ref, useSlots } from 'vue'
+import { useFormStore } from '#qfb/stores/formStore'
 import { getBrowserJsonItem, setBrowserStorageItem } from '#qfb/utils/browserStorage'
 
 type SectionKey = 'properties' | 'decorators' | 'layout' | 'conditions' | 'attributes' | 'validation' | 'data' | 'options'

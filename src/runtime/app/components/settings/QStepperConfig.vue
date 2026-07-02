@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { useQuasar } from 'quasar'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useEventListener } from '#qfb/composables/useEventListener'
+import { useFormStore } from '#qfb/stores/formStore'
+
 const { dark } = useQuasar()
 const formStore = useFormStore()
 

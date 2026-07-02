@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useQuasar } from 'quasar'
+import { reactive, ref } from 'vue'
 import { htmlTypes } from '#qfb/constants'
+import { useFormStore } from '#qfb/stores/formStore'
 
 const { dark } = useQuasar()
 const formStore = useFormStore()

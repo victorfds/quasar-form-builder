@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { FormBuilderAppConfig, FormBuilderShellUiConfig } from '#qfb/types'
+import { computed } from 'vue'
+import { useAppConfig } from '#imports'
+import { useQfbBuilderControls } from '#qfb/composables/useQfbBuilderControls'
 
 interface BuilderShellProps {
   title?: string

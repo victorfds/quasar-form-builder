@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useQuasar } from 'quasar'
+
 defineProps<{ label?: string, info?: string, description?: string }>()
 
 const $q = useQuasar()

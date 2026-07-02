@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
+import { computed } from 'vue'
 
 type RenderableSchema = FormKitSchemaDefinition & Record<string, any>
 
