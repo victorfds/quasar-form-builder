@@ -44,7 +44,7 @@ const runtimeAppDir = resolver.resolve('./runtime/app')
 const runtimeComponentsDir = resolver.resolve('./runtime/app/components')
 const runtimeComposablesDir = resolver.resolve('./runtime/app/composables')
 const runtimeUtilsDir = resolver.resolve('./runtime/app/utils')
-const runtimeCss = resolver.resolve('./runtime/app/assets/scss/index.scss')
+const runtimeCss = resolver.resolve('./runtime/app/assets/css/index.css')
 
 const quasarDefaults = {
   plugins: [
