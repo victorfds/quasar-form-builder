@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderDragPlacement } from '#qfb/types'
+import { computed } from 'vue'
+import { useFieldUi } from '#qfb/composables/useFieldUi'
+import { useFormStore } from '#qfb/stores/formStore'
 import { builderDragMime, hasRootOnlyBuilderDrag, markBuilderDragType } from '#qfb/utils/builderDrag'
 
 interface OverlayState {

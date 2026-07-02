@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig } from '#qfb/types'
+import { computed, inject, unref } from 'vue'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { getEffectiveMatrixColumnType, matrixColumnTypeUsesOptions } from '#qfb/constants/matrix'
+import { useFormStore } from '#qfb/stores/formStore'
+import { firstFilledArray } from '#qfb/utils'
+import { evaluateLogicString } from '#qfb/utils/formUtils'
+import { getFormKitContextAttrs } from '#qfb/utils/quasarFieldDesign'
 
 type StaticMatrixValue = Record<string, Record<string, unknown>>
 type DynamicMatrixValue = Array<Record<string, unknown>>

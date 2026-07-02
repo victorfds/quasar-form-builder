@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useQuasar } from 'quasar'
+import { reactive, toRaw } from 'vue'
+import { useFormStore } from '#qfb/stores/formStore'
+
 interface NamedSection {
   name: string
   label?: string

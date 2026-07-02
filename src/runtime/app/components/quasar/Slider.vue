@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QSliderProps } from 'quasar'
+import { computed } from 'vue'
+import { useValidationMessages } from '#qfb/composables/useValidationMessages'
 
 type SliderContext = FormKitFrameworkContext & {
   min?: number | string

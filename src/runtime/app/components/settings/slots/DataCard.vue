@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useQuasar } from 'quasar'
+import { nextTick, reactive } from 'vue'
+import { useFormStore } from '#qfb/stores/formStore'
+
 const { dark } = useQuasar()
 const formStore = useFormStore()
 const { onEnteredProp } = formStore

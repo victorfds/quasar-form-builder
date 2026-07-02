@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderFieldListKey, ColumnsType } from '#qfb/types'
+import { computed, inject, shallowRef, unref, watch } from 'vue'
+import { useFieldUi } from '#qfb/composables/useFieldUi'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
+import { useFormStore } from '#qfb/stores/formStore'
+import { withStructureChildrenListForRender } from '#qfb/utils'
 
 type BuilderStructureField = FormKitSchemaDefinition & {
   name?: string

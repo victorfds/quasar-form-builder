@@ -8,7 +8,11 @@ import type {
   FormViewerValues,
   FormViewerValuesUpdatePayload,
 } from '#qfb/types'
+import { computed, nextTick, onMounted, provide, toRaw } from 'vue'
+import { useFieldLayout } from '#qfb/composables/useFieldLayout'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
+import { withStructureChildrenListForRender } from '#qfb/utils'
+import { createFormSchemaData } from '#qfb/utils/formData'
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string

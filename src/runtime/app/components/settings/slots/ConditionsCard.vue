@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { LogicField } from '#qfb/types'
+import { useQuasar } from 'quasar'
+import { computed, reactive, ref } from 'vue'
 import { checkboxOperators, dateOperators, htmlTypes, operators } from '#qfb/constants'
+import { useFormStore } from '#qfb/stores/formStore'
 
 const props = defineProps<{
   noConditionsMessage?: string

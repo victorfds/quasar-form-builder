@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig, MatrixSize, MatrixViewMode } from '#qfb/types'
+import { useQuasar } from 'quasar'
+import { reactive, toRaw } from 'vue'
 import { getEffectiveMatrixColumnType, matrixColumnTypeOptions, matrixColumnTypeUsesOptions, matrixSizeOptions, matrixViewOptions } from '#qfb/constants/matrix'
+import { useFormStore } from '#qfb/stores/formStore'
 
 type MatrixOptionProp = 'rows' | 'columnsConfig'
 

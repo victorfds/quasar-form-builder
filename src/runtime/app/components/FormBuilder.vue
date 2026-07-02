@@ -2,7 +2,16 @@
 import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
 import type { ColumnsType } from '#qfb/types'
 import { clearErrors, reset } from '@formkit/vue'
+import { useQuasar } from 'quasar'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, provide } from 'vue'
+import { useState } from '#imports'
+import { useEventListener } from '#qfb/composables/useEventListener'
+import { useFieldUi } from '#qfb/composables/useFieldUi'
+import { useFormBuilderDnd } from '#qfb/composables/useFormBuilderDnd'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
+import { useFormStore } from '#qfb/stores/formStore'
+import { withStructureChildrenListForRender } from '#qfb/utils'
+import { createFormSchemaData } from '#qfb/utils/formData'
 
 type ViewerField = FormKitSchemaDefinition & {
   name?: string

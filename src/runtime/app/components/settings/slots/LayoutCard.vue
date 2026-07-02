@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { ColumnsType } from '#qfb/types'
+import { useQuasar } from 'quasar'
+import { computed, reactive } from 'vue'
+import { useFormStore } from '#qfb/stores/formStore'
 
 defineProps<{ showFullWidth?: boolean, showAlignment?: boolean, showSize?: boolean, showDense?: boolean, setAttrs?: boolean }>()
 

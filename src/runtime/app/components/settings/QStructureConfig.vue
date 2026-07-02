@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useFormStore } from '#qfb/stores/formStore'
+
 const formStore = useFormStore()
 </script>
 

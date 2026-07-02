@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderFieldListKey } from '#qfb/types'
+import { computed, inject, onMounted, onUpdated, shallowRef, unref } from 'vue'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
+import { useFormStore } from '#qfb/stores/formStore'
+import { firstFilledArray, withStructureChildrenListForRender } from '#qfb/utils'
+import { evaluateLogicString } from '#qfb/utils/formUtils'
 
 interface TabDefinition {
   name: string

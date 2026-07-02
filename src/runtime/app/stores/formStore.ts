@@ -1,10 +1,33 @@
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, BuilderSelectionChangeDetail, ColumnsType, FormSettingsType, FormViewportType, StructureCell } from '#qfb/types'
+import { defineStore } from 'pinia'
+import { useQuasar } from 'quasar'
+import { computed, nextTick, reactive, ref } from 'vue'
+import { useFormHistoryStore } from '#qfb/stores/formHistoryStore'
 import { getBrowserJsonItem, setBrowserStorageItem } from '#qfb/utils/browserStorage'
 import { dispatchBuilderEvent } from '#qfb/utils/builderEvents'
 import { getFormBuilderStorageConfig } from '#qfb/utils/storageConfig'
 
-export const useFormStore = defineStore('formStore', () => {
+export interface StepDefinition {
+  name: string
+  label?: string
+  showPrevious?: boolean
+  prevLabel?: string
+  nextLabel?: string
+  if?: string
+  children?: FormKitSchemaDefinition[]
+}
+
+export interface TabDefinition {
+  name: string
+  label?: string
+  if?: string
+  children?: FormKitSchemaDefinition[]
+}
+
+export type FormStoreApi = Record<string, any>
+
+export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   const { notify } = useQuasar()
   const formHistoryStore = useFormHistoryStore()
   const { formFieldsKey: formFieldsStorageKey } = getFormBuilderStorageConfig()
@@ -34,23 +57,6 @@ export const useFormStore = defineStore('formStore', () => {
     'q-list-structure',
     stepperType,
   ]
-
-  interface StepDefinition {
-    name: string
-    label?: string
-    showPrevious?: boolean
-    prevLabel?: string
-    nextLabel?: string
-    if?: string
-    children?: FormKitSchemaDefinition[]
-  }
-
-  interface TabDefinition {
-    name: string
-    label?: string
-    if?: string
-    children?: FormKitSchemaDefinition[]
-  }
 
   type StepperField = FormKitSchemaDefinition & {
     steps?: StepDefinition[]
