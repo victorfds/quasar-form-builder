@@ -1,5 +1,5 @@
-import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, BuilderSelectionChangeDetail, ColumnsType, FormSettingsType, FormViewportType, StructureCell } from '#qfb/types'
 import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, BuilderSelectionChangeDetail, ColumnsType, FormSettingsType, FormViewportType, StructureCell } from '#qfb/types'
 import { getBrowserJsonItem, setBrowserStorageItem } from '#qfb/utils/browserStorage'
 import { dispatchBuilderEvent } from '#qfb/utils/builderEvents'
 import { getFormBuilderStorageConfig } from '#qfb/utils/storageConfig'
@@ -83,6 +83,8 @@ export const useFormStore = defineStore('formStore', () => {
   type FieldWithColumns = FormKitSchemaDefinition & {
     columns?: ColumnsType & Record<string, any>
   }
+
+  const liveFalseInputProps = new Set(['fill-mask', 'reverse-fill-mask', 'unmasked-value'])
 
   function dispatchBuilderSelectionChange(detail: BuilderSelectionChangeDetail) {
     dispatchBuilderEvent('builder:selection-change', detail)
@@ -892,7 +894,7 @@ export const useFormStore = defineStore('formStore', () => {
     }
 
     const isSameList = sourceLocation.list === targetList
-    const requestedIndex = destinationIndex === undefined || destinationIndex === null ? targetList.length : destinationIndex
+    const requestedIndex = destinationIndex ?? targetList.length
     const adjustedIndex = isSameList && sourceLocation.index < requestedIndex ? requestedIndex - 1 : requestedIndex
     let boundedIndex = Math.max(0, Math.min(adjustedIndex, targetList.length))
 
@@ -1422,6 +1424,7 @@ export const useFormStore = defineStore('formStore', () => {
   }
 
   function shouldDeleteProperty(newPropValue: any, propName?: string) {
+    if (propName && liveFalseInputProps.has(propName) && newPropValue === false) return false
     if (propName === 'format24h' && newPropValue === false) return false
     return newPropValue === false || newPropValue === '' || isEmptyObject(newPropValue)
   }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BuilderDragPlacement } from '#qfb/types'
 import type { FormKitSchemaDefinition } from '@formkit/core'
+import type { BuilderDragPlacement } from '#qfb/types'
 import { builderDragMime, hasRootOnlyBuilderDrag, markBuilderDragType } from '#qfb/utils/builderDrag'
 
 interface OverlayState {
@@ -321,7 +321,7 @@ function onOverlayDragStart(ev: DragEvent) {
   <div v-if="showControls" class="preview-element-resizer-icon" />
   <div v-if="showControls" class="preview-element-resizer" @mousedown.stop="(ev: MouseEvent) => emit('resizeStart', { ev, field })" />
   <div v-if="showColumnSpan" class="preview-element-columns-display">
-    <span class="text-caption text-weight-semibold q-pa-xs">{{ columnSpan }}</span>
+    <span class="text-caption text-weight-regular q-pa-xs">{{ columnSpan }}</span>
   </div>
 </template>
 

@@ -238,7 +238,7 @@ function getPathValue(source: unknown, path: string) {
   let current: any = source
 
   for (const segment of segments) {
-    if (!isPlainRecord(current) || !Object.prototype.hasOwnProperty.call(current, segment)) {
+    if (!isPlainRecord(current) || !Object.hasOwn(current, segment)) {
       return { found: false, value: undefined }
     }
     const next = current[segment]
@@ -264,7 +264,7 @@ function findNestedValue(source: unknown, targetKey: string, visited = new WeakS
   if (visited.has(source)) return { found: false, value: undefined }
   visited.add(source)
 
-  if (Object.prototype.hasOwnProperty.call(source, targetKey)) {
+  if (Object.hasOwn(source, targetKey)) {
     const direct = source[targetKey]
     if (typeof direct !== 'function') return { found: true, value: direct }
   }
@@ -289,7 +289,7 @@ function getConditionValue(source: Record<string, any>, fieldName: string) {
     if (pathResult.found) return pathResult.value
   }
 
-  if (Object.prototype.hasOwnProperty.call(source, fieldName)) {
+  if (Object.hasOwn(source, fieldName)) {
     const direct = source[fieldName]
     if (typeof direct !== 'function') return direct
   }

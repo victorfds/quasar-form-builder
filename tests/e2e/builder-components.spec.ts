@@ -320,6 +320,50 @@ test('form viewer emits value lifecycle and validation events for cache integrat
   })).toBe('Maria')
 })
 
+test('form viewer phone mask options emit the unmasked Quasar model value', async ({ page }) => {
+  await page.goto('/phone-mask-events')
+  await page.waitForFunction(() => Boolean(document.querySelector('input[aria-label="Telefone"]')?.id))
+
+  const input = page.locator('input[aria-label="Telefone"]')
+  await expect(input).toHaveValue('(__) _____-____')
+
+  await input.fill('67')
+  await expect(input).toHaveValue('(__) _____-__67')
+  await expect(page.getByTestId('phone-model-value')).toHaveText('67')
+  await expect.poll(async () => page.evaluate(() => {
+    const raw = localStorage.getItem('qfb-phone-mask-draft') || '{}'
+    return JSON.parse(raw).phone
+  })).toBe('67')
+
+  await input.fill('67999991234')
+  await expect(input).toHaveValue('(67) 99999-1234')
+  await expect(page.getByTestId('phone-model-value')).toHaveText('67999991234')
+  await expect.poll(async () => page.evaluate(() => {
+    const raw = localStorage.getItem('qfb-phone-mask-draft') || '{}'
+    return JSON.parse(raw).phone
+  })).toBe('67999991234')
+
+  await page.getByTestId('toggle-unmasked-value').click()
+  await expect(page.getByTestId('phone-unmasked-state')).toHaveText('false')
+  await input.fill('67999991234')
+  await expect(input).toHaveValue('(67) 99999-1234')
+  await expect(page.getByTestId('phone-model-value')).toHaveText('(67) 99999-1234')
+  await expect.poll(async () => page.evaluate(() => {
+    const raw = localStorage.getItem('qfb-phone-mask-draft') || '{}'
+    return JSON.parse(raw).phone
+  })).toBe('(67) 99999-1234')
+
+  await page.getByTestId('toggle-unmasked-value').click()
+  await expect(page.getByTestId('phone-unmasked-state')).toHaveText('true')
+  await input.fill('67999991234')
+  await expect(input).toHaveValue('(67) 99999-1234')
+  await expect(page.getByTestId('phone-model-value')).toHaveText('67999991234')
+  await expect.poll(async () => page.evaluate(() => {
+    const raw = localStorage.getItem('qfb-phone-mask-draft') || '{}'
+    return JSON.parse(raw).phone
+  })).toBe('67999991234')
+})
+
 test.describe('builder component parity smoke', () => {
   for (const item of componentSchemas) {
     test(`${item.group}: mounts ${item.schema.name}`, async ({ page }) => {
@@ -2685,6 +2729,67 @@ test('quasar input settings propagate declared FormKit props to the rendered fie
   await expect(field).toContainText('+55')
   await expect(field).toContainText('BR')
   await expect(page.locator('[data-field-name="phone"] .q-spinner')).toBeVisible()
+})
+
+test('phone input renders fill-mask in the visible mask', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      '$formkit': 'q-input',
+      'name': 'phone',
+      'label': 'Telefone',
+      'inputType': 'tel',
+      'mask': '(##) #####-####',
+      'fill-mask': true,
+      'unmasked-value': true,
+    },
+  ])
+
+  const input = page.locator('[data-field-name="phone"] input').first()
+  await expect(input).toHaveValue('(__) _____-____')
+  await input.fill('67')
+  await expect(input).toHaveValue('(67) _____-____')
+})
+
+test('phone mask settings from the drawer persist and update rendered mask behavior', async ({ page }) => {
+  await loadBuilder(page, [
+    {
+      $formkit: 'q-input',
+      name: 'phone',
+      label: 'Telefone',
+      inputType: 'tel',
+      mask: '(##) #####-####',
+    },
+  ])
+
+  await page.locator('[data-field-name="phone"] .overlay-preview-element').click()
+  const drawer = page.locator('[data-drawer="right"]')
+  const input = page.locator('[data-field-name="phone"] input').first()
+  await drawer.locator('#input-fill-mask').click()
+  await expect(input).toHaveValue('(__) _____-____')
+  await drawer.locator('#input-fill-mask').click()
+  await expect(input).toHaveValue('')
+  await drawer.locator('#input-reverse-fill-mask').click()
+  await drawer.locator('#input-unmasked-value').click()
+
+  const fields = await readFields(page)
+  expect(fields[0]).toMatchObject({
+    'fill-mask': true,
+    'reverse-fill-mask': true,
+    'unmasked-value': true,
+  })
+
+  await page.reload()
+  await expect(page.locator('[data-field-name="phone"]')).toHaveCount(1)
+  await page.waitForFunction(() => Boolean(document.querySelector('[data-field-name="phone"] input')?.id))
+  await expect(input).toHaveValue('(__) _____-____')
+  await input.fill('67')
+  await expect(input).toHaveValue('(__) _____-__67')
+
+  await input.fill('')
+  await expect(input).toHaveValue('(__) _____-____')
+  await input.pressSequentially('12345678901234567890')
+  const rawValue = (await input.inputValue()).replace(/\D/g, '')
+  expect(rawValue).toHaveLength(11)
 })
 
 test('matrix table renders themed dividers and supports dynamic rows', async ({ page }) => {

@@ -1,8 +1,8 @@
-import type { ExtractedFormAnswer, ExtractedFormData, ExtractedFormItem, StructureCell } from '#qfb/types'
 import type { FormKitSchemaDefinition } from '@formkit/core'
+import type { ExtractedFormAnswer, ExtractedFormData, ExtractedFormItem, StructureCell } from '#qfb/types'
+import { empty, eq } from '@formkit/utils'
 import { isDayAfterTomorrow, isDayBeforeYesterday, isToday, isTomorrow, isYesterday } from '#qfb/utils/dateLogic'
 import { contains } from '#qfb/utils/logic'
-import { empty, eq } from '@formkit/utils'
 
 const structureTypes = new Set(['q-container', 'q-list-structure', 'q-grid', 'q-table-structure', 'q-tabs', 'q-stepper'])
 const noAnswerTypes = new Set(['q-btn', 'q-separator'])
@@ -75,7 +75,7 @@ function isStaticItem(field: FormKitSchemaDefinition): boolean {
 }
 
 function getChildContextValue(parentValue: unknown, childName: string, childIndex: number): unknown {
-  if (isRecord(parentValue) && Object.prototype.hasOwnProperty.call(parentValue, childName)) {
+  if (isRecord(parentValue) && Object.hasOwn(parentValue, childName)) {
     return parentValue[childName]
   }
   if (Array.isArray(parentValue)) return parentValue[childIndex]

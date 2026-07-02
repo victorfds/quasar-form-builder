@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { LogicField } from '#qfb/types'
 import type { FormKitSchemaDefinition } from '@formkit/core'
+import type { LogicField } from '#qfb/types'
 import { checkboxOperators, dateOperators, htmlTypes, operators } from '#qfb/constants'
 
 const props = defineProps<{
