@@ -1,5 +1,7 @@
 import { useQuasar } from 'quasar'
 import { computed } from 'vue'
+import { useCookie } from '#imports'
+import { getFormBuilderStorageConfig } from '#qfb/utils/storageConfig'
 
 export type ThemeMode = 'light' | 'dark'
 

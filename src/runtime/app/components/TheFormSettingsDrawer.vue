@@ -2,9 +2,10 @@
 import { except } from '@formkit/utils'
 import { useQuasar } from 'quasar'
 import { isDevelopment } from 'std-env'
-import { computed, ref } from 'vue'
+import { computed, ref, resolveComponent } from 'vue'
 import { htmlTypes } from '#qfb/constants'
 import { useFormStore } from '#qfb/stores/formStore'
+import { highlightJson } from '#qfb/utils/highlight'
 
 const model = defineModel<boolean>()
 const { dark } = useQuasar()
@@ -85,7 +86,7 @@ function onClickLabelFormName() {
 <template>
   <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="right" :width="340" data-drawer="right">
     <q-scroll-area class="fit" visible>
-      <slot name="before" v-bind="drawerSlotProps" />
+      <slot v-if="$slots.before" name="before" v-bind="drawerSlotProps" />
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
         <component :is="getComponentSettings" :key="activeConfigKey" />
         <div v-if="isDevelopment" v-html="useHighlight(formStore.activeField, dark.isActive)" />
@@ -153,8 +154,8 @@ function onClickLabelFormName() {
           </q-card>
         </q-list>
       </div>
-      <slot v-bind="drawerSlotProps" />
-      <slot name="after" v-bind="drawerSlotProps" />
+      <slot v-if="$slots.default" v-bind="drawerSlotProps" />
+      <slot v-if="$slots.after" name="after" v-bind="drawerSlotProps" />
     </q-scroll-area>
   </q-drawer>
 </template>
