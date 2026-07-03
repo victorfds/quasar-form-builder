@@ -26,7 +26,8 @@
     "preview": "nuxt preview .playground",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:consumer": "node scripts/test-consumer.mjs"
   },
   "peerDependencies": {
     "nuxt": ">=4.0.0"
