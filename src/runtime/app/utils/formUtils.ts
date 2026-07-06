@@ -2,6 +2,7 @@ import type { ConditionOperatorValue, LogicField } from '#qfb/types'
 import { contains, endsWith, startsWith } from './logic'
 
 const valueFunctionOperators = new Set(['$contains', '$startsWith', '$endsWith'])
+const multiValueOperators = new Set(['==', '!='])
 
 type ProcessableLogicField = Omit<LogicField, 'operator' | 'or'> & {
   operator: string
@@ -76,37 +77,52 @@ function formatConditionLiteral(raw: unknown) {
   return JSON.stringify(value)
 }
 
+function appendPendingValue(values: unknown[] = [], value: unknown): unknown[] {
+  const pendingValue = typeof value === 'string' ? value.trim() : value
+  if (pendingValue === '' || pendingValue === null || pendingValue === undefined) return values
+  if (values.includes(pendingValue)) return values
+  return [...values, pendingValue]
+}
+
+function getConditionValues(condition: Pick<ProcessableLogicField, 'value' | 'values'>): unknown[] {
+  return appendPendingValue(condition.values || [], condition.value)
+}
+
+function joinOrConditions(conditionString: string, orData: string[]): string {
+  return [conditionString, ...orData].filter(Boolean).join(' || ')
+}
+
 export function processSingleCondition(condition: ProcessableLogicField, orData: string[]): string {
-  const { name, operator, value, values } = condition
+  const { name, operator, value } = condition
 
   if (['$empty', '!$empty'].includes(operator)) {
-    return `${operator}($${name})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+    return joinOrConditions(`${operator}($${name})`, orData)
   }
 
   if (valueFunctionOperators.has(operator)) {
-    return `${operator}($${name},${formatConditionLiteral(value)})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+    return joinOrConditions(`${operator}($${name},${formatConditionLiteral(value)})`, orData)
   }
 
   // Handle generic function-like operators (e.g., $isToday, $isTomorrow, etc.)
   if (operator.startsWith('$')) {
-    return `${operator}($${name})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+    return joinOrConditions(`${operator}($${name})`, orData)
   }
 
   if (['== true', '== false'].includes(operator)) {
-    return `$${name} ${operator}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+    return joinOrConditions(`$${name} ${operator}`, orData)
   }
 
-  if (['==', '!='].includes(operator)) {
-    const valuesInString = values.map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`).join(' || ')
-    return `${valuesInString}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+  if (multiValueOperators.has(operator)) {
+    const valuesInString = getConditionValues(condition).map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`).join(' || ')
+    return joinOrConditions(valuesInString, orData)
   }
 
-  return `$${name} ${operator} ${formatConditionLiteral(value)}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
+  return joinOrConditions(`$${name} ${operator} ${formatConditionLiteral(value)}`, orData)
 }
 
 export function processConditions(conditions: ProcessableLogicField[]): string[] {
   return conditions.map((orCondition) => {
-    const { name, operator, value, values } = orCondition
+    const { name, operator, value } = orCondition
 
     if (['$empty', '!$empty'].includes(operator)) {
       return `${operator}($${name})`
@@ -125,8 +141,8 @@ export function processConditions(conditions: ProcessableLogicField[]): string[]
       return `$${name} ${operator}`
     }
 
-    if (['==', '!='].includes(operator)) {
-      return values.map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`).join(' || ')
+    if (multiValueOperators.has(operator)) {
+      return getConditionValues(orCondition).map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`).join(' || ')
     }
 
     return `$${name} ${operator} ${formatConditionLiteral(value)}`
@@ -151,7 +167,7 @@ export function saveLogic(elementStates: { logicFields: LogicField[] }, property
   const data: string[] = []
 
   transformedConditions.forEach((condition) => {
-    const orData = condition.or ? processConditions(condition.or) : []
+    const orData = condition.or ? processConditions(condition.or).filter(Boolean) : []
     const conditionString = processSingleCondition(condition, orData)
 
     if (conditionString) {

@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+import { saveLogic } from '../../src/runtime/app/utils/formUtils'
 
 const defaultOptions = [
   { label: 'Opção 1', value: 'option_1' },
@@ -262,6 +263,13 @@ async function expectConditionOperators(page: Page, fieldName: string, expected:
   }
 
   await page.keyboard.press('Escape')
+}
+
+async function selectConditionOperator(page: Page, label: string, index = 0) {
+  await conditionsDialog(page).getByLabel('Operador').nth(index).click()
+  await page.getByRole('option', { name: label, exact: true }).click()
+  await conditionsDialog(page).getByRole('heading', { name: 'Condições' }).click()
+  await expect(page.getByRole('listbox')).toHaveCount(0)
 }
 
 async function expectSchemaMounted(page: Page, schema: typeof componentSchemas[number]['schema']) {
@@ -769,6 +777,67 @@ test('condition operator list follows the selected target field semantics', asyn
   await expectConditionOperators(page, 'choices', ['está vazio', 'não está vazio', 'contém'], ['é igual a'])
   await expectConditionOperators(page, 'period', ['está vazio', 'não está vazio'], ['é hoje'])
   await expectConditionOperators(page, 'hour', ['está vazio', 'não está vazio', 'é igual a', 'é diferente de'], ['é hoje'])
+})
+
+test('saveLogic serializes pending equality tag values', () => {
+  const saved: Record<string, unknown> = {}
+
+  saveLogic(
+    {
+      logicFields: [
+        {
+          name: 'title',
+          operator: 'equals',
+          value: 'VIP',
+          values: [],
+          or: [
+            {
+              name: 'status',
+              operator: 'notEquals',
+              value: 'blocked',
+              values: [],
+              or: [],
+            },
+          ],
+        },
+      ],
+    },
+    'if',
+    (property, value) => {
+      saved[property] = value
+    },
+  )
+
+  expect(saved.if).toBe('$title == "VIP" || $status != "blocked"')
+})
+
+test('saving equality conditions commits the focused pending tag input', async ({ page }) => {
+  const cases = [
+    { operatorLabel: 'é igual a', value: 'VIP', expected: '$title == "VIP"' },
+    { operatorLabel: 'é diferente de', value: 'blocked', expected: '$title != "blocked"' },
+  ]
+
+  for (const scenario of cases) {
+    await loadBuilder(page, [
+      { $formkit: 'q-input', name: 'subject', label: 'Campo com condição', inputType: 'text' },
+      { $formkit: 'q-input', name: 'title', label: 'Título', inputType: 'text' },
+    ])
+
+    await openConditionsDialogForField(page, 'subject')
+    await selectConditionTargetField(page, 'title')
+    await selectConditionOperator(page, scenario.operatorLabel)
+
+    const dialog = conditionsDialog(page)
+    const valueInput = dialog.getByLabel('valor')
+    await valueInput.fill(scenario.value)
+    await expect(valueInput).toBeFocused()
+    await dialog.getByRole('button', { name: 'Salvar' }).evaluate((button: HTMLElement) => button.click())
+
+    await expect.poll(async () => {
+      const fields = await readFields(page)
+      return fields.find((field: { name: string }) => field.name === 'subject')?.if
+    }).toBe(scenario.expected)
+  }
 })
 
 test('text prefix and suffix condition operators evaluate in preview mode', async ({ page }) => {
