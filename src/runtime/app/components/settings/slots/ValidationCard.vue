@@ -2,6 +2,7 @@
 import { useQuasar } from 'quasar'
 import { computed, reactive, ref } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
+import { getLengthLimitsFromValidation } from '#qfb/utils'
 
 defineProps<{ showLength?: boolean }>()
 const { dark } = useQuasar()

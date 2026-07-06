@@ -3,6 +3,7 @@ import type { ColumnsType } from '#qfb/types'
 import { useQuasar } from 'quasar'
 import { computed, reactive } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
+import { hasOnlyOneKeyWithName } from '#qfb/utils'
 
 defineProps<{ showFullWidth?: boolean, showAlignment?: boolean, showSize?: boolean, showDense?: boolean, setAttrs?: boolean }>()
 
