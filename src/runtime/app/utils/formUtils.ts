@@ -88,65 +88,45 @@ function getConditionValues(condition: Pick<ProcessableLogicField, 'value' | 'va
   return appendPendingValue(condition.values || [], condition.value)
 }
 
-function joinOrConditions(conditionString: string, orData: string[]): string {
-  return [conditionString, ...orData].filter(Boolean).join(' || ')
+function joinOrConditions(conditions: string[]): string {
+  const validConditions = conditions.filter(Boolean)
+  if (validConditions.length > 1) return `(${validConditions.join(' || ')})`
+  return validConditions[0] || ''
 }
 
-export function processSingleCondition(condition: ProcessableLogicField, orData: string[]): string {
+function getConditionExpressions(condition: ProcessableLogicField): string[] {
   const { name, operator, value } = condition
 
   if (['$empty', '!$empty'].includes(operator)) {
-    return joinOrConditions(`${operator}($${name})`, orData)
+    return [`${operator}($${name})`]
   }
 
   if (valueFunctionOperators.has(operator)) {
-    return joinOrConditions(`${operator}($${name},${formatConditionLiteral(value)})`, orData)
+    return [`${operator}($${name},${formatConditionLiteral(value)})`]
   }
 
   // Handle generic function-like operators (e.g., $isToday, $isTomorrow, etc.)
   if (operator.startsWith('$')) {
-    return joinOrConditions(`${operator}($${name})`, orData)
+    return [`${operator}($${name})`]
   }
 
   if (['== true', '== false'].includes(operator)) {
-    return joinOrConditions(`$${name} ${operator}`, orData)
+    return [`$${name} ${operator}`]
   }
 
   if (multiValueOperators.has(operator)) {
-    const valuesInString = getConditionValues(condition).map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`).join(' || ')
-    return joinOrConditions(valuesInString, orData)
+    return getConditionValues(condition).map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`)
   }
 
-  return joinOrConditions(`$${name} ${operator} ${formatConditionLiteral(value)}`, orData)
+  return [`$${name} ${operator} ${formatConditionLiteral(value)}`]
+}
+
+export function processSingleCondition(condition: ProcessableLogicField, orData: string[]): string {
+  return joinOrConditions([...getConditionExpressions(condition), ...orData])
 }
 
 export function processConditions(conditions: ProcessableLogicField[]): string[] {
-  return conditions.map((orCondition) => {
-    const { name, operator, value } = orCondition
-
-    if (['$empty', '!$empty'].includes(operator)) {
-      return `${operator}($${name})`
-    }
-
-    if (valueFunctionOperators.has(operator)) {
-      return `${operator}($${name},${formatConditionLiteral(value)})`
-    }
-
-    // Generic function-like operator
-    if (operator.startsWith('$')) {
-      return `${operator}($${name})`
-    }
-
-    if (['== true', '== false'].includes(operator)) {
-      return `$${name} ${operator}`
-    }
-
-    if (multiValueOperators.has(operator)) {
-      return getConditionValues(orCondition).map((val: any) => `$${name} ${operator} ${formatConditionLiteral(val)}`).join(' || ')
-    }
-
-    return `$${name} ${operator} ${formatConditionLiteral(value)}`
-  })
+  return conditions.flatMap(orCondition => getConditionExpressions(orCondition))
 }
 
 type LogicUpdateProp = (property: 'if' | 'disable' | 'validation' | 'readonly', value: unknown) => void
@@ -201,17 +181,17 @@ export function parseLogic(logicString?: string): LogicField[] {
 
   const logicFields: LogicField[] = []
 
-  // Split by "&&" to separate main conditions
-  const mainConditions = logicString.split(' && ')
+  // Split by top-level "&&" to separate main conditions without breaking grouped ORs or function arguments.
+  const mainConditions = splitTopLevelLogic(logicString, '&&')
 
   mainConditions.forEach((mainConditionString) => {
-    // Split by "||" to handle "or" conditions
-    const orConditionsStrings = mainConditionString.split(' || ')
+    const conditionGroup = stripWrappingParentheses(mainConditionString)
+    // Split by top-level "||" to handle grouped "or" conditions.
+    const orConditionsStrings = splitTopLevelLogic(conditionGroup, '||')
     const mainCondition = parseCondition(orConditionsStrings.shift()!) // First is the main condition
 
     if (orConditionsStrings.length) {
-      const grouped = groupConditions(orConditionsStrings)
-      mainCondition.or = grouped.map(parseCondition)
+      mainCondition.or = orConditionsStrings.map(parseCondition)
     }
 
     if (!orConditionsStrings.length) {
@@ -222,6 +202,115 @@ export function parseLogic(logicString?: string): LogicField[] {
   })
 
   return logicFields
+}
+
+function splitTopLevelLogic(logicString: string, operator: '&&' | '||'): string[] {
+  const parts: string[] = []
+  let current = ''
+  let quote: '"' | '\'' | null = null
+  let escaped = false
+  let depth = 0
+
+  for (let index = 0; index < logicString.length; index++) {
+    const char = logicString[index]
+
+    if (escaped) {
+      current += char
+      escaped = false
+      continue
+    }
+
+    if (quote && char === '\\') {
+      current += char
+      escaped = true
+      continue
+    }
+
+    if (quote) {
+      current += char
+      if (char === quote) quote = null
+      continue
+    }
+
+    if (char === '"' || char === '\'') {
+      quote = char
+      current += char
+      continue
+    }
+
+    if (char === '(') {
+      depth++
+      current += char
+      continue
+    }
+
+    if (char === ')') {
+      depth = Math.max(0, depth - 1)
+      current += char
+      continue
+    }
+
+    if (depth === 0 && logicString.slice(index, index + operator.length) === operator) {
+      parts.push(current.trim())
+      current = ''
+      index += operator.length - 1
+      continue
+    }
+
+    current += char
+  }
+
+  parts.push(current.trim())
+  return parts.filter(Boolean)
+}
+
+function hasWrappingParentheses(value: string): boolean {
+  if (!value.startsWith('(') || !value.endsWith(')')) return false
+
+  let quote: '"' | '\'' | null = null
+  let escaped = false
+  let depth = 0
+
+  for (let index = 0; index < value.length; index++) {
+    const char = value[index]
+
+    if (escaped) {
+      escaped = false
+      continue
+    }
+
+    if (quote && char === '\\') {
+      escaped = true
+      continue
+    }
+
+    if (quote) {
+      if (char === quote) quote = null
+      continue
+    }
+
+    if (char === '"' || char === '\'') {
+      quote = char
+      continue
+    }
+
+    if (char === '(') depth++
+    if (char === ')') depth--
+
+    if (depth === 0 && index < value.length - 1) return false
+  }
+
+  return depth === 0
+}
+
+function stripWrappingParentheses(value: string): string {
+  let trimmed = value.trim()
+
+  while (hasWrappingParentheses(trimmed)) {
+    trimmed = trimmed.slice(1, -1).trim()
+  }
+
+  return trimmed
 }
 
 function normalizeLiteral(raw: string) {
@@ -440,8 +529,10 @@ export function evaluateLogicString(logicString: string | undefined, source: Rec
 }
 
 export function parseCondition(conditionString: string): LogicField {
+  const normalizedCondition = stripWrappingParentheses(conditionString)
+
   // Match function-like operators: $empty(name), !$empty(name), $contains(name,value), $isToday(name), ...
-  const functionMatch = conditionString.match(/^(!?\$[a-z]\w*)\((.*?)\)$/i)
+  const functionMatch = normalizedCondition.match(/^(!?\$[a-z]\w*)\((.*?)\)$/i)
   if (functionMatch) {
     const operator = reverseOperatorValue(functionMatch[1])
     const args = splitFunctionArguments(functionMatch[2] || '')
@@ -467,7 +558,7 @@ export function parseCondition(conditionString: string): LogicField {
     }
   }
 
-  const trueOrFalseMatch = conditionString.match(/^\$(.*?)\s(==)\s(true|false)$/)
+  const trueOrFalseMatch = normalizedCondition.match(/^\$(.*?)\s(==)\s(true|false)$/)
   if (trueOrFalseMatch) {
     const [_, name, operator, value] = trueOrFalseMatch
     return {
@@ -479,7 +570,7 @@ export function parseCondition(conditionString: string): LogicField {
   }
 
   // Match equality operators (== or !=) with multiple values
-  const equalityMatch = conditionString.match(/^\$(.*?)\s(==|!=)\s(.+)$/)
+  const equalityMatch = normalizedCondition.match(/^\$(.*?)\s(==|!=)\s(.+)$/)
   if (equalityMatch) {
     const [_, name, operator, valuesString] = equalityMatch
     const values = valuesString?.split(' || ').map(val => val.trim()) || []
@@ -492,7 +583,7 @@ export function parseCondition(conditionString: string): LogicField {
   }
 
   // Match comparison operators (>, >=, <, <=)
-  const comparisonMatch = conditionString.match(/^\$(.*?)\s(>=|<=|>|<)\s(.+)$/)
+  const comparisonMatch = normalizedCondition.match(/^\$(.*?)\s(>=|<=|>|<)\s(.+)$/)
   if (comparisonMatch) {
     return {
       name: comparisonMatch[1]?.replace('$', '') || '',
@@ -537,7 +628,7 @@ export function generateHumanReadableText(parsedLogic: LogicField[], operators: 
 
     if (field.or && field.or.length) {
       const orConditions = field.or.map(formatCondition).join(' ou ')
-      return `${mainCondition} ou ${orConditions}`
+      return `(${mainCondition} ou ${orConditions})`
     }
 
     return mainCondition
@@ -545,34 +636,4 @@ export function generateHumanReadableText(parsedLogic: LogicField[], operators: 
 
   // Map all logic fields into a readable format
   return parsedLogic.map(formatLogicField).join(' e ')
-}
-
-function groupConditions(values: string[]): string[] {
-  // Group conditions using reduce
-  const grouped = values.reduce<Record<string, string[]>>((acc, condition) => {
-    // Match for "key == value" or "key != value"
-    const match = condition.match(/(.+?)(==|!=)\s*(.+)/)
-    if (match) {
-      const keyOperator = match[1] + match[2].trim() // Extract "key ==" or "key !="
-      const value = match[3].trim() // Extract value
-      return {
-        ...acc,
-        [keyOperator]: [...(acc[keyOperator] || []), value],
-      }
-    }
-    return acc
-  }, {})
-
-  // Map grouped conditions into formatted strings
-  const groupedConditions = Object.entries(grouped).map(
-    ([keyOperator, values]) => `${keyOperator} ${values.join(', ')}`,
-  )
-
-  // Filter unique conditions (not grouped)
-  const uniqueConditions = values.filter(
-    condition => !condition.match(/(.+?)(==|!=)\s*(.+)/),
-  )
-
-  // Combine grouped and unique conditions
-  return [...groupedConditions, ...uniqueConditions]
 }

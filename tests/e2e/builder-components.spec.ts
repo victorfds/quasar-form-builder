@@ -1,6 +1,9 @@
 import type { Page } from '@playwright/test'
+import { compile } from '@formkit/core'
+import { empty } from '@formkit/utils'
 import { expect, test } from '@playwright/test'
-import { saveLogic } from '../../src/runtime/app/utils/formUtils'
+import { getAllConditionOperators } from '../../src/runtime/app/utils/conditionOperators'
+import { evaluateLogicString, generateHumanReadableText, parseLogic, saveLogic } from '../../src/runtime/app/utils/formUtils'
 
 const defaultOptions = [
   { label: 'Opção 1', value: 'option_1' },
@@ -263,6 +266,13 @@ async function expectConditionOperators(page: Page, fieldName: string, expected:
   }
 
   await page.keyboard.press('Escape')
+}
+
+function evaluateFormKitExpression(expression: string, source: Record<string, unknown>): boolean {
+  const condition = compile(expression).provide((tokens: string[]) => {
+    return Object.fromEntries(tokens.map(token => [token, () => source[token]]))
+  })
+  return Boolean(condition())
 }
 
 async function selectConditionOperator(page: Page, label: string, index = 0) {
@@ -808,7 +818,75 @@ test('saveLogic serializes pending equality tag values', () => {
     },
   )
 
-  expect(saved.if).toBe('$title == "VIP" || $status != "blocked"')
+  expect(saved.if).toBe('($title == "VIP" || $status != "blocked")')
+})
+
+test('saveLogic groups or expressions before and expressions', () => {
+  const saved: Record<string, unknown> = {}
+
+  saveLogic(
+    {
+      logicFields: [
+        {
+          name: 'text',
+          operator: 'notEquals',
+          value: '',
+          values: ['12'],
+          or: [
+            {
+              name: 'text',
+              operator: 'notEquals',
+              value: '',
+              values: ['14'],
+              or: [],
+            },
+          ],
+        },
+        {
+          name: 'signature',
+          operator: 'notEmpty',
+          value: '',
+          values: [],
+          or: [],
+        },
+      ],
+    },
+    'if',
+    (property, value) => {
+      saved[property] = value
+    },
+  )
+
+  const expression = saved.if as string
+  const parsed = parseLogic(expression)
+
+  expect(expression).toBe('($text != 12 || $text != 14) && !$empty($signature)')
+  expect(generateHumanReadableText(parsed, getAllConditionOperators())).toBe('(text é diferente de [12] ou text é diferente de [14]) e signature não está vazio')
+  expect(parsed).toMatchObject([
+    {
+      name: 'text',
+      operator: 'notEquals',
+      values: ['12'],
+      or: [
+        {
+          name: 'text',
+          operator: 'notEquals',
+          values: ['14'],
+        },
+      ],
+    },
+    {
+      name: 'signature',
+      operator: 'notEmpty',
+      or: [],
+    },
+  ])
+
+  expect(parseLogic('$text != 12 || $text != 14 && !$empty($signature)')).toMatchObject(parsed)
+  expect(evaluateLogicString(expression, { text: 15, signature: '' })).toBe(false)
+  expect(evaluateLogicString(expression, { text: 15, signature: 'signed' })).toBe(true)
+  expect(evaluateFormKitExpression(expression, { text: 15, signature: '', empty })).toBe(false)
+  expect(evaluateFormKitExpression(expression, { text: 15, signature: 'signed', empty })).toBe(true)
 })
 
 test('saving equality conditions commits the focused pending tag input', async ({ page }) => {
