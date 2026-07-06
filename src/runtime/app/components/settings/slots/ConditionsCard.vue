@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { FormKitSchemaDefinition } from '@formkit/core'
-import type { LogicField } from '#qfb/types'
+import type { ConditionValueInputMode, LogicField } from '#qfb/types'
 import { useQuasar } from 'quasar'
 import { computed, reactive, ref } from 'vue'
-import { checkboxOperators, dateOperators, htmlTypes, operators } from '#qfb/constants'
 import { useFormStore } from '#qfb/stores/formStore'
+import { getAllConditionOperators, getConditionOperatorsForField, getConditionValueInputMode, isConditionOperatorAllowedForField, isConditionTargetField, needsConditionValue } from '#qfb/utils/conditionOperators'
 import { generateHumanReadableText, parseLogic, saveLogic } from '#qfb/utils/formUtils'
 
 const props = defineProps<{
@@ -31,9 +31,10 @@ const showConditionsForm = ref<boolean>(false)
 const compactMode = computed(() => props.mode === 'icon')
 
 const getFieldList = computed(() => {
-  const cannotSelectList = ['q-btn', 'hr'].concat(htmlTypes.map(htmlType => htmlType.value))
   const activeName = (activeElement.value as any)?.name
-  const list = formStore.allFields.filter(k => k.name !== activeName && k.name !== 'slots').map(formField => ({ label: formField.name, value: formField.name, cannotSelect: cannotSelectList.includes(formField.$formkit) || cannotSelectList.includes(formField.$el) }))
+  const list = formStore.allFields
+    .filter(formField => formField.name !== activeName && isConditionTargetField(formField))
+    .map(formField => ({ label: formField.name, value: formField.name, cannotSelect: false }))
 
   if (!list.length) return [{ label: 'A lista está vazia', value: null, cannotSelect: true }]
 
@@ -68,37 +69,34 @@ function resetConditions() {
   elementStates.logicFields = [{ name: '', operator: '', value: '', values: [], or: [] }]
 }
 
-function getOperators(field: LogicField) {
-  const originalField = getFieldByName(field.name)
-
-  if (!originalField) return []
-
-  if (['q-checkbox', 'q-toggle'].includes(String(originalField.$formkit))) return checkboxOperators
-  if (['q-date', 'q-date-multiple', 'q-date-range', 'q-datetime'].includes(originalField?.$formkit as string)) return dateOperators
-  if (['q-select', 'q-option-group', 'q-btn-toggle'].includes(String(originalField.$formkit))) {
-    return operators.filter(operator => ['empty', 'notEmpty', 'equals', 'notEquals'].includes(operator.value))
-  }
-  if (originalField.$formkit === 'q-input' && originalField.inputType === 'number') {
-    return operators.filter(operator => operator.value !== 'contains')
-  }
-  if (['q-slider', 'q-range'].includes(String(originalField.$formkit))) {
-    return operators.filter(operator => ['empty', 'notEmpty', 'equals', 'notEquals', 'greaterThan', 'greaterOrEqualsThan', 'lessThan', 'lessOrEqualsThan'].includes(operator.value))
-  }
-
-  if (field.name) return operators
-
-  return []
+function getOriginalField(fieldName?: string) {
+  return fieldName ? getFieldByName(fieldName) : null
 }
 
-// Helpers to simplify template logic
-const DATE_OP_VALUES = new Set(dateOperators.map(o => o.value))
+function resetConditionValue(field: LogicField) {
+  field.value = ''
+  field.values = []
+}
+
+function handleFieldNameChange(field: LogicField) {
+  resetConditionValue(field)
+
+  const originalField = getOriginalField(field.name)
+  if (!isConditionOperatorAllowedForField(originalField, field.operator)) {
+    field.operator = ''
+  }
+}
+
+function handleOperatorChange(field: LogicField) {
+  resetConditionValue(field)
+}
+
+function getOperators(field: LogicField) {
+  return getConditionOperatorsForField(getOriginalField(field.name))
+}
 
 function needsValue(operator?: string): boolean {
-  if (!operator) return false
-  if (operator === 'isTrue' || operator === 'isFalse') return false
-  if (operator === 'empty' || operator === 'notEmpty') return false
-  if (DATE_OP_VALUES.has(operator)) return false
-  return true
+  return needsConditionValue(operator)
 }
 
 // Higher-level helpers to simplify template conditions
@@ -133,16 +131,24 @@ function hasOptionsFor(fieldName?: string): boolean {
   return !!(fieldName && (getOptionsBasedOnField(fieldName) as any)?.length)
 }
 
+function getValueInputMode(field: LogicField): ConditionValueInputMode {
+  return getConditionValueInputMode(getOriginalField(field.name), field.operator)
+}
+
 function showOptionsSelect(field: LogicField): boolean {
-  return Boolean(field.name && needsValue(field.operator) && isEqualsOrNotEquals(field.operator) && hasOptionsFor(field.name))
+  return Boolean(field.name && hasOptionsFor(field.name) && getValueInputMode(field) === 'options-multiple')
+}
+
+function showSingleOptionSelect(field: LogicField): boolean {
+  return Boolean(field.name && hasOptionsFor(field.name) && getValueInputMode(field) === 'options-single')
 }
 
 function showTagsInput(field: LogicField): boolean {
-  return Boolean(field.name && needsValue(field.operator) && isEqualsOrNotEquals(field.operator) && !hasOptionsFor(field.name))
+  return Boolean(field.name && isEqualsOrNotEquals(field.operator) && getValueInputMode(field) === 'tags')
 }
 
 function showValueInput(field: LogicField): boolean {
-  return Boolean(field.name && needsValue(field.operator) && !isEqualsOrNotEquals(field.operator))
+  return Boolean(field.name && getValueInputMode(field) === 'text')
 }
 
 function columnClass(field: LogicField): string {
@@ -150,7 +156,7 @@ function columnClass(field: LogicField): string {
 }
 
 function shouldShowDialogEmptyState(): boolean {
-  if (props.saveTo === 'if') return false
+  if (!props.saveTo || props.saveTo === 'if') return false
   const active: any = activeElement.value
   const hasGlobalIf = Boolean(active?.if)
   return !hasSavedLogic() && !hasGlobalIf && !showConditionsForm.value
@@ -189,10 +195,10 @@ function hasSubtitle(): boolean {
         </div>
         <div v-else class="text-body2">
           <code>
-            {{ generateHumanReadableText(parseLogic(getSavedLogicString()), [...operators, ...checkboxOperators, ...dateOperators]) }}
+            {{ generateHumanReadableText(parseLogic(getSavedLogicString()), getAllConditionOperators()) }}
           </code>
         </div>
-        <q-btn no-caps label="Editar" color="primary" dense @click="toggleConditionDialog" />
+        <q-btn no-caps label="Editar" aria-label="Editar condições" color="primary" dense @click="toggleConditionDialog" />
       </div>
     </q-card-section>
   </q-card>
@@ -239,13 +245,11 @@ function hasSubtitle(): boolean {
             <div class="condition-wrapper">
               <q-select
                 v-model="field.name" :options="getFieldList" option-disable="cannotSelect" emit-value filled
-                label="Campo" @update:model-value="() => {
-                  field.values = []
-                }"
+                label="Campo" @update:model-value="() => handleFieldNameChange(field)"
               />
 
               <div :class="columnClass(field)">
-                <q-select v-model="field.operator" :options="getOperators(field)" filled emit-value map-options>
+                <q-select :key="`operator-${field.name || 'empty'}-${index}`" v-model="field.operator" :options="getOperators(field)" filled emit-value map-options label="Operador" @update:model-value="() => handleOperatorChange(field)">
                   <template #no-option>
                     <q-item>
                       <q-item-section class="text-grey">
@@ -259,6 +263,19 @@ function hasSubtitle(): boolean {
                   v-if="showOptionsSelect(field)"
                   v-model="field.values" :options="getOptionsBasedOnField(field.name)" multiple filled label="valor"
                   map-options emit-value
+                >
+                  <template #no-option>
+                    <q-item>
+                      <q-item-section class="text-italic text-grey">
+                        Sem opções
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                </q-select>
+                <q-select
+                  v-if="showSingleOptionSelect(field)"
+                  v-model="field.value" :options="getOptionsBasedOnField(field.name)" filled label="valor"
+                  map-options emit-value clearable
                 >
                   <template #no-option>
                     <q-item>
@@ -306,13 +323,11 @@ function hasSubtitle(): boolean {
               <div class="condition-wrapper-or">
                 <q-select
                   v-model="fieldOr.name" :options="getFieldList" option-disable="cannotSelect" filled emit-value
-                  label="Campo" @update:model-value="() => {
-                    fieldOr.values = []
-                  }"
+                  label="Campo" @update:model-value="() => handleFieldNameChange(fieldOr)"
                 />
 
                 <div :class="columnClass(fieldOr)">
-                  <q-select v-model="fieldOr.operator" :options="getOperators(fieldOr)" filled emit-value map-options>
+                  <q-select :key="`operator-or-${fieldOr.name || 'empty'}-${index}-${indexOr}`" v-model="fieldOr.operator" :options="getOperators(fieldOr)" filled emit-value map-options label="Operador" @update:model-value="() => handleOperatorChange(fieldOr)">
                     <template #no-option>
                       <q-item>
                         <q-item-section class="text-grey">
@@ -326,6 +341,19 @@ function hasSubtitle(): boolean {
                     v-if="showOptionsSelect(fieldOr)"
                     v-model="fieldOr.values" :options="getOptionsBasedOnField(fieldOr.name)" multiple filled
                     label="valor" map-options emit-value
+                  >
+                    <template #no-option>
+                      <q-item>
+                        <q-item-section class="text-italic text-grey">
+                          Sem opções
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
+                  <q-select
+                    v-if="showSingleOptionSelect(fieldOr)"
+                    v-model="fieldOr.value" :options="getOptionsBasedOnField(fieldOr.name)" filled
+                    label="valor" map-options emit-value clearable
                   >
                     <template #no-option>
                       <q-item>

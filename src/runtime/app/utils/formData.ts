@@ -2,7 +2,7 @@ import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { ExtractedFormAnswer, ExtractedFormData, ExtractedFormItem, StructureCell } from '#qfb/types'
 import { empty, eq } from '@formkit/utils'
 import { isDayAfterTomorrow, isDayBeforeYesterday, isToday, isTomorrow, isYesterday } from '#qfb/utils/dateLogic'
-import { contains } from '#qfb/utils/logic'
+import { contains, endsWith, startsWith } from '#qfb/utils/logic'
 
 const structureTypes = new Set(['q-container', 'q-list-structure', 'q-grid', 'q-table-structure', 'q-tabs', 'q-stepper'])
 const noAnswerTypes = new Set(['q-btn', 'q-separator'])
@@ -179,6 +179,8 @@ export function createFormSchemaData(formFields: FormKitSchemaDefinition[] = [],
     empty,
     eq,
     contains,
+    startsWith,
+    endsWith,
     isToday,
     isTomorrow,
     isYesterday,

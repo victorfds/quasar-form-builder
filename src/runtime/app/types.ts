@@ -210,9 +210,36 @@ export type MatrixViewMode = 'default' | 'table'
 export type MatrixSize = 'default' | 'sm' | 'md' | 'lg'
 export type MatrixValue = Record<string, Record<string, unknown>> | Array<Record<string, unknown>>
 
+export type ConditionOperatorValue
+  = | 'empty'
+    | 'notEmpty'
+    | 'equals'
+    | 'notEquals'
+    | 'greaterThan'
+    | 'greaterOrEqualsThan'
+    | 'lessThan'
+    | 'lessOrEqualsThan'
+    | 'startsWith'
+    | 'endsWith'
+    | 'contains'
+    | 'isTrue'
+    | 'isFalse'
+    | 'isToday'
+    | 'isTomorrow'
+    | 'isYesterday'
+    | 'isDayAfterTomorrow'
+    | 'isDayBeforeYesterday'
+
+export interface ConditionOperatorOption {
+  value: ConditionOperatorValue
+  label: string
+}
+
+export type ConditionValueInputMode = 'none' | 'text' | 'tags' | 'options-single' | 'options-multiple'
+
 export interface LogicField {
   name: string
-  operator: string
+  operator: ConditionOperatorValue | ''
   value: string
   values: string[]
   or?: LogicField[] | null

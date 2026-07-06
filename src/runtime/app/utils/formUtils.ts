@@ -1,5 +1,12 @@
-import type { LogicField } from '#qfb/types'
-import { contains } from './logic'
+import type { ConditionOperatorValue, LogicField } from '#qfb/types'
+import { contains, endsWith, startsWith } from './logic'
+
+const valueFunctionOperators = new Set(['$contains', '$startsWith', '$endsWith'])
+
+type ProcessableLogicField = Omit<LogicField, 'operator' | 'or'> & {
+  operator: string
+  or?: ProcessableLogicField[] | null
+}
 
 export function transformOperatorValue(operatorValue: string): string {
   const operatorMap: Record<string, string> = {
@@ -12,6 +19,8 @@ export function transformOperatorValue(operatorValue: string): string {
     lessThan: '<',
     lessOrEqualsThan: '<=',
     contains: '$contains',
+    startsWith: '$startsWith',
+    endsWith: '$endsWith',
     // Date-specific operators (function-like)
     isToday: '$isToday',
     isTomorrow: '$isTomorrow',
@@ -25,8 +34,8 @@ export function transformOperatorValue(operatorValue: string): string {
   return operatorMap[operatorValue] ?? ''
 }
 
-export function reverseOperatorValue(symbol?: string): string {
-  const reverseOperatorMap: Record<string, string> = {
+export function reverseOperatorValue(symbol?: string): ConditionOperatorValue | '' {
+  const reverseOperatorMap: Record<string, ConditionOperatorValue> = {
     '$empty': 'empty',
     '!$empty': 'notEmpty',
     '==': 'equals',
@@ -36,6 +45,8 @@ export function reverseOperatorValue(symbol?: string): string {
     '<': 'lessThan',
     '<=': 'lessOrEqualsThan',
     '$contains': 'contains',
+    '$startsWith': 'startsWith',
+    '$endsWith': 'endsWith',
     // Date-specific operators (function-like)
     '$isToday': 'isToday',
     '$isTomorrow': 'isTomorrow',
@@ -65,14 +76,14 @@ function formatConditionLiteral(raw: unknown) {
   return JSON.stringify(value)
 }
 
-export function processSingleCondition(condition: LogicField, orData: string[]): string {
+export function processSingleCondition(condition: ProcessableLogicField, orData: string[]): string {
   const { name, operator, value, values } = condition
 
   if (['$empty', '!$empty'].includes(operator)) {
     return `${operator}($${name})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
   }
 
-  if (['$contains'].includes(operator)) {
+  if (valueFunctionOperators.has(operator)) {
     return `${operator}($${name},${formatConditionLiteral(value)})${orData.length ? ' || ' : ''}${orData.join(' || ')}`
   }
 
@@ -93,7 +104,7 @@ export function processSingleCondition(condition: LogicField, orData: string[]):
   return `$${name} ${operator} ${formatConditionLiteral(value)}${orData.length ? ' || ' : ''}${orData.join(' || ')}`
 }
 
-export function processConditions(conditions: LogicField[]): string[] {
+export function processConditions(conditions: ProcessableLogicField[]): string[] {
   return conditions.map((orCondition) => {
     const { name, operator, value, values } = orCondition
 
@@ -101,7 +112,7 @@ export function processConditions(conditions: LogicField[]): string[] {
       return `${operator}($${name})`
     }
 
-    if (['$contains'].includes(operator)) {
+    if (valueFunctionOperators.has(operator)) {
       return `${operator}($${name},${formatConditionLiteral(value)})`
     }
 
@@ -206,6 +217,56 @@ function normalizeLiteral(raw: string) {
   const asNumber = Number(unquoted)
   if (!Number.isNaN(asNumber) && unquoted !== '') return asNumber
   return unquoted
+}
+
+function formatParsedLiteral(raw: string): string {
+  const normalized = normalizeLiteral(raw)
+  if (normalized === null || normalized === undefined) return ''
+  return String(normalized)
+}
+
+function splitFunctionArguments(raw: string): string[] {
+  const args: string[] = []
+  let current = ''
+  let quote: '"' | '\'' | null = null
+  let escaped = false
+
+  for (const char of raw) {
+    if (escaped) {
+      current += char
+      escaped = false
+      continue
+    }
+
+    if (char === '\\') {
+      current += char
+      escaped = true
+      continue
+    }
+
+    if (quote) {
+      current += char
+      if (char === quote) quote = null
+      continue
+    }
+
+    if (char === '"' || char === '\'') {
+      quote = char
+      current += char
+      continue
+    }
+
+    if (char === ',') {
+      args.push(current.trim())
+      current = ''
+      continue
+    }
+
+    current += char
+  }
+
+  args.push(current.trim())
+  return args
 }
 
 function normalizeConditionValue(value: unknown): unknown {
@@ -313,6 +374,16 @@ function evaluateSingleLogicCondition(condition: LogicField, source: Record<stri
     return containsFn(value, normalizeLiteral(condition.value))
   }
 
+  if (operator === 'startsWith') {
+    const startsWithFn = typeof source.startsWith === 'function' ? source.startsWith : startsWith
+    return startsWithFn(value, normalizeLiteral(condition.value))
+  }
+
+  if (operator === 'endsWith') {
+    const endsWithFn = typeof source.endsWith === 'function' ? source.endsWith : endsWith
+    return endsWithFn(value, normalizeLiteral(condition.value))
+  }
+
   if (operator.startsWith('is')) {
     const fn = source[operator]
     if (typeof fn === 'function') return fn(value)
@@ -357,15 +428,16 @@ export function parseCondition(conditionString: string): LogicField {
   const functionMatch = conditionString.match(/^(!?\$[a-z]\w*)\((.*?)\)$/i)
   if (functionMatch) {
     const operator = reverseOperatorValue(functionMatch[1])
+    const args = splitFunctionArguments(functionMatch[2] || '')
 
-    // For $contains, we have 2 parameters: name and value
-    if (operator === 'contains') {
-      const [name = '', value = ''] = (functionMatch[2] || '').split(',').map(item => item.trim())
+    // Text match functions have 2 parameters: name and value.
+    if (operator === 'contains' || operator === 'startsWith' || operator === 'endsWith') {
+      const [name = '', value = ''] = args
 
       return {
         operator,
         name: name?.replace('$', ''),
-        value,
+        value: formatParsedLiteral(value),
         values: [],
       }
     }
@@ -373,7 +445,7 @@ export function parseCondition(conditionString: string): LogicField {
     // Generic 1-argument function operators (date ops, $empty, etc.)
     return {
       operator,
-      name: functionMatch[2]?.replace('$', '') || '',
+      name: args[0]?.replace('$', '') || '',
       value: '',
       values: [],
     }
@@ -399,7 +471,7 @@ export function parseCondition(conditionString: string): LogicField {
       name: name?.replace('$', '') || '',
       operator: reverseOperatorValue(operator),
       value: '',
-      values,
+      values: values.map(formatParsedLiteral),
     }
   }
 
@@ -409,7 +481,7 @@ export function parseCondition(conditionString: string): LogicField {
     return {
       name: comparisonMatch[1]?.replace('$', '') || '',
       operator: reverseOperatorValue(comparisonMatch[2]),
-      value: comparisonMatch[3]?.trim() || '',
+      value: formatParsedLiteral(comparisonMatch[3]?.trim() || ''),
       values: [],
     }
   }
