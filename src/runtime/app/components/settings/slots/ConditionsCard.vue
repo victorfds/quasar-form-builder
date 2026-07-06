@@ -5,6 +5,7 @@ import { useQuasar } from 'quasar'
 import { computed, reactive, ref } from 'vue'
 import { checkboxOperators, dateOperators, htmlTypes, operators } from '#qfb/constants'
 import { useFormStore } from '#qfb/stores/formStore'
+import { generateHumanReadableText, parseLogic, saveLogic } from '#qfb/utils/formUtils'
 
 const props = defineProps<{
   noConditionsMessage?: string

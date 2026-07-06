@@ -5,7 +5,7 @@ import { computed, inject, shallowRef } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
 import { builderModeKey } from '#qfb/constants/injectionKeys'
 import { useFormStore } from '#qfb/stores/formStore'
-import { getFormKitContextAttrs, getQuasarFieldDesignAttrs } from '#qfb/utils/quasarFieldDesign'
+import { cleanUndefinedAttrs, getFormKitContextAttrs, getQuasarFieldDesignAttrs } from '#qfb/utils/quasarFieldDesign'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: { inputType: QInputProps['type'] } } }>()
 
