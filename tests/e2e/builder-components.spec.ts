@@ -1,5 +1,9 @@
 import type { Page } from '@playwright/test'
+import { compile } from '@formkit/core'
+import { empty } from '@formkit/utils'
 import { expect, test } from '@playwright/test'
+import { getAllConditionOperators } from '../../src/runtime/app/utils/conditionOperators'
+import { evaluateLogicString, generateHumanReadableText, parseLogic, saveLogic } from '../../src/runtime/app/utils/formUtils'
 
 const defaultOptions = [
   { label: 'Opção 1', value: 'option_1' },
@@ -262,6 +266,20 @@ async function expectConditionOperators(page: Page, fieldName: string, expected:
   }
 
   await page.keyboard.press('Escape')
+}
+
+function evaluateFormKitExpression(expression: string, source: Record<string, unknown>): boolean {
+  const condition = compile(expression).provide((tokens: string[]) => {
+    return Object.fromEntries(tokens.map(token => [token, () => source[token]]))
+  })
+  return Boolean(condition())
+}
+
+async function selectConditionOperator(page: Page, label: string, index = 0) {
+  await conditionsDialog(page).getByLabel('Operador').nth(index).click()
+  await page.getByRole('option', { name: label, exact: true }).click()
+  await conditionsDialog(page).getByRole('heading', { name: 'Condições' }).click()
+  await expect(page.getByRole('listbox')).toHaveCount(0)
 }
 
 async function expectSchemaMounted(page: Page, schema: typeof componentSchemas[number]['schema']) {
@@ -769,6 +787,135 @@ test('condition operator list follows the selected target field semantics', asyn
   await expectConditionOperators(page, 'choices', ['está vazio', 'não está vazio', 'contém'], ['é igual a'])
   await expectConditionOperators(page, 'period', ['está vazio', 'não está vazio'], ['é hoje'])
   await expectConditionOperators(page, 'hour', ['está vazio', 'não está vazio', 'é igual a', 'é diferente de'], ['é hoje'])
+})
+
+test('saveLogic serializes pending equality tag values', () => {
+  const saved: Record<string, unknown> = {}
+
+  saveLogic(
+    {
+      logicFields: [
+        {
+          name: 'title',
+          operator: 'equals',
+          value: 'VIP',
+          values: [],
+          or: [
+            {
+              name: 'status',
+              operator: 'notEquals',
+              value: 'blocked',
+              values: [],
+              or: [],
+            },
+          ],
+        },
+      ],
+    },
+    'if',
+    (property, value) => {
+      saved[property] = value
+    },
+  )
+
+  expect(saved.if).toBe('($title == "VIP" || $status != "blocked")')
+})
+
+test('saveLogic groups or expressions before and expressions', () => {
+  const saved: Record<string, unknown> = {}
+
+  saveLogic(
+    {
+      logicFields: [
+        {
+          name: 'text',
+          operator: 'notEquals',
+          value: '',
+          values: ['12'],
+          or: [
+            {
+              name: 'text',
+              operator: 'notEquals',
+              value: '',
+              values: ['14'],
+              or: [],
+            },
+          ],
+        },
+        {
+          name: 'signature',
+          operator: 'notEmpty',
+          value: '',
+          values: [],
+          or: [],
+        },
+      ],
+    },
+    'if',
+    (property, value) => {
+      saved[property] = value
+    },
+  )
+
+  const expression = saved.if as string
+  const parsed = parseLogic(expression)
+
+  expect(expression).toBe('($text != 12 || $text != 14) && !$empty($signature)')
+  expect(generateHumanReadableText(parsed, getAllConditionOperators())).toBe('(text é diferente de [12] ou text é diferente de [14]) e signature não está vazio')
+  expect(parsed).toMatchObject([
+    {
+      name: 'text',
+      operator: 'notEquals',
+      values: ['12'],
+      or: [
+        {
+          name: 'text',
+          operator: 'notEquals',
+          values: ['14'],
+        },
+      ],
+    },
+    {
+      name: 'signature',
+      operator: 'notEmpty',
+      or: [],
+    },
+  ])
+
+  expect(parseLogic('$text != 12 || $text != 14 && !$empty($signature)')).toMatchObject(parsed)
+  expect(evaluateLogicString(expression, { text: 15, signature: '' })).toBe(false)
+  expect(evaluateLogicString(expression, { text: 15, signature: 'signed' })).toBe(true)
+  expect(evaluateFormKitExpression(expression, { text: 15, signature: '', empty })).toBe(false)
+  expect(evaluateFormKitExpression(expression, { text: 15, signature: 'signed', empty })).toBe(true)
+})
+
+test('saving equality conditions commits the focused pending tag input', async ({ page }) => {
+  const cases = [
+    { operatorLabel: 'é igual a', value: 'VIP', expected: '$title == "VIP"' },
+    { operatorLabel: 'é diferente de', value: 'blocked', expected: '$title != "blocked"' },
+  ]
+
+  for (const scenario of cases) {
+    await loadBuilder(page, [
+      { $formkit: 'q-input', name: 'subject', label: 'Campo com condição', inputType: 'text' },
+      { $formkit: 'q-input', name: 'title', label: 'Título', inputType: 'text' },
+    ])
+
+    await openConditionsDialogForField(page, 'subject')
+    await selectConditionTargetField(page, 'title')
+    await selectConditionOperator(page, scenario.operatorLabel)
+
+    const dialog = conditionsDialog(page)
+    const valueInput = dialog.getByLabel('valor')
+    await valueInput.fill(scenario.value)
+    await expect(valueInput).toBeFocused()
+    await dialog.getByRole('button', { name: 'Salvar' }).evaluate((button: HTMLElement) => button.click())
+
+    await expect.poll(async () => {
+      const fields = await readFields(page)
+      return fields.find((field: { name: string }) => field.name === 'subject')?.if
+    }).toBe(scenario.expected)
+  }
 })
 
 test('text prefix and suffix condition operators evaluate in preview mode', async ({ page }) => {

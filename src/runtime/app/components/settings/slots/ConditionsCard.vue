@@ -60,6 +60,7 @@ function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
 }
 
 function triggerSaveLogic() {
+  elementStates.logicFields.forEach(commitPendingTags)
   const updateProp = props.updateProp || onEnteredProp
   saveLogic(elementStates, props.saveTo, updateProp)
   conditionDialog.value = false
@@ -89,6 +90,25 @@ function handleFieldNameChange(field: LogicField) {
 
 function handleOperatorChange(field: LogicField) {
   resetConditionValue(field)
+}
+
+function commitPendingTag(field: LogicField) {
+  const value = field.value.trim()
+  if (value && !field.values.includes(value)) {
+    field.values.push(value)
+  }
+  field.value = ''
+}
+
+function commitPendingTags(field: LogicField) {
+  if (showTagsInput(field)) {
+    commitPendingTag(field)
+  }
+  field.or?.forEach(commitPendingTags)
+}
+
+function removeTag(field: LogicField, index: number) {
+  field.values.splice(index, 1)
 }
 
 function getOperators(field: LogicField) {
@@ -287,27 +307,15 @@ function hasSubtitle(): boolean {
                 </q-select>
                 <q-input
                   v-if="showTagsInput(field)"
-                  v-model="field.value" filled clearable @keyup.enter="function addTag() {
-                    const value = field.value.trim()
-                    if (value && !field.values.includes(value)) {
-                      field.values.push(value)
-                    }
-                    field.value = ''
-                  }" @blur="function addTag() {
-                    const value = field.value.trim()
-                    if (value && !field.values.includes(value)) {
-                      field.values.push(value)
-                    }
-                    field.value = ''
-                  }"
+                  v-model="field.value" filled clearable aria-label="valor"
+                  @keyup.enter="commitPendingTag(field)"
+                  @blur="commitPendingTag(field)"
                 >
                   <template #prepend>
                     <div class="q-gutter-xs row flex-wrap">
                       <q-chip
-                        v-for="(tag, tagIndex) in field.values" :key="tagIndex" removable @remove="() => (function removeTag(index: number) {
-                          field.values.splice(index, 1)
-                        })(tagIndex)
-                        "
+                        v-for="(tag, tagIndex) in field.values" :key="tagIndex" removable
+                        @remove="removeTag(field, tagIndex)"
                       >
                         {{ tag }}
                       </q-chip>
@@ -315,7 +323,7 @@ function hasSubtitle(): boolean {
                   </template>
                 </q-input>
 
-                <q-input v-if="showValueInput(field)" v-model="field.value" filled />
+                <q-input v-if="showValueInput(field)" v-model="field.value" filled aria-label="valor" />
               </div>
             </div>
 
@@ -364,27 +372,15 @@ function hasSubtitle(): boolean {
                     </template>
                   </q-select>
                   <q-input
-                    v-if="showTagsInput(fieldOr)" v-model="fieldOr.value" filled clearable @keyup.enter="function addTag() {
-                      const value = fieldOr.value.trim()
-                      if (value && !fieldOr.values.includes(value)) {
-                        fieldOr.values.push(value)
-                      }
-                      fieldOr.value = ''
-                    }" @blur="function addTag() {
-                      const value = fieldOr.value.trim()
-                      if (value && !fieldOr.values.includes(value)) {
-                        fieldOr.values.push(value)
-                      }
-                      fieldOr.value = ''
-                    }"
+                    v-if="showTagsInput(fieldOr)" v-model="fieldOr.value" filled clearable aria-label="valor"
+                    @keyup.enter="commitPendingTag(fieldOr)"
+                    @blur="commitPendingTag(fieldOr)"
                   >
                     <template #prepend>
                       <div class="q-gutter-xs row flex-wrap">
                         <q-chip
-                          v-for="(tag, indexTag) in fieldOr.values" :key="indexTag" removable @remove="() => (function removeTag(index: number) {
-                            fieldOr.values.splice(index, 1)
-                          })(indexTag)
-                          "
+                          v-for="(tag, indexTag) in fieldOr.values" :key="indexTag" removable
+                          @remove="removeTag(fieldOr, indexTag)"
                         >
                           {{ tag }}
                         </q-chip>
@@ -392,7 +388,7 @@ function hasSubtitle(): boolean {
                     </template>
                   </q-input>
 
-                  <q-input v-if="showValueInput(fieldOr)" v-model="fieldOr.value" filled />
+                  <q-input v-if="showValueInput(fieldOr)" v-model="fieldOr.value" filled aria-label="valor" />
                 </div>
               </div>
             </div>
