@@ -8,7 +8,7 @@ import { useFieldUi } from '#qfb/composables/useFieldUi'
 import useSteps from '#qfb/composables/useSteps'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { useFormStore } from '#qfb/stores/formStore'
-import { withStructureChildrenListForRender } from '#qfb/utils'
+import { withStructureChildrenForRender, withStructureChildrenListForRender } from '#qfb/utils'
 import { evaluateLogicString } from '#qfb/utils/formUtils'
 
 interface StepDefinition {

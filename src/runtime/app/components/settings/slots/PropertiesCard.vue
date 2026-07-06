@@ -3,6 +3,7 @@ import { useQuasar } from 'quasar'
 import { reactive, ref } from 'vue'
 import { fieldTypes } from '#qfb/constants'
 import { useFormStore } from '#qfb/stores/formStore'
+import { getTypesBasedOnFieldType } from '#qfb/utils'
 
 defineProps<{ hasInputType?: boolean, hasTooltip?: boolean, hasPlaceholder?: boolean, hasDescription?: boolean }>()
 

@@ -5,7 +5,7 @@ import { computed, inject, shallowRef, unref, watch } from 'vue'
 import { useFieldUi } from '#qfb/composables/useFieldUi'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { useFormStore } from '#qfb/stores/formStore'
-import { withStructureChildrenListForRender } from '#qfb/utils'
+import { withStructureChildrenForRender, withStructureChildrenListForRender } from '#qfb/utils'
 
 type BuilderStructureField = FormKitSchemaDefinition & {
   name?: string
