@@ -2,6 +2,8 @@ import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { ComponentsTypes } from '#qfb/types'
 import { fieldTypes } from '#qfb/constants'
 
+export * from './conditionOperators'
+
 export function nameExists(name: string, array: Array<FormKitSchemaDefinition>) {
   return array.some(el => el.name === name)
 }

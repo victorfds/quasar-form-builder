@@ -1,4 +1,6 @@
-export const operators = [
+import type { ConditionOperatorOption } from '#qfb/types'
+
+export const operators: ConditionOperatorOption[] = [
   { value: 'empty', label: 'está vazio' },
   { value: 'notEmpty', label: 'não está vazio' },
   { value: 'equals', label: 'é igual a' },
@@ -7,18 +9,17 @@ export const operators = [
   { value: 'greaterOrEqualsThan', label: '>= do que' },
   { value: 'lessThan', label: '< do que' },
   { value: 'lessOrEqualsThan', label: '<= do que' },
+  { value: 'startsWith', label: 'começa com' },
+  { value: 'endsWith', label: 'termina com' },
   { value: 'contains', label: 'contém' },
 ]
 
-export const checkboxOperators = [
+export const checkboxOperators: ConditionOperatorOption[] = [
   { value: 'isTrue', label: 'é verdadeiro' },
   { value: 'isFalse', label: 'é falso' },
-  { value: 'equals', label: 'é igual a' },
-  { value: 'notEquals', label: 'é diferente de' },
-
 ]
 
-export const dateOperators = [
+export const dateOperators: ConditionOperatorOption[] = [
   { value: 'empty', label: 'está vazio' },
   { value: 'notEmpty', label: 'não está vazio' },
   { value: 'isToday', label: 'é hoje' },
@@ -27,6 +28,13 @@ export const dateOperators = [
   { value: 'isDayAfterTomorrow', label: 'é depois de amanhã' },
   { value: 'isDayBeforeYesterday', label: 'é anteontem' },
 ]
+
+export const allConditionOperators: ConditionOperatorOption[] = Array.from(
+  new Map(
+    [...operators, ...checkboxOperators, ...dateOperators]
+      .map(operator => [operator.value, operator]),
+  ).values(),
+)
 
 export const fieldTypes: Record<string, { label: string, value: string }[]> = {
   'q-input': [

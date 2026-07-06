@@ -222,6 +222,48 @@ async function switchToPreviewMode(page: Page) {
   await expect(page.locator('.preview-form-container .preview-form-remove-action')).toHaveCount(0)
 }
 
+async function openConditionsDialogForField(page: Page, fieldName: string) {
+  await page.locator(`[data-field-name="${fieldName}"] .overlay-preview-element`).click()
+  const drawer = page.locator('[data-drawer="right"]')
+  await expect(drawer).toContainText(fieldName)
+  await drawer.getByRole('button', { name: 'Editar condições' }).click()
+  await expect(conditionsDialog(page)).toBeVisible()
+}
+
+function conditionsDialog(page: Page) {
+  return page.locator('.q-dialog .q-card').filter({ hasText: 'Condições' }).last()
+}
+
+async function getVisibleMenuItemTexts(page: Page) {
+  const menu = page.getByRole('listbox').last()
+  await expect(menu).toBeVisible()
+  return menu.getByRole('option').evaluateAll(elements =>
+    elements
+      .map(element => element.textContent?.replace(/\s+/g, ' ').trim())
+      .filter((text): text is string => Boolean(text)),
+  )
+}
+
+async function selectConditionTargetField(page: Page, fieldName: string) {
+  await conditionsDialog(page).getByLabel('Campo').first().click()
+  await page.getByRole('option', { name: fieldName, exact: true }).click()
+  await conditionsDialog(page).getByRole('heading', { name: 'Condições' }).click()
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+}
+
+async function expectConditionOperators(page: Page, fieldName: string, expected: string[], unexpected: string[] = []) {
+  await selectConditionTargetField(page, fieldName)
+  await conditionsDialog(page).getByLabel('Operador').first().click()
+  const labels = await getVisibleMenuItemTexts(page)
+
+  expect(labels).toEqual(expected)
+  for (const label of unexpected) {
+    expect(labels).not.toContain(label)
+  }
+
+  await page.keyboard.press('Escape')
+}
+
 async function expectSchemaMounted(page: Page, schema: typeof componentSchemas[number]['schema']) {
   if ('$formkit' in schema && schema.$formkit === 'q-stepper') {
     await expect(page.locator('.q-stepper')).toBeVisible()
@@ -692,6 +734,61 @@ test('step conditions react to fields nested inside list structures', async ({ p
   await page.getByLabel('Número').fill('4')
 
   await expect(page.locator('.q-stepper__tab').filter({ hasText: 'Passo 2' })).toBeVisible()
+})
+
+test('condition operator list follows the selected target field semantics', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'subject', label: 'Campo com condição', inputType: 'text' },
+    { $formkit: 'q-input', name: 'title', label: 'Título', inputType: 'text' },
+    { $formkit: 'q-input', name: 'amount', label: 'Valor', inputType: 'number' },
+    { $formkit: 'q-signature', name: 'signature', label: 'Assinatura' },
+    { $formkit: 'q-checkbox', name: 'accepted', label: 'Aceite' },
+    { $formkit: 'q-select', name: 'choices', label: 'Escolhas', multiple: true, options: defaultOptions },
+    { $formkit: 'q-date-range', name: 'period', label: 'Período' },
+    { $formkit: 'q-time', name: 'hour', label: 'Hora' },
+    { $formkit: 'q-btn', name: 'submit', buttonLabel: 'Enviar', ignore: true, type: 'submit' },
+    { $el: 'p', name: 'paragraph', children: 'Texto estático' },
+    { $formkit: 'q-grid', name: 'grid', rowsCount: 1, columnsCount: 1, cells: [] },
+  ])
+
+  await openConditionsDialogForField(page, 'subject')
+
+  await conditionsDialog(page).getByLabel('Campo').first().click()
+  const targetLabels = await getVisibleMenuItemTexts(page)
+  expect(targetLabels).toContain('signature')
+  expect(targetLabels).not.toContain('subject')
+  expect(targetLabels).not.toContain('submit')
+  expect(targetLabels).not.toContain('paragraph')
+  expect(targetLabels).not.toContain('grid')
+  await page.keyboard.press('Escape')
+
+  await expectConditionOperators(page, 'signature', ['está vazio', 'não está vazio'], ['contém', 'é igual a'])
+  await expectConditionOperators(page, 'title', ['está vazio', 'não está vazio', 'é igual a', 'é diferente de', 'contém', 'começa com', 'termina com'])
+  await expectConditionOperators(page, 'amount', ['está vazio', 'não está vazio', 'é igual a', 'é diferente de', '> do que', '>= do que', '< do que', '<= do que'], ['contém'])
+  await expectConditionOperators(page, 'accepted', ['é verdadeiro', 'é falso'], ['é igual a'])
+  await expectConditionOperators(page, 'choices', ['está vazio', 'não está vazio', 'contém'], ['é igual a'])
+  await expectConditionOperators(page, 'period', ['está vazio', 'não está vazio'], ['é hoje'])
+  await expectConditionOperators(page, 'hour', ['está vazio', 'não está vazio', 'é igual a', 'é diferente de'], ['é hoje'])
+})
+
+test('text prefix and suffix condition operators evaluate in preview mode', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'title', label: 'Título', inputType: 'text' },
+    { $formkit: 'q-input', name: 'prefixTarget', label: 'Prefixo', inputType: 'text', if: '$startsWith($title,"VIP")' },
+    { $formkit: 'q-input', name: 'suffixTarget', label: 'Sufixo', inputType: 'text', if: '$endsWith($title,".com")' },
+  ])
+
+  await switchToPreviewMode(page)
+  await expect(page.locator('[data-field-name="prefixTarget"]')).toBeHidden()
+  await expect(page.locator('[data-field-name="suffixTarget"]')).toBeHidden()
+
+  await page.getByLabel('Título').fill('VIP cliente')
+  await expect(page.locator('[data-field-name="prefixTarget"]')).toBeVisible()
+  await expect(page.locator('[data-field-name="suffixTarget"]')).toBeHidden()
+
+  await page.getByLabel('Título').fill('portal.com')
+  await expect(page.locator('[data-field-name="prefixTarget"]')).toBeHidden()
+  await expect(page.locator('[data-field-name="suffixTarget"]')).toBeVisible()
 })
 
 test('stepper navigation buttons move between visible steps in preview mode', async ({ page }) => {
