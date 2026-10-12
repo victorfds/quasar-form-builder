@@ -2,10 +2,14 @@
 
 Módulo Nuxt para criar, configurar e visualizar formulários com Quasar, FormKit e Pinia.
 
+Este checkout prepara a versão `0.2.0`, ainda não publicada por esta atualização. Para testar essa versão em outro projeto, use o tarball local descrito em Validação Para Produção.
+
 O módulo registra Quasar, Pinia, FormKit, estilos globais, componentes públicos do builder, composables e inputs FormKit baseados em Quasar. O projeto consumidor precisa instalar o módulo, adicioná-lo ao `nuxt.config.ts` e usar a rota pronta ou os componentes exportados.
 
 ## Recursos
 
+- Mídia persistente por adaptadores, previews, recuperação e gravador de áudio. Consulte [a integração de mídia](docs/media.md).
+- Identidades permanentes dos campos e remapeamento de condições ao renomear ou duplicar.
 - Construtor visual de formulários com painéis de elementos, árvore e propriedades.
 - Renderização final do formulário por schema FormKit.
 - Componentes Quasar registrados como inputs FormKit.
@@ -16,8 +20,8 @@ O módulo registra Quasar, Pinia, FormKit, estilos globais, componentes público
 
 ## Requisitos
 
-- Nuxt `>= 4.0.0`.
-- Node e pnpm compatíveis com o projeto consumidor.
+- Nuxt `>= 4.5.1 < 5`, Vue `^3.5.43` e Pinia `^4.0.3` no projeto consumidor.
+- Node `22.22.3+` ou `24.15.0+`; desenvolvimento validado com pnpm `12.11.2`.
 - Um projeto Nuxt com suporte a módulos.
 
 O módulo instala e registra as integrações internas necessárias. O projeto consumidor não precisa copiar configurações de Quasar, Pinia ou FormKit.
@@ -27,7 +31,7 @@ O módulo instala e registra as integrações internas necessárias. O projeto c
 Instale o pacote:
 
 ```bash
-pnpm add nuxt-quasar-form-builder
+pnpm add nuxt-quasar-form-builder vue@^3.5.43 pinia@^4.0.3
 ```
 
 Adicione o módulo ao `nuxt.config.ts`:
@@ -65,6 +69,8 @@ O prefixo padrão dos componentes é `Qfb`.
 | `QfbBuilderShell` | Interface completa do construtor, com layout, painéis laterais, tema, histórico e pré-visualização. |
 | `QfbFormBuilder` | Área de edição do formulário para uso dentro de uma página própria. |
 | `QfbFormViewer` | Renderização do formulário final a partir de um schema FormKit. |
+| `QfbAudioRecorder` | Captura ou seleção de áudio com persistência opcional por controlador. |
+| `QfbMediaAttachments` | Leitura de anexos gerais, sem inventar associações com perguntas. |
 | `QfbElementsDrawer` | Painel esquerdo com catálogo de elementos e árvore do formulário. |
 | `QfbPropertiesDrawer` | Painel direito com propriedades do formulário e do item selecionado. |
 
@@ -80,7 +86,7 @@ export default defineNuxtConfig({
 })
 ```
 
-Com essa configuração, os componentes públicos passam a ser `AcmeBuilderShell`, `AcmeFormBuilder`, `AcmeFormViewer`, `AcmeElementsDrawer` e `AcmePropertiesDrawer`.
+Com essa configuração, os componentes públicos passam a usar `Acme`, incluindo `AcmeBuilderShell`, `AcmeFormBuilder`, `AcmeFormViewer`, `AcmeAudioRecorder`, `AcmeMediaAttachments`, `AcmeElementsDrawer` e `AcmePropertiesDrawer`.
 
 ## Criar Uma Página Própria
 
@@ -379,17 +385,14 @@ Rode o playground em `http://localhost:3000`:
 pnpm dev
 ```
 
-O playground em `.playground` consome `src/module.ts` diretamente. Esse fluxo simula o uso real por outro projeto Nuxt.
+O playground em `.playground` consome `src/module.ts` diretamente. `test:consumer` instala o tarball em projetos separados para verificar o pacote distribuído, sem depender desse fluxo local.
 
 ## Validação Para Produção
 
 Execute os comandos abaixo antes de publicar:
 
 ```bash
-pnpm lint
-pnpm build
-pnpm build:module
-pnpm test:e2e
+pnpm check
 ```
 
 Para testar o pacote em outro projeto antes do publish, gere um tarball local:
@@ -401,10 +404,12 @@ pnpm pack
 Depois instale o arquivo gerado no projeto consumidor:
 
 ```bash
-pnpm add ./nuxt-quasar-form-builder-0.0.1.tgz
+pnpm add ./nuxt-quasar-form-builder-0.2.0.tgz
 ```
 
 ## Publicação
+
+Consulte [a migração para 0.2.0](docs/migration-0.2.md), [o changelog](CHANGELOG.md) e [as exceções de segurança](docs/security.md). Nenhuma atualização ou teste publica o pacote automaticamente.
 
 O pacote exporta `dist/module.mjs` e os tipos gerados em `dist/types.d.mts`. Rode `pnpm build:module` antes de publicar para garantir que `dist` esteja atualizado.
 
