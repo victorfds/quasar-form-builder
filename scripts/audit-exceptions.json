@@ -1,0 +1,26 @@
+{
+  "reviewedAt": "2026-10-12",
+  "expiresAt": "2026-11-12",
+  "exceptions": [
+    {
+      "id": "GHSA-86w9-cpqp-85rv",
+      "package": "node-forge",
+      "range": "<=1.4.0",
+      "paths": [
+        ".>@nuxt/module-builder>@nuxt/cli>listhen>node-forge",
+        ".>nuxt>@nuxt/nitro-server>nitropack>listhen>node-forge"
+      ],
+      "reason": "No patched release. Tooling only; no RSA verification or TLS certificate handling in this module. Development listener uses HTTP."
+    },
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "range": "<=3.0.3",
+      "paths": [
+        ".>nuxt>@nuxt/nitro-server>nitropack>globby>micromatch>braces",
+        ".>nuxt>@nuxt/nitro-server>nitropack>globby>fast-glob>micromatch>braces"
+      ],
+      "reason": "No patched release. Build-time file globs are developer-authored; form fields, values and requests are never filesystem glob patterns."
+    }
+  ]
+}

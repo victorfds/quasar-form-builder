@@ -13,7 +13,7 @@ const elementStates = reactive<{
   buttonReset: boolean
   fullWidth?: boolean
   align?: 'left' | 'center' | 'right'
-  size?: 'default' | 'sm' | 'md' | 'lg'
+  size?: string | number
 }>({
   buttonLabel: formStore.activeField?.buttonLabel,
   buttonType: formStore.activeField?.color || 'primary',
@@ -36,7 +36,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
 <template>
   <q-card flat>
     <q-card-section>
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-button-label" @click="onClickLabel(propButtonLabelInputRef, { select: true })">
           <span class="text-body2">
             Texto do botão
@@ -51,7 +51,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section>
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-button-type" @click="onClickLabel(propButtonTypeInputRef)">
           <span class="text-body2">
             Tipo
@@ -74,7 +74,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section>
       <div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="form-button-toggle-submit">
             <span class="text-body2">
               Concluir
@@ -94,7 +94,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             }"
           />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="form-button-toggle-submit">
             <span class="text-body2">
               Limpar

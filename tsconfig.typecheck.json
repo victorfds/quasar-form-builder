@@ -1,0 +1,5 @@
+{
+  "extends": "./.playground/.nuxt/tsconfig.app.json",
+  "include": [".playground/.nuxt/**/*.d.ts", "src/**/*.ts", "src/**/*.vue", ".playground/pages/**/*.vue", ".playground/utils/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".tmp", ".playground/server"]
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
+import type { FormKitNode } from '@formkit/core'
 import type {
   ColumnsType,
   FormViewerFieldChangePayload,
@@ -8,13 +8,20 @@ import type {
   FormViewerValues,
   FormViewerValuesUpdatePayload,
 } from '#qfb/types'
-import { computed, nextTick, onMounted, provide, toRaw } from 'vue'
+import type { QfbMediaChange, QfbMediaController, QfbMediaErrorDescription } from '../media/types'
+import type { QfbSchemaField } from '../types'
+import { computed, nextTick, onMounted, provide, shallowRef, toRaw, watch } from 'vue'
 import { useFieldLayout } from '#qfb/composables/useFieldLayout'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { withStructureChildrenListForRender } from '#qfb/utils'
-import { createFormSchemaData } from '#qfb/utils/formData'
+import { createFormSchemaData, extractFormData } from '#qfb/utils/formData'
+import { describeMediaError } from '../media/errors'
+import { qfbMediaControllerKey, qfbMediaErrorKey, qfbViewerReadonlyKey } from '../media/injection'
+import { getValueAtPath } from '../media/values'
+import { walkQfbSchema } from '../schema/identity'
 
-type ViewerField = FormKitSchemaDefinition & {
+type ViewerField = QfbSchemaField & {
+  fieldId?: string
   name?: string
   columns?: ColumnsType & Record<string, any>
   align?: 'left' | 'center' | 'right'
@@ -24,22 +31,104 @@ type ViewerField = FormKitSchemaDefinition & {
   description?: string
 }
 
-const props = defineProps<{ formFields: FormKitSchemaDefinition[], readonly?: boolean }>()
+const props = defineProps<{
+  formFields: QfbSchemaField[]
+  readonly?: boolean
+  mediaController?: QfbMediaController
+}>()
 const emit = defineEmits<{
   (e: 'submit', data: any): void
   (e: 'updateModelValues', payload: FormViewerValuesUpdatePayload): void
   (e: 'fieldChange', payload: FormViewerFieldChangePayload): void
   (e: 'viewerReady', payload: FormViewerReadyPayload): void
   (e: 'submitInvalid', payload: FormViewerSubmitInvalidPayload): void
+  (e: 'mediaChange', payload: QfbMediaChange): void
+  (e: 'mediaError', payload: QfbMediaErrorDescription): void
 }>()
 const values = defineModel<any>({ default: () => ({}) })
+const formNode = shallowRef<FormKitNode>()
+let mounted = false
+defineExpose({
+  submit: () => {
+    if (!props.readonly && !props.mediaController?.readonly.value) formNode.value?.submit()
+  },
+})
 const data = computed(() => createFormSchemaData(props.formFields, values.value))
+// FormKit adds group/default values in place; never let those mutate the caller's SSR model.
+const inputValues = computed(() => cloneFormValue(values.value))
 
 provide(builderModeKey, false)
 provide(schemaDataKey, data)
+provide(qfbMediaErrorKey, error => emit('mediaError', error))
+provide(
+  qfbMediaControllerKey,
+  computed(() => props.mediaController),
+)
+provide(
+  qfbViewerReadonlyKey,
+  computed(() => Boolean(props.readonly || props.mediaController?.readonly.value)),
+)
 
-function onSubmit(data: any, _node: FormKitNode) {
-  if (props.readonly) return
+watch(
+  () => props.mediaController,
+  (controller, _previous, cleanup) => {
+    if (!controller) return
+    cleanup(
+      controller.associateViewer(
+        () => Boolean(props.readonly),
+        event => emit('mediaChange', event),
+        error => emit('mediaError', error),
+      ),
+    )
+  },
+  { immediate: true, flush: 'sync' },
+)
+
+watch(
+  [() => props.mediaController, () => JSON.stringify(props.formFields)],
+  ([controller], _previous, cleanup) => {
+    if (!controller) return
+    const definitions = new Map<string, Record<string, any>>()
+    walkQfbSchema(props.formFields, (field) => {
+      if (field.fieldId) definitions.set(field.fieldId, field)
+    })
+    const unregister: Array<() => void> = []
+    for (const answer of extractFormData(props.formFields, values.value).answers) {
+      if (!['q-file', 'q-audio-recorder'].includes(answer.type || '')) continue
+      if (!answer.fieldId) {
+        emit('mediaError', {
+          code: 'field-unavailable',
+          message: `Adote e persista os fieldIds antes de usar mídia integrada: ${answer.name}`,
+          recoverable: false,
+        })
+        continue
+      }
+      const field = { fieldId: answer.fieldId, fieldPath: answer.fieldPath }
+      unregister.push(
+        controller.registerField(
+          field,
+          () => definitions.get(answer.fieldId!) || {},
+          () => getValueAtPath(values.value, answer.fieldPath),
+        ),
+      )
+    }
+    cleanup(() => unregister.forEach(remove => remove()))
+  },
+  { immediate: true },
+)
+
+async function onSubmit(data: any, node: FormKitNode) {
+  if (props.readonly || props.mediaController?.readonly.value) return
+  if (props.mediaController) {
+    try {
+      await props.mediaController.prepare(data)
+    }
+    catch (error) {
+      emit('mediaError', describeMediaError(error))
+      onSubmitInvalid(node)
+      return
+    }
+  }
   emit('submit', data)
   // The node has a builtin function that can be used called node.submit()
 }
@@ -71,9 +160,7 @@ function cloneFormValue<T>(value: T): T {
   }
 
   if (isPlainRecord(rawValue)) {
-    return Object.fromEntries(
-      Object.entries(rawValue).map(([key, item]) => [key, cloneFormValue(item)]),
-    ) as T
+    return Object.fromEntries(Object.entries(rawValue).map(([key, item]) => [key, cloneFormValue(item)])) as T
   }
 
   return rawValue
@@ -88,13 +175,13 @@ function getChangedFields(previousValues: unknown, newValues: unknown) {
 }
 
 function updateModelValues(newValues: any) {
-  if (props.readonly) return
+  if (!mounted || props.readonly || props.mediaController?.readonly.value) return
   const previousValues = cloneFormValue(values.value)
   const nextValues = cloneFormValue(newValues)
   const changedFields = getChangedFields(previousValues, nextValues)
   const timestamp = Date.now()
 
-  values.value = newValues
+  values.value = cloneFormValue(newValues)
 
   emit('updateModelValues', {
     values: nextValues,
@@ -118,7 +205,7 @@ function onSubmitInvalid(node: FormKitNode) {
   // Mark all inputs as touched so FormKit shows validation messages
   node.walk((n) => {
     // Only mark real input nodes (skip the form node itself)
-    if (n.type !== 'input') return
+    if (n.type !== 'input' || n.context?.state.valid !== false) return
     n.store.set({
       visible: true,
       type: 'error',
@@ -137,11 +224,15 @@ function onSubmitInvalid(node: FormKitNode) {
   })
 }
 
-const renderFields = computed(() => withStructureChildrenListForRender((props.formFields || []) as unknown as ViewerField[]))
+const renderFields = computed(() =>
+  withStructureChildrenListForRender((props.formFields || []) as unknown as ViewerField[]),
+)
 const { getGridColumnStyle, getAlignClass } = useFieldLayout()
 
 onMounted(async () => {
   await nextTick()
+  mounted = true
+  if (formNode.value) updateModelValues(formNode.value.value)
   emit('viewerReady', {
     values: cloneFormValue(values.value),
     fieldsCount: renderFields.value.length,
@@ -153,20 +244,32 @@ onMounted(async () => {
 <template>
   <article>
     <FormKit
-      :model-value="values" type="form" :actions="false"
-      validation-visibility="submit" @submit="onSubmit" @submit-invalid="onSubmitInvalid"
+      :model-value="inputValues"
+      type="form"
+      :actions="false"
+      preserve
+      validation-visibility="submit"
+      @node="
+        (node) => {
+          formNode = node
+        }
+      "
+      @submit="onSubmit"
+      @submit-invalid="onSubmitInvalid"
       @update:model-value="updateModelValues"
     >
       <FormCanvas>
         <div
           v-for="field in renderFields"
-          :key="field.name"
+          :key="String(field.fieldId || field.name)"
           class="form-field form-field--responsive"
           :class="getAlignClass(field)"
           :style="getGridColumnStyle(field)"
         >
           <WithLabelAndDescription
-            v-if="field.$el" :label="field.label" :info="field.info"
+            v-if="field.$el"
+            :label="field.label"
+            :info="field.info"
             :description="field.description"
           >
             <FormKitSchemaRenderer :schema="field" :data="data" />
@@ -181,13 +284,13 @@ onMounted(async () => {
 
 <style lang="scss">
 /* When inputs are invalid (after being touched or submit), make the control more evident */
-.formkit-outer[data-invalid="true"] .q-field__control {
+.formkit-outer[data-invalid='true'] .q-field__control {
   outline: 1px solid #e53935;
   outline-offset: -1px;
 }
 
 /* Show asterisk only when invalid is visible (blurred or after submit) */
-.formkit-outer[data-invalid="true"] .q-field__label::after {
+.formkit-outer[data-invalid='true'] .q-field__label::after {
   content: ' *';
   color: #e53935;
 }

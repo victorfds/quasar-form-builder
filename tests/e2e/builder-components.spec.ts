@@ -82,7 +82,8 @@ async function loadBuilder(page: Page, fields: unknown[]) {
     localStorage.clear()
     localStorage.setItem('form-fields', JSON.stringify(schema))
   }, fields)
-  await page.reload()
+  const response = await page.reload()
+  expect(response?.status()).toBe(200)
   await page.waitForFunction(() => document.body.textContent?.includes('Construtor de Formulários'))
   await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 10000 })
   const firstField = fields[0] as { $formkit?: string, name?: string } | undefined
@@ -93,7 +94,7 @@ async function loadBuilder(page: Page, fields: unknown[]) {
     await expect(page.locator(`[data-field-name="${firstField.name}"]`)).toHaveCount(1)
   }
   await expect(page.locator('body')).not.toContainText('Unknown input type')
-  await expect(page.locator('body')).not.toContainText('500')
+  await expect(page.getByRole('heading', { name: /^500(?:\s|$)/ })).toHaveCount(0)
 }
 
 async function readFields(page: Page) {
@@ -288,7 +289,7 @@ async function expectSchemaMounted(page: Page, schema: typeof componentSchemas[n
     return
   }
 
-  if ('$formkit' in schema && schema.inputType === 'hidden') {
+  if ('inputType' in schema && schema.inputType === 'hidden') {
     await expect(page.locator(`[data-field-name="${schema.name}"]`)).toHaveCount(1)
     return
   }
@@ -331,7 +332,7 @@ test('builder shell can hide the header and default floating controls', async ({
   await page.goto('/minimal-shell')
 
   await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 10000 })
-  await expect(page.locator('header')).toHaveCount(0)
+  await expect(page.locator('header.q-header')).toHaveCount(0)
   await expect(page.locator('.q-page-sticky')).toHaveCount(0)
 })
 
@@ -349,10 +350,15 @@ test('public drawer and builder components compose in a custom layout', async ({
 })
 
 test('form viewer emits value lifecycle and validation events for cache integrations', async ({ page }) => {
+  const runtimeErrors: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error') runtimeErrors.push(message.text())
+  })
   await page.goto('/viewer-events')
 
   await expect(page.getByTestId('ready-count')).toHaveText('1')
   await expect(page.getByTestId('ready-fields-count')).toHaveText('2')
+  expect(runtimeErrors).toEqual([])
 
   await page.getByRole('button', { name: 'Finalizar' }).click()
   await expect(page.getByTestId('invalid-count')).toHaveText('1')
@@ -860,7 +866,7 @@ test('saveLogic groups or expressions before and expressions', () => {
   const expression = saved.if as string
   const parsed = parseLogic(expression)
 
-  expect(expression).toBe('($text != 12 || $text != 14) && !$empty($signature)')
+  expect(expression).toBe('($text != 12 || $text != 14) && $empty($signature) == false')
   expect(generateHumanReadableText(parsed, getAllConditionOperators())).toBe('(text é diferente de [12] ou text é diferente de [14]) e signature não está vazio')
   expect(parsed).toMatchObject([
     {
@@ -2120,7 +2126,7 @@ test('grid structure drop zones are scoped to each column block', async ({ page 
       count: zones.length,
       withinCells: zones.map((zone, index) => {
         const zoneRect = zone.getBoundingClientRect()
-        const cellRect = cells[index].getBoundingClientRect()
+        const cellRect = cells[index]!.getBoundingClientRect()
 
         return {
           hasSize: zoneRect.width > 0 && zoneRect.height > 0,
@@ -3645,4 +3651,92 @@ test('resize updates the field width while dragging before mouseup', async ({ pa
 
   await expect(page.locator('[data-field-name="number"]')).toHaveCSS('grid-column-end', 'span 11')
   await page.mouse.up()
+})
+
+test('editing canvas prevents selecting field names, labels and nested static text', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'url', label: 'URL', inputType: 'url', columns: { container: 6 } },
+    { $formkit: 'q-container', name: 'group', children: [{ $el: 'p', name: 'paragraph', children: 'Texto dentro da estrutura' }] },
+  ])
+  const field = page.locator('[data-field-name="url"]')
+  await field.locator('.overlay-preview-element').click()
+  for (const locator of [field.locator('.preview-form-name'), field.locator('.q-field__label'), page.locator('[data-field-name="paragraph"] p')])
+    await expect(locator).toHaveCSS('user-select', 'none')
+
+  await field.locator('.preview-form-name').dblclick()
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('')
+  const name = await field.locator('.preview-form-name').boundingBox()
+  if (!name) throw new Error('field name not found')
+  await page.mouse.move(name.x + 2, name.y + name.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(name.x + name.width - 2, name.y + name.height / 2, { steps: 8 })
+  await page.mouse.up()
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('')
+  const selectionPrevented = await field.locator('.q-field__label').evaluate(element =>
+    !element.dispatchEvent(new Event('selectstart', { bubbles: true, cancelable: true })),
+  )
+  expect(selectionPrevented).toBe(true)
+})
+
+test('resizing clears existing text selection and does not select text while crossing fields', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'url', label: 'URL', inputType: 'url', columns: { container: 12 } },
+  ])
+  const field = page.locator('[data-field-name="url"]')
+  await field.locator('.overlay-preview-element').click()
+  await field.locator('.preview-form-name').evaluate(element => window.getSelection()?.selectAllChildren(element))
+  expect(await page.evaluate(() => window.getSelection()?.rangeCount)).toBe(1)
+  const handle = await field.locator('.preview-element-resizer').boundingBox()
+  const wrapper = await page.locator('.my-form-wrapper').boundingBox()
+  if (!handle || !wrapper) throw new Error('resize handles not found')
+  const x = handle.x + handle.width / 2
+  const y = handle.y + handle.height / 2
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  expect(await page.evaluate(() => window.getSelection()?.rangeCount)).toBe(0)
+  await page.mouse.move(x - wrapper.width / 12, y)
+  await expect(field).toHaveCSS('grid-column-end', 'span 11')
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('')
+  await page.mouse.move(wrapper.x + 8, y - 24, { steps: 12 })
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('')
+  await page.mouse.up()
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('')
+})
+
+test('starting a builder drag clears an existing text selection', async ({ page }) => {
+  await loadBuilder(page, [{ $formkit: 'q-input', name: 'url', label: 'URL', inputType: 'url' }])
+  const field = page.locator('[data-field-name="url"]')
+  await field.locator('.overlay-preview-element').click()
+  await field.locator('.preview-form-name').evaluate(element => window.getSelection()?.selectAllChildren(element))
+  expect(await page.evaluate(() => window.getSelection()?.rangeCount)).toBe(1)
+  await field.locator('.overlay-preview-element').evaluate((element) => {
+    element.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() }))
+  })
+  await expect(page.locator('body')).toHaveClass(/qfb-builder-dragging/)
+  expect(await page.evaluate(() => window.getSelection()?.rangeCount)).toBe(0)
+  await field.locator('.overlay-preview-element').dispatchEvent('dragend')
+  await expect(page.locator('body')).not.toHaveClass(/qfb-builder-dragging/)
+})
+
+test('preview text and settings inputs remain selectable outside the editing canvas', async ({ page }) => {
+  await loadBuilder(page, [
+    { $formkit: 'q-input', name: 'url', label: 'URL', inputType: 'url' },
+    { $el: 'p', name: 'paragraph', children: 'Texto selecionável' },
+  ])
+  await page.locator('[data-field-name="url"] .overlay-preview-element').click()
+  const input = page.locator('[data-drawer="right"] input').first()
+  await input.focus()
+  await input.press('ControlOrMeta+A')
+  expect(await input.evaluate((element: HTMLInputElement) => element.value.slice(element.selectionStart!, element.selectionEnd!))).toBe('url')
+
+  await switchToPreviewMode(page)
+  await expect(page.locator('.preview-form-container')).not.toHaveClass(/preview-form-container--editing/)
+  const paragraph = page.locator('[data-field-name="paragraph"] p')
+  expect(await paragraph.evaluate(element => getComputedStyle(element).userSelect)).not.toBe('none')
+  await paragraph.dblclick({ position: { x: 8, y: 8 } })
+  expect(await page.evaluate(() => window.getSelection()?.toString())).not.toBe('')
+  const selectionAllowed = await paragraph.evaluate(element =>
+    element.dispatchEvent(new Event('selectstart', { bubbles: true, cancelable: true })),
+  )
+  expect(selectionAllowed).toBe(true)
 })

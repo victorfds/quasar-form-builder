@@ -2,6 +2,7 @@
 import { useQuasar } from 'quasar'
 import { computed, reactive, ref } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
+import { isQfbConditionalRule } from '#qfb/types'
 import { getLengthLimitsFromValidation } from '#qfb/utils'
 
 defineProps<{ showLength?: boolean }>()
@@ -17,7 +18,7 @@ const elementStates = reactive<{
   maxLength?: string | number | null
   exactLength?: string | number | null
 }>({
-  required: Boolean(formStore.activeField?.validation?.then?.includes?.('required')) || Boolean(formStore.activeField?.validation?.includes?.('required')),
+  required: String(isQfbConditionalRule(formStore.activeField?.validation) ? formStore.activeField.validation.then : formStore.activeField?.validation || '').split('|').includes('required'),
   minLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'min')?.min,
   maxLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'max')?.max,
   exactLength: getLengthLimitsFromValidation(formStore.activeField?.validation, usesLength.value ? 'length' : 'between')?.exact,
@@ -37,7 +38,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
 <template>
   <q-card flat>
     <q-card-section>
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-required">
           <span class="text-body2">
             Obrigatório
@@ -46,7 +47,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
         <q-toggle
           id="form-required" :model-value="elementStates.required" color="primary" @update:model-value="val => {
             elementStates.required = val
-            if (!val && formStore.activeField?.validation?.if) {
+            if (!val && isQfbConditionalRule(formStore.activeField?.validation)) {
               onEnteredProp('validation', { if: '' })
             }
             onEnteredProp('validation', val ? 'required' : '-required')
@@ -63,7 +64,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
     <q-separator v-if="showLength" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section v-if="showLength">
       <div>
-        <div class="row align-center items-center justify-between q-mt-sm">
+        <div class="qfb-settings-row q-mt-sm">
           <label for="form-min-length" @click="onClickLabel(propMinLengthInputRef)">
             <span class="text-body2">
               {{ usesLength ? 'Mínimo' : 'Valor mínimo' }}
@@ -83,7 +84,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             }"
           />
         </div>
-        <div class="row align-center items-center justify-between q-mt-sm">
+        <div class="qfb-settings-row q-mt-sm">
           <label for="form-max-length" @click="onClickLabel(propMaxLengthInputRef)">
             <span class="text-body2">
               {{ usesLength ? 'Máximo' : 'Valor máximo' }}
@@ -103,7 +104,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             }"
           />
         </div>
-        <div class="row align-center items-center justify-between q-mt-sm">
+        <div class="qfb-settings-row q-mt-sm">
           <label for="form-exact-length" @click="onClickLabel(propExactLengthInputRef)">
             <span class="text-body2">
               {{ usesLength ? 'Exato' : 'Valor exato' }}

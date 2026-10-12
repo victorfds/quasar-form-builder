@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
+import type { QInputProps } from 'quasar'
 import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig } from '#qfb/types'
 import { computed, inject, unref } from 'vue'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
@@ -240,14 +241,18 @@ function getColumnStyle(column: MatrixColumnConfig) {
   }
 }
 
-function getInputType(column: MatrixColumnConfig) {
+function getInputType(column: MatrixColumnConfig): QInputProps['type'] {
   const type = getColumnType(column)
   if (type === 'textarea') return 'textarea'
-  if (['number', 'email', 'password', 'url', 'tel'].includes(type)) return type
+  if (type === 'number' || type === 'email' || type === 'password' || type === 'url' || type === 'tel') return type
   if (type === 'date') return 'date'
   if (type === 'date-time') return 'datetime-local'
   if (type === 'time') return 'time'
   return 'text'
+}
+
+function inputValue(value: unknown): string | number | null {
+  return typeof value === 'string' || typeof value === 'number' ? value : null
 }
 
 function getOptionGroupType(column: MatrixColumnConfig) {
@@ -370,7 +375,7 @@ function getOptionGroupClass(column: MatrixColumnConfig) {
                 />
                 <q-input
                   v-else
-                  :model-value="getStaticCellValue(row.value, column)"
+                  :model-value="inputValue(getStaticCellValue(row.value, column))"
                   :type="getInputType(column)"
                   dense
                   borderless
@@ -454,7 +459,7 @@ function getOptionGroupClass(column: MatrixColumnConfig) {
                 />
                 <q-input
                   v-else
-                  :model-value="getDynamicCellValue(rowIndex, column)"
+                  :model-value="inputValue(getDynamicCellValue(rowIndex, column))"
                   :type="getInputType(column)"
                   dense
                   borderless

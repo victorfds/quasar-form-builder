@@ -4,7 +4,7 @@ export interface BuilderField {
   name?: string
   columns?: ColumnsType & Record<string, any>
   align?: 'left' | 'center' | 'right'
-  $el?: string
+  $el?: string | null
   label?: string
   info?: string
   description?: string

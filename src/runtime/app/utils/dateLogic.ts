@@ -7,7 +7,7 @@ function toStartOfDay(d: Date): Date {
 function parseDateString(s: string): Date | null {
   if (!s) return null
   // Remove time part if present
-  const [datePart] = s.split(' ')
+  const datePart = s.split(' ')[0]!
   // y-m-d or y/m/d
   let m = datePart.match(/^(\d{4})[-/]?(\d{2})[-/]?(\d{2})$/)
   if (m) {

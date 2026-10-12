@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderDragPlacement } from '#qfb/types'
+import type { QfbSchemaField } from '../../types'
 import { computed } from 'vue'
 import { useFieldUi } from '#qfb/composables/useFieldUi'
 import { useFormStore } from '#qfb/stores/formStore'
 import { builderDragMime, hasRootOnlyBuilderDrag, markBuilderDragType } from '#qfb/utils/builderDrag'
 
 interface OverlayState {
-  // active and hover are based on field names for simplicity
+  // Names remain available for integrations; mounted fields use their domain identity.
   activeNames: string[]
   hoverName?: string
-  elementBeingDragged?: { field?: FormKitSchemaDefinition, index?: number }
+  elementBeingDragged?: { field?: QfbSchemaField, index?: number }
   isUserDraggingOver?: boolean
   dragInIndicator?: { index?: number, name?: string, placement?: BuilderDragPlacement, listKey?: string }
   listKey?: string
@@ -20,7 +20,7 @@ interface OverlayState {
 }
 
 const props = defineProps<{
-  field: FormKitSchemaDefinition & { name?: string }
+  field: QfbSchemaField & { name?: string, fieldId?: string }
   index: number
   state: OverlayState
   previewModeEditing: boolean
@@ -41,16 +41,22 @@ const emit = defineEmits<{
   (e: 'resizeStart', payload: { ev: MouseEvent, field: any }): void
 }>()
 
-const isLatest = computed(() => !props.selectionOnly && !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && props.state.activeNames.at(-1) === (props.field?.name || ''))
-const isActive = computed(() => !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && props.state.activeNames?.includes(props.field?.name || ''))
-const isDragging = computed(() => (props.state.elementBeingDragged?.field as any)?.name === (props.field?.name || ''))
+const formStore = useFormStore()
+const matchesSelection = computed(() => props.field.fieldId && !props.selectionOnly && formStore.activeField?.fieldId
+  ? props.field.fieldId === formStore.activeField.fieldId
+  : props.state.activeNames?.includes(props.field?.name || ''))
+const isLatest = computed(() => !props.selectionOnly && !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && matchesSelection.value)
+const isActive = computed(() => !props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index && matchesSelection.value)
+const isDragging = computed(() => {
+  const dragged = props.state.elementBeingDragged?.field as Record<string, any> | undefined
+  return dragged?.fieldId && props.field.fieldId ? dragged.fieldId === props.field.fieldId : dragged?.name === (props.field?.name || '')
+})
 const isHover = computed(() => !isActive.value && props.state.hoverName === (props.field?.name || ''))
 const isTabsHost = computed(() => props.field?.$formkit === 'q-tabs')
 const isRootOnlyHost = computed(() => ['q-tabs', 'q-stepper'].includes(String(props.field?.$formkit || '')))
 const isCellField = computed(() => props.state.listKey?.startsWith('cell:') === true)
 const isRootList = computed(() => props.state.listKey === 'root')
 const showControls = computed(() => !props.selectionOnly && !isTabsHost.value && props.previewModeEditing && (!props.state.elementBeingDragged?.field && !props.state.elementBeingDragged?.index) && (isActive.value || isHover.value))
-const formStore = useFormStore()
 const fieldUi = useFieldUi()
 const columnSpan = computed(() => fieldUi.getColumnSpan(props.field, formStore.formSettings.columns))
 const showColumnSpan = computed(() => !props.selectionOnly && !isTabsHost.value && props.previewModeEditing && (isActive.value || isHover.value))

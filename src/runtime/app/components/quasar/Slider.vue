@@ -3,6 +3,7 @@ import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QSliderProps } from 'quasar'
 import { computed } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
+import { withoutModelValue } from '#qfb/utils/quasarFieldDesign'
 
 type SliderContext = FormKitFrameworkContext & {
   min?: number | string
@@ -49,7 +50,7 @@ const modelValue = computed(() => {
           label
           label-always
           color="primary"
-          v-bind="sliderAttrs"
+          v-bind="withoutModelValue(sliderAttrs)"
           @update:model-value="(val) => context?.node.input(val)"
           @change="checkForErrorMessages"
         />

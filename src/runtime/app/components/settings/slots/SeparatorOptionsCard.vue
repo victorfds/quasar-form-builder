@@ -33,7 +33,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
   <q-card flat>
     <q-card-section>
       <div class="column q-gutter-sm">
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="separator-vertical">
             <span class="text-body2">Vertical</span>
           </label>
@@ -45,7 +45,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="separator-spaced">
             <span class="text-body2">Espaçado</span>
           </label>
@@ -57,7 +57,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="separator-inset">
             <span class="text-body2">Recuado</span>
           </label>
@@ -69,7 +69,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="separator-color" @click="onClickLabel(colorSelectRef)">
             <span class="text-body2">Cor</span>
           </label>
@@ -89,7 +89,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="separator-size" @click="onClickLabel(sizeInputRef)">
             <span class="text-body2">Espessura</span>
           </label>

@@ -15,7 +15,7 @@ const elementStates = reactive<{
   fullWidth?: boolean
   dense?: boolean
   align?: 'left' | 'center' | 'right'
-  size?: 'default' | 'sm' | 'md' | 'lg'
+  size?: string | number
   columns?: ColumnsType
   columnsPreferencies: { hasDefault?: boolean, hasTablet?: boolean, hasDesktop?: boolean }
 }>({
@@ -44,7 +44,7 @@ const isColumnDefault = computed(() => {
     return !formStore.activeField?.columns?.lg?.container
   }
 
-  return !formStore.activeField?.columns?.[formStore.formSettings.columns]?.container
+  return !formStore.activeField?.columns?.container
 })
 
 function handleCheckboxUpdate(isChecked: boolean) {
@@ -85,7 +85,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
 <template>
   <q-card flat>
     <q-card-section v-if="showFullWidth">
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-button-toggle-submit">
           <span class="text-body2">
             Largura máxima
@@ -102,7 +102,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
     </q-card-section>
     <q-separator v-if="showAlignment" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section v-if="showAlignment">
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-button-align">
           <span class="text-body2">
             Alinhar
@@ -128,7 +128,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
     </q-card-section>
     <q-separator v-if="showSize" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section v-if="showSize">
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-button-size">
           <span class="text-body2">
             Tamanho
@@ -155,7 +155,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
     </q-card-section>
     <q-separator v-if="showDense" :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section v-if="showDense">
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-button-toggle-submit">
           <span class="text-body2">
             Compacto
@@ -172,7 +172,7 @@ function handleCheckboxUpdate(isChecked: boolean) {
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section>
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-button-columns">
           <span class="text-body2">
             Colunas

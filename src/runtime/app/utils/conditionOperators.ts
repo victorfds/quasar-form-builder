@@ -1,8 +1,8 @@
-import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { ConditionOperatorOption, ConditionOperatorValue, ConditionValueInputMode } from '#qfb/types'
+import type { QfbSchemaField } from '../types'
 import { allConditionOperators } from '#qfb/constants'
 
-type ConditionField = FormKitSchemaDefinition & Record<string, any>
+type ConditionField = QfbSchemaField & Record<string, any>
 
 const operatorByValue = new Map<ConditionOperatorValue, ConditionOperatorOption>(
   allConditionOperators.map(operator => [operator.value, operator]),
@@ -78,7 +78,7 @@ export function getConditionOperatorsForField(field?: ConditionField | null): Co
   const inputType = getFieldInputType(field)
 
   if (formKitType === 'q-signature') return pickOperators(emptyStateOperatorValues)
-  if (formKitType === 'q-file') return pickOperators(emptyStateOperatorValues)
+  if (formKitType === 'q-file' || formKitType === 'q-audio-recorder') return pickOperators(emptyStateOperatorValues)
   if (formKitType === 'q-matrix') return pickOperators(emptyStateOperatorValues)
   if (formKitType === 'q-range') return pickOperators(emptyStateOperatorValues)
   if (formKitType === 'q-editor') return pickOperators(textOperatorValues)

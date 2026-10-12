@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
+import { isQfbConditionalRule } from '#qfb/types'
 
 defineProps<{ showReadonly?: boolean }>()
 const formStore = useFormStore()
@@ -63,56 +64,60 @@ function removeCustomAttr(index: number) {
 <template>
   <q-card flat>
     <q-card-section>
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-required">
           <span class="text-body2">
             Desabilitado
           </span>
         </label>
-        <q-toggle
-          id="form-required" :model-value="elementStates.disable" color="primary" @update:model-value="val => {
-            elementStates.disable = val
-            if (!val && formStore.activeField?.disable?.if) {
-              onEnteredProp('disable', { if: '' })
-            }
-            onEnteredProp('disable', val)
-          }"
-        />
+        <div class="row items-center no-wrap justify-end">
+          <q-toggle
+            id="form-required" :model-value="elementStates.disable" color="primary" @update:model-value="val => {
+              elementStates.disable = val
+              if (!val && isQfbConditionalRule(formStore.activeField?.disable)) {
+                onEnteredProp('disable', { if: '' })
+              }
+              onEnteredProp('disable', val)
+            }"
+          />
 
-        <SettingsSlotsConditionsCard
-          v-if="elementStates.disable" save-to="disable"
-          mode="icon"
-          no-conditions-message="Regra de desabilitação vazia"
-          :conditions-dialog-subtitle="`${formStore.activeField?.name} / regra para desabilitação`"
-        />
+          <SettingsSlotsConditionsCard
+            v-if="elementStates.disable" save-to="disable"
+            mode="icon"
+            no-conditions-message="Regra de desabilitação vazia"
+            :conditions-dialog-subtitle="`${formStore.activeField?.name} / regra para desabilitação`"
+          />
+        </div>
       </div>
 
-      <div v-if="showReadonly" class="row align-center items-center justify-between">
+      <div v-if="showReadonly" class="qfb-settings-row">
         <label for="form-readonly">
           <span class="text-body2">
             Apenas leitura
           </span>
         </label>
-        <q-toggle
-          id="form-readonly" :model-value="elementStates.readonly" color="primary" @update:model-value="val => {
-            elementStates.readonly = val
-            if (!val && formStore.activeField?.readonly?.if) {
-              onEnteredProp('readonly', { if: '' })
-            }
-            onEnteredProp('readonly', val)
-          }"
-        />
+        <div class="row items-center no-wrap justify-end">
+          <q-toggle
+            id="form-readonly" :model-value="elementStates.readonly" color="primary" @update:model-value="val => {
+              elementStates.readonly = val
+              if (!val && isQfbConditionalRule(formStore.activeField?.readonly)) {
+                onEnteredProp('readonly', { if: '' })
+              }
+              onEnteredProp('readonly', val)
+            }"
+          />
 
-        <SettingsSlotsConditionsCard
-          v-if="elementStates.readonly"
-          save-to="readonly"
-          mode="icon"
-          no-conditions-message="Regra de apenas leitura vazia"
-          :conditions-dialog-subtitle="`${formStore.activeField?.name} / regra para ativar modo apenas leitura`"
-        />
+          <SettingsSlotsConditionsCard
+            v-if="elementStates.readonly"
+            save-to="readonly"
+            mode="icon"
+            no-conditions-message="Regra de apenas leitura vazia"
+            :conditions-dialog-subtitle="`${formStore.activeField?.name} / regra para ativar modo apenas leitura`"
+          />
+        </div>
       </div>
 
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <label for="form-attrs-id" @click="focusInput(idInputRef)">
           <span class="text-body2">
             ID
@@ -133,7 +138,7 @@ function removeCustomAttr(index: number) {
         />
       </div>
 
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <span class="text-body2">
           Atributos personalizados
         </span>

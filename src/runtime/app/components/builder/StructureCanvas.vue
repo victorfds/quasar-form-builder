@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderFieldListKey, ColumnsType } from '#qfb/types'
+import type { QfbSchemaField } from '../../types'
 import { computed, inject, shallowRef, unref, watch } from 'vue'
 import { useFieldUi } from '#qfb/composables/useFieldUi'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { useFormStore } from '#qfb/stores/formStore'
 import { withStructureChildrenForRender, withStructureChildrenListForRender } from '#qfb/utils'
 
-type BuilderStructureField = FormKitSchemaDefinition & {
+type BuilderStructureField = QfbSchemaField & {
   name?: string
   columns?: ColumnsType & Record<string, any>
   align?: 'left' | 'center' | 'right'
-  $el?: string
+  $el?: string | null
   label?: string
   info?: string
   description?: string
@@ -205,9 +205,10 @@ function onDrop(ev: DragEvent) {
   >
     <div
       v-for="(field, index) in displayFields"
-      :key="field.name"
+      :key="field.fieldId || field.name"
       class="form-field form-field--responsive"
       :data-field-name="field?.name"
+      :data-field-id="field?.fieldId"
       :class="getFieldClasses(field)"
       :style="getFieldStyle(field)"
       @mouseover.prevent="canDrag ? builderDnd?.onMouseOverAtFormElement(field) : undefined"

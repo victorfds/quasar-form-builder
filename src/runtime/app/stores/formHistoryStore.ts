@@ -11,18 +11,23 @@ export const useFormHistoryStore = defineStore('formHistoryStore', () => {
   const memory = useMemory()
 
   function addToMemory(value: any) {
+    for (const key of memory.getKeys()) {
+      if (key > pointer.value) memory.removeItem(key)
+    }
     const size = memory.getSize()
+    const snapshot = JSON.stringify(value)
+    if (size && memory.getItem(pointer.value) === snapshot) return
 
     if (size === 0) {
       const cachedFormFields = getBrowserStorageItem(formFieldsKey)
 
       memory.setItem(size, cachedFormFields || JSON.stringify([]))
-      memory.setItem(size + 1, JSON.stringify(value))
+      memory.setItem(size + 1, snapshot)
       pointer.value = size + 1
       return
     }
 
-    memory.setItem(size, JSON.stringify(value))
+    memory.setItem(size, snapshot)
     pointer.value = size
   }
 

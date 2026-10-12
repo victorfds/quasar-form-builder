@@ -22,7 +22,7 @@ const elementStates = reactive({
     <q-card-section>
       <div class="column q-gutter-sm">
         <template v-if="isOptionGroup">
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="choice-inline">
               <span class="text-body2">Em linha</span>
             </label>
@@ -34,7 +34,7 @@ const elementStates = reactive({
             />
           </div>
 
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="choice-left-label">
               <span class="text-body2">Label à esquerda</span>
             </label>
@@ -48,7 +48,7 @@ const elementStates = reactive({
         </template>
 
         <template v-if="isBtnToggle">
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="choice-multiple">
               <span class="text-body2">Múltiplo</span>
             </label>
@@ -60,7 +60,7 @@ const elementStates = reactive({
             />
           </div>
 
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="choice-spread">
               <span class="text-body2">Distribuir largura</span>
             </label>
@@ -72,7 +72,7 @@ const elementStates = reactive({
             />
           </div>
 
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="choice-rounded">
               <span class="text-body2">Arredondado</span>
             </label>

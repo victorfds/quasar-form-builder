@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
+import type { FormKitFrameworkContext } from '@formkit/core'
 import type { BuilderFieldListKey } from '#qfb/types'
+import type { QfbSchemaField } from '../../types'
 import { computed, inject, onMounted, onUpdated, shallowRef, unref } from 'vue'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { useFormStore } from '#qfb/stores/formStore'
@@ -8,10 +9,11 @@ import { firstFilledArray, withStructureChildrenListForRender } from '#qfb/utils
 import { evaluateLogicString } from '#qfb/utils/formUtils'
 
 interface TabDefinition {
+  fieldId?: string
   name: string
   label?: string
   if?: string
-  children?: FormKitSchemaDefinition[]
+  children?: QfbSchemaField[]
 }
 
 const props = defineProps<{
@@ -68,7 +70,7 @@ function ensureActiveTab() {
   }
 
   if (!newTabs.some(tab => tab.name === activeTab.value)) {
-    setActiveTab(newTabs[0].name)
+    setActiveTab(newTabs[0]!.name)
   }
 }
 
@@ -91,7 +93,7 @@ function getTabOverlayField(tabName: string) {
   return {
     $formkit: 'q-tab-item',
     name: getTabOverlayName(tabName),
-  } as FormKitSchemaDefinition & { name: string }
+  } as QfbSchemaField & { name: string }
 }
 
 function getTabOverlayState(tabName: string) {
@@ -154,15 +156,15 @@ onUpdated(() => {
     <q-tabs :model-value="activeTab" dense align="left" active-color="primary" @update:model-value="tabName => setActiveTab(String(tabName))">
       <q-tab
         v-for="tab in renderedTabs"
-        :key="tab.name"
+        :key="tab.fieldId || tab.name"
         :name="tab.name"
         :class="{ 'structure-tabs__tab--selected': isSelectedTab(tab.name) }"
         class="structure-tabs__tab relative-position"
         no-caps
         @click="selectTab(tab.name)"
-        @dragenter.prevent="(ev) => onTabDragenter(ev, tab.name)"
-        @dragover.prevent="(ev) => onTabDragenter(ev, tab.name)"
-        @drop.prevent="(ev) => onTabDrop(ev, tab.name)"
+        @dragenter.prevent="(ev: DragEvent) => onTabDragenter(ev, tab.name)"
+        @dragover.prevent="(ev: DragEvent) => onTabDragenter(ev, tab.name)"
+        @drop.prevent="(ev: DragEvent) => onTabDrop(ev, tab.name)"
       >
         <span class="structure-tabs__tab-label">
           {{ tab.label || tab.name }}
@@ -181,7 +183,7 @@ onUpdated(() => {
     <q-separator />
     <div
       v-if="activeRenderedTab"
-      :key="activeRenderedTab.name"
+      :key="activeRenderedTab.fieldId || activeRenderedTab.name"
       class="structure-tabs__panel q-px-none"
       role="tabpanel"
     >

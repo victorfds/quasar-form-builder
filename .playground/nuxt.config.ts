@@ -2,6 +2,11 @@ import { fileURLToPath } from 'node:url'
 import FormBuilderModule from '../src/module'
 
 export default defineNuxtConfig({
+  devtools: { enabled: false },
+  alias: {
+    'nuxt-quasar-form-builder/media': fileURLToPath(new URL('../src/runtime/app/media/index.ts', import.meta.url)),
+    'nuxt-quasar-form-builder/schema': fileURLToPath(new URL('../src/runtime/app/schema/index.ts', import.meta.url)),
+  },
   modules: [
     FormBuilderModule,
     '@nuxt/eslint',

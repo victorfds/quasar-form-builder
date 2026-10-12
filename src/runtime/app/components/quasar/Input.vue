@@ -7,7 +7,7 @@ import { builderModeKey } from '#qfb/constants/injectionKeys'
 import { useFormStore } from '#qfb/stores/formStore'
 import { cleanUndefinedAttrs, getFormKitContextAttrs, getQuasarFieldDesignAttrs } from '#qfb/utils/quasarFieldDesign'
 
-const props = defineProps<{ context: FormKitFrameworkContext & { attrs: { inputType: QInputProps['type'] } } }>()
+const props = defineProps<{ context: FormKitFrameworkContext & { attrs: { inputType: QInputProps['type'] | 'hidden', description?: string } } }>()
 
 const maskTokenPattern = /[#SNAaXx]/g
 const maskValuePattern = /[a-z0-9]/gi
@@ -149,13 +149,13 @@ function handleUpdateModelValue(val: string | number | null) {
     v-else-if="isHiddenInput"
     v-bind="hiddenInputAttrs"
     type="hidden"
-    :name="context.name"
+    :name="String(context.name)"
     :value="context.value == null ? '' : String(context.value)"
   >
   <q-input
     v-else
     :key="inputBehaviorKey"
-    v-bind="inputAttrs" :model-value="context.value" :label="context.label" :type="inputType"
+    v-bind="inputAttrs" :model-value="context.value" :label="context.label" :type="inputType === 'hidden' ? 'text' : inputType"
     :hint="context.attrs.description" hide-bottom-space color="cyan-8" :error-message="getMessages" :error="errorActive"
     @update:model-value="handleUpdateModelValue" @keydown="handleMaskedKeydown" @paste="handleMaskedPaste"
     @blur="checkForErrorMessages"

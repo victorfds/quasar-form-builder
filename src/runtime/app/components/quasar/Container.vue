@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
+import type { FormKitFrameworkContext } from '@formkit/core'
+import type { QfbSchemaField } from '../../types'
 import { useQuasar } from 'quasar'
 import { computed, inject } from 'vue'
 import { builderModeKey } from '#qfb/constants/injectionKeys'
@@ -8,13 +9,13 @@ import { firstFilledArray } from '#qfb/utils'
 
 const props = defineProps<{
   context: FormKitFrameworkContext & {
-    children?: FormKitSchemaDefinition[]
-    structureChildren?: FormKitSchemaDefinition[]
+    children?: QfbSchemaField[]
+    structureChildren?: QfbSchemaField[]
     description?: string
     attrs: {
       label?: string
-      structureChildren?: FormKitSchemaDefinition[]
-      children?: FormKitSchemaDefinition[]
+      structureChildren?: QfbSchemaField[]
+      children?: QfbSchemaField[]
       description?: string
     }
   }
@@ -24,7 +25,7 @@ const { dark } = useQuasar()
 const formStore = useFormStore()
 const builderMode = inject(builderModeKey, false)
 const isEditing = computed(() => Boolean(builderMode && formStore.formSettings.previewMode === 'editing'))
-const children = computed(() => firstFilledArray<FormKitSchemaDefinition>(
+const children = computed(() => firstFilledArray<QfbSchemaField>(
   props.context.structureChildren,
   props.context.attrs.structureChildren,
   props.context.children,

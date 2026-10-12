@@ -48,7 +48,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
     <q-card-section>
       <div class="column q-gutter-sm">
         <div class="column">
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="min-date" @click="onClickLabel(minRef)">
               <span class="text-body2">Data mínima</span>
             </label>
@@ -70,7 +70,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             </q-input>
           </div>
 
-          <div class="row align-center items-center justify-between q-mt-sm">
+          <div class="qfb-settings-row q-mt-sm">
             <label for="max-date" @click="onClickLabel(maxRef)">
               <span class="text-body2">Data máxima</span>
             </label>
@@ -93,7 +93,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
           </div>
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="mask" @click="onClickLabel(maskRef)">
             <span class="text-body2">Máscara</span>
           </label>
@@ -104,7 +104,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label @click="() => { }">
             <span class="text-body2">Emitir imediatamente</span>
           </label>
@@ -114,19 +114,19 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="default-year-month" @click="onClickLabel(defaultYearMonthRef)">
             <span class="text-body2">Ano/mês padrão</span>
           </label>
           <q-input
             id="default-year-month" ref="defaultYearMonthRef" :model-value="elementStates.defaultYearMonth"
             hide-bottom-space filled class="mw-200" color="cyan-8" dense placeholder="YYYY/MM"
-            @update:model-value="val => { elementStates.defaultYearMonth = val; onEnteredProp('defaultYearMonth', val) }"
+            @update:model-value="val => { elementStates.defaultYearMonth = String(val ?? ''); onEnteredProp('defaultYearMonth', val) }"
           />
         </div>
 
         <div class="column">
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="disabled-dates">
               <span class="text-body2">Datas desabilitadas</span>
             </label>

@@ -1,6 +1,11 @@
 import type { FormKitFrameworkContext } from '@formkit/core'
 
 type FieldDesignAttrs = Record<string, any>
+
+export function withoutModelValue<T extends object>(attrs: T): Omit<T, 'modelValue'> {
+  const { modelValue: _modelValue, ...rest } = attrs as T & { modelValue?: unknown }
+  return rest
+}
 type ContextWithAttrs = FormKitFrameworkContext & {
   attrs?: FieldDesignAttrs
   [key: string]: any

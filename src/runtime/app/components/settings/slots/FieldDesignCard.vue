@@ -40,7 +40,7 @@ function updateBooleanProp(propName: 'rounded' | 'square' | 'dark', value: boole
 <template>
   <q-card flat>
     <q-card-section>
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="field-style">
           <span class="text-body2">Aparência</span>
         </label>
@@ -64,7 +64,7 @@ function updateBooleanProp(propName: 'rounded' | 'square' | 'dark', value: boole
         />
       </div>
 
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <label for="field-rounded">
           <span class="text-body2">Arredondado</span>
         </label>
@@ -76,7 +76,7 @@ function updateBooleanProp(propName: 'rounded' | 'square' | 'dark', value: boole
         />
       </div>
 
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <label for="field-square">
           <span class="text-body2">Quadrado</span>
         </label>
@@ -88,7 +88,7 @@ function updateBooleanProp(propName: 'rounded' | 'square' | 'dark', value: boole
         />
       </div>
 
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <label for="field-dark">
           <span class="text-body2">Forçar escuro</span>
         </label>

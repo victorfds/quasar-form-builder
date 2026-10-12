@@ -2,6 +2,7 @@ import type { FormKitNode } from '@formkit/core'
 import type { Component } from 'vue'
 import { en, pt } from '@formkit/i18n'
 import { createInput, defineFormKitConfig } from '@formkit/vue'
+import QuasarAudioRecorder from './app/components/quasar/AudioRecorder.vue'
 import QuasarBtn from './app/components/quasar/Btn.vue'
 import QuasarBtnToggle from './app/components/quasar/BtnToggle.vue'
 import QuasarCheckbox from './app/components/quasar/Checkbox.vue'
@@ -33,7 +34,7 @@ function quasarInput(
   props: string[] = ['columns'],
   type: 'input' | 'group' | 'list' = 'input',
 ) {
-  return createInput(component, { type, props: Array.from(new Set([...props, 'attrs', 'readonly', 'disable', 'disabled'])) })
+  return createInput(component, { type, props: Array.from(new Set([...props, 'fieldId', 'attrs', 'readonly', 'disable', 'disabled'])) })
 }
 
 const quasarInputs = {
@@ -51,7 +52,8 @@ const quasarInputs = {
   'q-time': quasarInput(QuasarTime, ['columns', 'mask', 'format24h', 'withSeconds', 'nowBtn']),
   'q-slider': quasarInput(QuasarSlider, ['columns', 'min', 'max', 'step', 'vertical']),
   'q-range': quasarInput(QuasarRange, ['columns', 'min', 'max', 'step']),
-  'q-file': quasarInput(QuasarFile, ['columns', 'accept', 'multiple', 'maxFileSize', 'maxTotalSize', 'maxFiles', 'useChips', 'counter', 'clearable', 'gallery', 'filled', 'outlined', 'standout', 'borderless', 'rounded', 'square', 'dark']),
+  'q-file': quasarInput(QuasarFile, ['columns', 'accept', 'multiple', 'maxFileSize', 'maxTotalSize', 'maxFiles', 'useChips', 'counter', 'clearable', 'gallery', 'mediaKind', 'capture', 'filled', 'outlined', 'standout', 'borderless', 'rounded', 'square', 'dark']),
+  'q-audio-recorder': quasarInput(QuasarAudioRecorder, ['columns', 'maxDurationSeconds', 'preferredMimeTypes', 'maxFileSize', 'maxTotalSize', 'multiple', 'maxFiles', 'mediaKind']),
   'q-separator': quasarInput(QuasarSeparator, ['columns', 'vertical', 'inset', 'spaced', 'color', 'size']),
   'q-signature': quasarInput(QuasarSignature),
   'q-matrix': quasarInput(QuasarMatrix, ['columns', 'rows', 'columnsConfig', 'defaultColumnType', 'defaultColumnOptions', 'table', 'rowsMode', 'initialRows', 'minRows', 'maxRows', 'canAddRows', 'addButtonText', 'canRemoveRows', 'matrixView', 'minColumnWidth', 'maxColumnWidth', 'cellGap', 'horizontalPadding', 'hideRowLabels', 'allowMultilineRows', 'stickyRowLabels', 'hideColumnLabels', 'allowMultilineColumns', 'stickyColumnHeaders', 'matrixSize']),
@@ -64,7 +66,9 @@ const quasarInputs = {
   'q-list-structure': quasarInput(QuasarListStructure, ['columns', 'structureChildren', 'nested'], 'group'),
 }
 
-function quasarPlugin() {}
+function quasarPlugin(node: FormKitNode) {
+  node.addProps(['fieldId'])
+}
 
 quasarPlugin.library = (node: FormKitNode) => {
   const definition = quasarInputs[String(node.props.type) as keyof typeof quasarInputs]

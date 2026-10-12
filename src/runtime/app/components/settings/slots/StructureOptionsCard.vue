@@ -45,7 +45,7 @@ function removeTab(index: number) {
 <template>
   <q-card flat>
     <q-card-section v-if="formStore.activeField?.$formkit === 'q-grid'">
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label><span class="text-body2">Linhas</span></label>
         <q-btn-toggle
           :model-value="elementStates.rowsCount"
@@ -64,7 +64,7 @@ function removeTab(index: number) {
           @update:model-value="val => { elementStates.rowsCount = val; onEnteredProp('rowsCount', val) }"
         />
       </div>
-      <div class="row align-center items-center justify-between q-mt-md">
+      <div class="qfb-settings-row q-mt-md">
         <label><span class="text-body2">Colunas</span></label>
         <q-btn-toggle
           :model-value="elementStates.columnsCount"
@@ -86,7 +86,7 @@ function removeTab(index: number) {
     </q-card-section>
 
     <q-card-section v-else-if="formStore.activeField?.$formkit === 'q-list-structure'">
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label><span class="text-body2">Lista aninhada</span></label>
         <q-toggle
           :model-value="elementStates.nested"

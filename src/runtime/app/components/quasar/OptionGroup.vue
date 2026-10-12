@@ -3,6 +3,7 @@ import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QOptionGroupProps } from 'quasar'
 import { computed } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
+import { withoutModelValue } from '#qfb/utils/quasarFieldDesign'
 
 type OptionGroupAttrs = QOptionGroupProps & {
   groupType?: 'checkbox' | 'radio' | 'toggle'
@@ -34,7 +35,7 @@ const optionGroupAttrs = computed(() => {
     options: _options,
     ...attrs
   } = props.context.attrs
-  return attrs
+  return withoutModelValue(attrs)
 })
 const modelValue = computed(() => {
   if (isMultiple.value) return Array.isArray(props.context.value) ? props.context.value : []

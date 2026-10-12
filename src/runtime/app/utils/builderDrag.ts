@@ -1,4 +1,4 @@
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import type { QfbSchemaField } from '../types'
 
 const rootOnlyStructureTypes = new Set(['q-stepper', 'q-tabs'])
 const builderDraggingClass = 'qfb-builder-dragging'
@@ -9,7 +9,7 @@ export const builderDragMime = {
   rootOnly: 'application/x-builder-root-only',
 } as const
 
-export function getBuilderSchemaType(schema?: FormKitSchemaDefinition | FormKitSchemaNode | Record<string, unknown> | null) {
+export function getBuilderSchemaType(schema?: QfbSchemaField | Record<string, unknown> | null) {
   return typeof schema?.$formkit === 'string' ? schema.$formkit : ''
 }
 
@@ -17,7 +17,7 @@ export function isRootOnlyBuilderType(type?: string | null) {
   return rootOnlyStructureTypes.has(String(type || ''))
 }
 
-export function markBuilderDragType(dataTransfer: DataTransfer | null | undefined, schema?: FormKitSchemaDefinition | FormKitSchemaNode | Record<string, unknown> | null) {
+export function markBuilderDragType(dataTransfer: DataTransfer | null | undefined, schema?: QfbSchemaField | Record<string, unknown> | null) {
   markBuilderDragActive()
 
   if (!dataTransfer) return
@@ -34,6 +34,7 @@ export function markBuilderDragType(dataTransfer: DataTransfer | null | undefine
 
 export function markBuilderDragActive() {
   if (typeof document === 'undefined') return
+  document.getSelection()?.removeAllRanges()
   document.body.classList.add(builderDraggingClass)
 }
 

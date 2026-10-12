@@ -3,6 +3,7 @@ import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QEditorProps } from 'quasar'
 import { computed } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
+import { withoutModelValue } from '#qfb/utils/quasarFieldDesign'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QEditorProps } }>()
 const { hasError, getMessages, checkForErrorMessages } = useValidationMessages(props.context?.node)
@@ -16,7 +17,7 @@ const errorActive = computed(() =>
 <template>
   <q-editor
     :model-value="context.value || 'Digite seu texto aqui'" :label="context.label" flat
-    :type="context.inputType" :hint="context.help" v-bind="context.attrs" :error-message="getMessages" :error="errorActive"
+    :type="context.inputType" :hint="context.help" v-bind="withoutModelValue(context.attrs)" :error-message="getMessages" :error="errorActive"
     @update:model-value="(val) => context?.node.input(val)" @blur="checkForErrorMessages"
   />
 </template>

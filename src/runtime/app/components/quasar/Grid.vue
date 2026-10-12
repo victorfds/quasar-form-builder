@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
+import type { FormKitFrameworkContext } from '@formkit/core'
 import type { BuilderFieldListKey, StructureCell } from '#qfb/types'
+import type { QfbSchemaField } from '../../types'
 import { useQuasar } from 'quasar'
 import { computed, inject } from 'vue'
 import { builderModeKey } from '#qfb/constants/injectionKeys'
@@ -14,16 +15,16 @@ interface GridOption {
 
 const props = defineProps<{
   context: FormKitFrameworkContext & {
-    children?: FormKitSchemaDefinition[]
-    structureChildren?: FormKitSchemaDefinition[]
+    children?: QfbSchemaField[]
+    structureChildren?: QfbSchemaField[]
     columnsCount?: number
     description?: string
     rowsCount?: number
     cells?: StructureCell[]
     attrs: {
       label?: string
-      structureChildren?: FormKitSchemaDefinition[]
-      children?: FormKitSchemaDefinition[]
+      structureChildren?: QfbSchemaField[]
+      children?: QfbSchemaField[]
       columnsCount?: number
       rowsCount?: number
       cells?: StructureCell[]
@@ -55,7 +56,7 @@ const columns = computed<GridOption[]>(() =>
   })),
 )
 const gridCells = computed(() => {
-  const legacyChildren = firstFilledArray<FormKitSchemaDefinition>(
+  const legacyChildren = firstFilledArray<QfbSchemaField>(
     props.context.structureChildren,
     props.context.attrs.structureChildren,
     props.context.children,
@@ -75,6 +76,7 @@ const gridCells = computed(() => {
         rowIndex,
         columnIndex,
         children: existingCell?.children || (rowIndex === 0 && columnIndex === 0 ? legacyChildren : []),
+        fieldId: existingCell?.fieldId,
       }
     }),
   )
@@ -113,7 +115,7 @@ const hasStructureHeader = computed(() => Boolean(structureLabel.value || struct
     >
       <div
         v-for="cell in gridCells"
-        :key="cell.name"
+        :key="cell.fieldId || cell.name"
         class="structure-grid__cell"
         :class="{
           'structure-grid__cell--last-row': cell.rowIndex === rowsCount - 1,

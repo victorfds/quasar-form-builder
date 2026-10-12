@@ -111,6 +111,50 @@
   max-width: 200px;
 }
 
+.qfb-settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, min(60%, 200px));
+  align-items: center;
+  gap: 12px;
+}
+
+.qfb-settings-row > * {
+  min-width: 0;
+}
+
+.qfb-settings-row > :first-child {
+  overflow-wrap: anywhere;
+}
+
+.qfb-settings-row > :last-child {
+  justify-self: end;
+}
+
+.qfb-settings-row > .q-field {
+  width: 100%;
+}
+
+.qfb-settings-row > .q-btn-group {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.qfb-settings-row > .q-btn-group .q-btn {
+  flex: 1 0 auto;
+  min-width: 0;
+  padding-right: 6px;
+  padding-left: 6px;
+}
+
+.qfb-settings-row > .q-btn-group .q-btn__content {
+  overflow-wrap: normal;
+  white-space: normal;
+}
+
+.qfb-settings-row > .q-btn-group:has(> .q-btn:nth-child(4)):not(:has(> .q-btn:nth-child(5))) > .q-btn {
+  flex-basis: 50%;
+}
+
 .formkit-outer[data-type^='q-'] > .formkit-wrapper > .formkit-label,
 .formkit-outer[data-type^='q-'] > .formkit-label {
   display: none;

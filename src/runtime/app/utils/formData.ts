@@ -1,10 +1,9 @@
-import type { FormKitSchemaDefinition } from '@formkit/core'
-import type { ExtractedFormAnswer, ExtractedFormData, ExtractedFormItem, StructureCell } from '#qfb/types'
+import type { ExtractedFormAnswer, ExtractedFormData, ExtractedFormItem, QfbSchemaField, StructureCell } from '../types'
 import { empty, eq } from '@formkit/utils'
-import { isDayAfterTomorrow, isDayBeforeYesterday, isToday, isTomorrow, isYesterday } from '#qfb/utils/dateLogic'
-import { contains, endsWith, startsWith } from '#qfb/utils/logic'
+import { isDayAfterTomorrow, isDayBeforeYesterday, isToday, isTomorrow, isYesterday } from './dateLogic'
+import { contains, endsWith, startsWith } from './logic'
 
-const structureTypes = new Set(['q-container', 'q-list-structure', 'q-grid', 'q-table-structure', 'q-tabs', 'q-stepper'])
+const structureTypes = new Set(['group', 'list', 'form', 'q-container', 'q-list-structure', 'q-grid', 'q-table-structure', 'q-tabs', 'q-stepper'])
 const noAnswerTypes = new Set(['q-btn', 'q-separator'])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -50,36 +49,28 @@ function assignValueAliases(target: Record<string, unknown>, value: unknown, pat
   })
 }
 
-function getFieldName(field: FormKitSchemaDefinition): string {
+function getFieldName(field: Record<string, any>): string {
   return typeof field.name === 'string' ? field.name : ''
 }
 
-function getFieldLabel(field: FormKitSchemaDefinition): string {
+function getFieldLabel(field: Record<string, any>): string {
   const label = typeof field.label === 'string' ? field.label : ''
   const children = typeof field.children === 'string' ? field.children : ''
   return label || children || getFieldName(field)
 }
 
-function getFieldType(field: FormKitSchemaDefinition): string {
+function getFieldType(field: Record<string, any>): string {
   if (typeof field.$formkit === 'string') return field.$formkit
   if (typeof field.$el === 'string') return field.$el
   return 'element'
 }
 
-function isStructure(field: FormKitSchemaDefinition): boolean {
+function isStructure(field: Record<string, any>): boolean {
   return structureTypes.has(String(field.$formkit || ''))
 }
 
-function isStaticItem(field: FormKitSchemaDefinition): boolean {
+function isStaticItem(field: Record<string, any>): boolean {
   return Boolean(field.$el) || noAnswerTypes.has(String(field.$formkit || ''))
-}
-
-function getChildContextValue(parentValue: unknown, childName: string, childIndex: number): unknown {
-  if (isRecord(parentValue) && Object.hasOwn(parentValue, childName)) {
-    return parentValue[childName]
-  }
-  if (Array.isArray(parentValue)) return parentValue[childIndex]
-  return undefined
 }
 
 function pushFlatItems(item: ExtractedFormItem, flatItems: ExtractedFormItem[]): void {
@@ -88,86 +79,102 @@ function pushFlatItems(item: ExtractedFormItem, flatItems: ExtractedFormItem[]):
 }
 
 function extractFields(
-  fields: FormKitSchemaDefinition[],
+  fields: QfbSchemaField[],
   values: unknown,
   path: string[],
   valuesByName: Record<string, unknown>,
   answers: ExtractedFormAnswer[],
+  valuePath: string[] = [],
+  rootValues: unknown = values,
+  contexts: Map<string, string[]> = new Map(),
 ): ExtractedFormItem[] {
-  return fields.map((field, index) => extractField(field, values, path, index, valuesByName, answers))
+  return fields.map((field, index) => extractField(field, values, path, index, valuesByName, answers, valuePath, rootValues, contexts))
 }
 
 function extractStructureChildren(
-  field: FormKitSchemaDefinition,
+  field: Record<string, any>,
   fieldValue: unknown,
   fieldPath: string[],
   valuesByName: Record<string, unknown>,
   answers: ExtractedFormAnswer[],
+  valuePath: string[],
+  rootValues: unknown,
+  contexts: Map<string, string[]>,
 ): ExtractedFormItem[] {
   if (Array.isArray(field.steps)) {
     return field.steps.flatMap((step: any) =>
-      extractFields(step.children || [], getNestedValue(fieldValue, [step.name]) ?? fieldValue, [...fieldPath, step.name], valuesByName, answers),
+      extractFields(step.children || [], getNestedValue(fieldValue, [step.name]), [...fieldPath, step.name], valuesByName, answers, [...valuePath, step.name], rootValues, contexts),
     )
   }
 
   if (Array.isArray(field.tabs)) {
     return field.tabs.flatMap((tab: any) =>
-      extractFields(tab.children || [], getNestedValue(fieldValue, [tab.name]) ?? fieldValue, [...fieldPath, tab.name], valuesByName, answers),
+      extractFields(tab.children || [], fieldValue, [...fieldPath, tab.name], valuesByName, answers, valuePath, rootValues, contexts),
     )
   }
 
   if (Array.isArray(field.cells)) {
     return (field.cells as StructureCell[]).flatMap(cell =>
-      extractFields(cell.children || [], fieldValue, [...fieldPath, cell.name], valuesByName, answers),
+      extractFields(cell.children || [], fieldValue, [...fieldPath, cell.name], valuesByName, answers, valuePath, rootValues, contexts),
     )
   }
 
-  const children = Array.isArray(field.children) ? field.children as FormKitSchemaDefinition[] : []
-  return extractFields(children, fieldValue, fieldPath, valuesByName, answers)
+  const children = Array.isArray(field.children) ? field.children as QfbSchemaField[] : Array.isArray(field.structureChildren) ? field.structureChildren as QfbSchemaField[] : []
+  return extractFields(children, fieldValue, fieldPath, valuesByName, answers, valuePath, rootValues, contexts)
 }
 
 function extractField(
-  field: FormKitSchemaDefinition,
+  definition: QfbSchemaField,
   values: unknown,
   parentPath: string[],
   index: number,
   valuesByName: Record<string, unknown>,
   answers: ExtractedFormAnswer[],
+  parentValuePath: string[],
+  rootValues: unknown,
+  contexts: Map<string, string[]>,
 ): ExtractedFormItem {
+  const field = definition && typeof definition === 'object' && !Array.isArray(definition) ? definition as Record<string, any> : { $el: 'span', children: String(definition ?? '') }
   const name = getFieldName(field)
   const label = getFieldLabel(field)
   const type = getFieldType(field)
   const fieldPath = name ? [...parentPath, name] : [...parentPath, `${type}:${index}`]
-  const fieldValue = name ? getChildContextValue(values, name, index) : undefined
+  const valuePath = contexts.get(String(field.fieldId || '')) || (name ? [...parentValuePath, Array.isArray(values) ? String(index) : name] : parentValuePath)
+  const fieldValue = name ? getNestedValue(rootValues, valuePath) : undefined
+  const metadata = { fieldId: typeof field.fieldId === 'string' ? field.fieldId : undefined, fieldPath: valuePath }
 
   if (isStructure(field)) {
-    const children = extractStructureChildren(field, fieldValue ?? values, fieldPath, valuesByName, answers)
-    return { kind: 'structure', name, label, type, path: fieldPath, children }
+    const children = extractStructureChildren(field, fieldValue, fieldPath, valuesByName, answers, valuePath, rootValues, contexts)
+    return { kind: 'structure', name, label, type, path: fieldPath, children, ...metadata }
   }
 
   if (isStaticItem(field)) {
-    return { kind: 'static', name, label, type, path: fieldPath, value: fieldValue, displayValue: stringifyDisplayValue(fieldValue) }
+    const children = Array.isArray(field.children) ? extractFields(field.children as QfbSchemaField[], values, fieldPath, valuesByName, answers, parentValuePath, rootValues, contexts) : undefined
+    return { kind: 'static', name, label, type, path: fieldPath, value: fieldValue, displayValue: stringifyDisplayValue(fieldValue), children, ...metadata, fieldPath: parentValuePath }
   }
 
   const displayValue = stringifyDisplayValue(fieldValue)
-  const item: ExtractedFormItem = { kind: 'field', name, label, type, path: fieldPath, value: fieldValue, displayValue }
+  const item: ExtractedFormItem = { kind: 'field', name, label, type, path: fieldPath, value: fieldValue, displayValue, ...metadata }
   if (name) {
     valuesByName[name] = fieldValue
-    answers.push({ name, label, type, path: fieldPath, value: fieldValue, displayValue })
+    answers.push({ name, label, type, path: fieldPath, value: fieldValue, displayValue, ...metadata })
   }
   return item
 }
 
-export function extractFormData(formFields: FormKitSchemaDefinition[] = [], values: unknown = {}): ExtractedFormData {
+export interface QfbExtractOptions { fieldContexts?: Array<{ fieldId: string, fieldPath: string[] }> }
+
+export function extractFormData(formFields: QfbSchemaField[] = [], values: unknown = {}, options: QfbExtractOptions = {}): ExtractedFormData {
   const valuesByName: Record<string, unknown> = {}
   const answers: ExtractedFormAnswer[] = []
-  const items = extractFields(formFields, values, [], valuesByName, answers)
+  const contexts = new Map(options.fieldContexts?.map(field => [field.fieldId, field.fieldPath]))
+  const items = extractFields(formFields, values, [], valuesByName, answers, [], values, contexts)
   const flatItems: ExtractedFormItem[] = []
   items.forEach(item => pushFlatItems(item, flatItems))
   return { items, flatItems, answers, valuesByName }
 }
 
-export function createFormSchemaData(formFields: FormKitSchemaDefinition[] = [], values: unknown = {}): Record<string, unknown> {
+export function createFormSchemaData(formFields: QfbSchemaField[] = [], values: unknown = {}): Record<string, unknown> {
   const valueAliases: Record<string, unknown> = {}
   assignValueAliases(valueAliases, values)
   const extracted = extractFormData(formFields, values)
