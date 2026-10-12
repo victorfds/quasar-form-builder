@@ -11,4 +11,11 @@ const antfuConfig = antfu({
   ignores: ['.*', 'test-results/**', 'playwright-report/**'],
 })
 
-export default withNuxt(antfuConfig)
+export default withNuxt(antfuConfig, {
+  files: ['**/*.{js,cjs,mjs}'],
+  rules: {
+    // Espree references do not carry TypeScript's isValueReference marker.
+    'unused-imports/no-unused-vars': 'off',
+    'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }],
+  },
+})
