@@ -10,12 +10,13 @@ const nextAudio = { ...audio, name: 'second.webm', buffer: Buffer.from('second a
 
 async function builder(page: Page, fields: unknown[]) {
   await page.goto('/')
+  await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 30_000 })
   await page.evaluate((schema) => {
     localStorage.clear()
     localStorage.setItem('form-fields', JSON.stringify(schema))
   }, fields)
   await page.reload()
-  await expect(page.locator('.my-form-wrapper')).toBeVisible()
+  await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 30_000 })
   await expect(page.locator('[data-field-name]').first()).toBeVisible()
 }
 

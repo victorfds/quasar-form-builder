@@ -895,7 +895,7 @@ test('saveLogic groups or expressions before and expressions', () => {
   expect(evaluateFormKitExpression(expression, { text: 15, signature: 'signed', empty })).toBe(true)
 })
 
-test('saving equality conditions commits the focused pending tag input', async ({ page }) => {
+test('saving equality conditions commits the focused pending tag input', { tag: '@smoke' }, async ({ page }) => {
   const cases = [
     { operatorLabel: 'é igual a', value: 'VIP', expected: '$title == "VIP"' },
     { operatorLabel: 'é diferente de', value: 'blocked', expected: '$title != "blocked"' },
@@ -914,7 +914,10 @@ test('saving equality conditions commits the focused pending tag input', async (
     const dialog = conditionsDialog(page)
     const valueInput = dialog.getByLabel('valor')
     await valueInput.fill(scenario.value)
-    await expect(valueInput).toBeFocused()
+    // Another headless Firefox window can own OS focus without blurring this input.
+    await expect.poll(() => valueInput.evaluate(input => input.ownerDocument.activeElement === input)).toBe(true)
+    await expect(valueInput).toHaveValue(scenario.value)
+    await expect(dialog.locator('.q-chip')).toHaveCount(0)
     await dialog.getByRole('button', { name: 'Salvar' }).evaluate((button: HTMLElement) => button.click())
 
     await expect.poll(async () => {
