@@ -1,0 +1,6 @@
+{
+  "extends": "./.playground/.nuxt/tsconfig.server.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  }
+}
