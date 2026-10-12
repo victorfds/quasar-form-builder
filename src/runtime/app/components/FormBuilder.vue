@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { FormKitNode, FormKitSchemaDefinition } from '@formkit/core'
+import type { FormKitNode } from '@formkit/core'
 import type { ColumnsType } from '#qfb/types'
+import type { QfbSchemaField } from '../types'
 import { clearErrors, reset } from '@formkit/vue'
 import { useQuasar } from 'quasar'
 import { computed, onBeforeUnmount, onMounted, onUnmounted, provide } from 'vue'
@@ -13,7 +14,10 @@ import { useFormStore } from '#qfb/stores/formStore'
 import { withStructureChildrenListForRender } from '#qfb/utils'
 import { createFormSchemaData } from '#qfb/utils/formData'
 
-type ViewerField = FormKitSchemaDefinition & {
+type ViewerField = QfbSchemaField & {
+  fieldId?: string
+  $formkit?: string
+  inputType?: string
   name?: string
   columns?: ColumnsType & Record<string, any>
   align?: 'left' | 'center' | 'right'
@@ -223,9 +227,11 @@ function getFieldStyle(field: ViewerField) {
           :class="{
             'bg-dark': dark.isActive,
             'bg-white': !dark.isActive,
+            'preview-form-container--editing': isPreviewEditing,
             'preview-form-container--full': formStore.formSettings.preview.isFullWidth,
           }"
           :style="previewFormStyle"
+          @selectstart.capture="isPreviewEditing && $event.preventDefault()"
         >
           <q-card-section class="my-form-wrapper no-padding">
             <FormKit
@@ -244,8 +250,9 @@ function getFieldStyle(field: ViewerField) {
                 @dragleave="onDragLeaveFormSectionArea"
               >
                 <div
-                  v-for="(field, index) in builderFields" :key="field.name" class="form-field form-field--responsive"
+                  v-for="(field, index) in builderFields" :key="field.fieldId || field.name" class="form-field form-field--responsive"
                   :data-field-name="field?.name"
+                  :data-field-id="field?.fieldId"
                   :class="getFieldClasses(field)"
                   :style="getFieldStyle(field)"
                   @mouseover.prevent="onMouseOverAtFormElement(field)"
@@ -312,5 +319,11 @@ function getFieldStyle(field: ViewerField) {
 
 .preview-form-container--full {
   width: 100%;
+}
+
+.preview-form-container--editing,
+.preview-form-container--editing * {
+  -webkit-user-select: none;
+  user-select: none;
 }
 </style>

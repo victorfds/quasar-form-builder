@@ -31,7 +31,7 @@ function onClickLabel(refElement: { focus: () => void } | null) {
   <q-card flat>
     <q-card-section>
       <div class="column q-gutter-sm">
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="time-mask" @click="onClickLabel(maskRef)">
             <span class="text-body2">Máscara</span>
           </label>
@@ -51,7 +51,7 @@ function onClickLabel(refElement: { focus: () => void } | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="time-format-24h">
             <span class="text-body2">Formato 24h</span>
           </label>
@@ -63,7 +63,7 @@ function onClickLabel(refElement: { focus: () => void } | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="time-with-seconds">
             <span class="text-body2">Exibir segundos</span>
           </label>
@@ -75,7 +75,7 @@ function onClickLabel(refElement: { focus: () => void } | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="time-now-btn">
             <span class="text-body2">Botão agora</span>
           </label>

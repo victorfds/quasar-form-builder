@@ -132,7 +132,7 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
     >
       <q-card>
         <q-card-section>
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="step-label" @click="onClickLabel(labelInputRef)">
               <span class="text-body2">
                 Cabeçalho
@@ -153,7 +153,7 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
     >
       <q-card>
         <q-card-section>
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="step-show-previous">
               <span class="text-body2">
                 Mostrar anterior
@@ -161,7 +161,7 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
             </label>
             <q-toggle id="step-show-previous" :model-value="showPreviousValue" color="primary" @update:model-value="updateShowPrevious" />
           </div>
-          <div class="row align-center items-center justify-between q-mt-sm">
+          <div class="qfb-settings-row q-mt-sm">
             <label for="step-prev-label" @click="onClickLabel(prevLabelInputRef)">
               <span class="text-body2">
                 Texto do anterior
@@ -173,7 +173,7 @@ function updateStepCondition(prop: 'if' | 'validation' | 'disable' | 'readonly',
               :disable="!showPreviousValue" @update:model-value="updatePrevLabel"
             />
           </div>
-          <div class="row align-center items-center justify-between q-mt-sm">
+          <div class="qfb-settings-row q-mt-sm">
             <label for="step-next-label" @click="onClickLabel(nextLabelInputRef)">
               <span class="text-body2">
                 {{ isLastStep ? 'Texto do finalizar' : 'Texto do próximo' }}

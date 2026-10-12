@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { FormKitFrameworkContext, FormKitSchemaDefinition } from '@formkit/core'
+import type { FormKitFrameworkContext } from '@formkit/core'
+import type { QfbSchemaField } from '../../types'
 import { useQuasar } from 'quasar'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, unref } from 'vue'
 import { useState } from '#imports'
@@ -12,13 +13,14 @@ import { withStructureChildrenForRender, withStructureChildrenListForRender } fr
 import { evaluateLogicString } from '#qfb/utils/formUtils'
 
 interface StepDefinition {
+  fieldId?: string
   name: string
   label?: string
   showPrevious?: boolean
   prevLabel?: string
   nextLabel?: string
   if?: string
-  children?: FormKitSchemaDefinition[]
+  children?: QfbSchemaField[]
 }
 
 const props = defineProps<{
@@ -107,7 +109,7 @@ function ensureRenderableActiveStep() {
   }
 
   if (!newSteps.some(step => step.name === activeStep.value)) {
-    setCurrentStep(newSteps[0].name)
+    setCurrentStep(newSteps[0]!.name)
   }
 }
 
@@ -277,7 +279,7 @@ const selectedStepOverlayField = computed(() => {
   return {
     $formkit: 'q-step-item',
     name: selectedStepOverlayName.value,
-  } as FormKitSchemaDefinition & { name: string }
+  } as QfbSchemaField & { name: string }
 })
 const selectedStepOverlayState = computed(() => ({
   activeNames: selectedStepOverlayName.value ? [selectedStepOverlayName.value] : [],
@@ -410,26 +412,25 @@ function getDisplayFields(step: StepDefinition) {
 
   return fields.map((field) => {
     if (field && Object.keys(field).some(key => key.includes('if'))) {
-      // @ts-expect-error schema keys are dynamic
       const { if: _if, ...rest } = field
-      return withStructureChildrenForRender({ ...rest, hasCondition: true } as FormKitSchemaDefinition)
+      return withStructureChildrenForRender({ ...rest, hasCondition: true } as QfbSchemaField)
     }
     return withStructureChildrenForRender(field)
   })
 }
 
-function hasCondition(field: FormKitSchemaDefinition & { hasCondition?: boolean }) {
+function hasCondition(field: QfbSchemaField & { hasCondition?: boolean }) {
   return Boolean(field?.hasCondition)
 }
 
-function getFieldClasses(field: FormKitSchemaDefinition & { columns?: any, align?: any }) {
+function getFieldClasses(field: QfbSchemaField & { columns?: any, align?: any }) {
   return [
     fieldUi.getAlignClass(field as any),
     hasCondition(field) && isPreviewEditing.value ? 'opacity-50' : '',
   ]
 }
 
-function getFieldStyle(field: FormKitSchemaDefinition & { columns?: any, align?: any }) {
+function getFieldStyle(field: QfbSchemaField & { columns?: any, align?: any }) {
   return fieldUi.getGridColumnStyle(field as any)
 }
 
@@ -521,13 +522,13 @@ function handleRootOnlyWrapperDrop(ev: DragEvent) {
     >
       <q-step
         v-for="step in renderedSteps"
-        :key="step.name"
+        :key="step.fieldId || step.name"
         :name="step.name"
         :title="step.label || step.name"
         :done="stepDone(step.name)"
         :error="stepError(step.name)"
       >
-        <FormKit type="group" :name="step.name" :plugins="[stepPlugin]">
+        <FormKit type="group" :name="step.name" :field-id="step.fieldId" preserve :plugins="[stepPlugin]">
           <FormCanvas
             v-model:root-ref="stepCanvasRefs[step.name]"
             :droppable="canDrag"
@@ -542,7 +543,7 @@ function handleRootOnlyWrapperDrop(ev: DragEvent) {
           >
             <div
               v-for="(field, index) in getDisplayFields(step)"
-              :key="field.name"
+              :key="field.fieldId || field.name"
               class="form-field form-field--responsive"
               :data-field-name="field?.name"
               :class="getFieldClasses(field)"

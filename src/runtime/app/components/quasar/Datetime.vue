@@ -4,6 +4,7 @@ import type { QInputProps } from 'quasar'
 import { useQuasar } from 'quasar'
 import { computed } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
+import { withoutModelValue } from '#qfb/utils/quasarFieldDesign'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QInputProps } }>()
 
@@ -20,7 +21,7 @@ const errorActive = computed(() =>
 
 <template>
   <q-input
-    filled :model-value="context.value || defaultDate" v-bind="context.attrs" :error-message="getMessages" color="cyan-8"
+    filled :model-value="context.value || defaultDate" v-bind="withoutModelValue(context.attrs)" :error-message="getMessages" color="cyan-8"
     :error="errorActive" :hint="context.help" inputmode="none" @update:model-value="(val) => context?.node.input(val)"
     @blur="checkForErrorMessages"
     @keydown.stop.prevent @keypress.stop.prevent @beforeinput.stop.prevent @paste.stop.prevent @drop.stop.prevent @cut.stop.prevent

@@ -3,6 +3,7 @@ import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QToggleProps } from 'quasar'
 import { computed } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
+import { withoutModelValue } from '#qfb/utils/quasarFieldDesign'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QToggleProps & { description?: string } } }>()
 
@@ -20,7 +21,7 @@ const toggleAttrs = computed(() => {
     ...attrs
   } = props.context.attrs as QToggleProps & Record<string, unknown>
 
-  return attrs
+  return withoutModelValue(attrs)
 })
 </script>
 

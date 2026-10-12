@@ -278,7 +278,7 @@ function updateRowCondition(row: MatrixRowConfig, value: unknown) {
         Colunas
       </div>
 
-      <div class="row align-center items-center justify-between q-mb-md">
+      <div class="qfb-settings-row q-mb-md">
         <span class="text-body2">Tipo padrão</span>
         <q-select
           :model-value="elementStates.defaultColumnType"
@@ -447,27 +447,27 @@ function updateRowCondition(row: MatrixRowConfig, value: unknown) {
 
       <template v-else>
         <div class="column q-gutter-sm">
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <span class="text-body2">Quantidade inicial de linhas</span>
             <q-input :model-value="elementStates.initialRows" type="number" hide-bottom-space filled dense class="mw-100" @update:model-value="val => updateProp('initialRows', val ? Number(val) : '')" />
           </div>
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <span class="text-body2">Mínimo de linhas</span>
             <q-input :model-value="elementStates.minRows" type="number" placeholder="nenhum" hide-bottom-space filled dense class="mw-100" @update:model-value="val => updateProp('minRows', val ? Number(val) : '')" />
           </div>
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <span class="text-body2">Máximo de linhas</span>
             <q-input :model-value="elementStates.maxRows" type="number" placeholder="nenhum" hide-bottom-space filled dense class="mw-100" @update:model-value="val => updateProp('maxRows', val ? Number(val) : '')" />
           </div>
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <span class="text-body2">Pode adicionar linhas</span>
             <q-toggle :model-value="elementStates.canAddRows" color="primary" @update:model-value="val => updateProp('canAddRows', val)" />
           </div>
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <span class="text-body2">Texto do botão adicionar</span>
             <q-input :model-value="elementStates.addButtonText" hide-bottom-space filled dense class="mw-140" @update:model-value="val => updateProp('addButtonText', String(val || ''))" />
           </div>
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <span class="text-body2">Pode remover linhas</span>
             <q-toggle :model-value="elementStates.canRemoveRows" color="primary" @update:model-value="val => updateProp('canRemoveRows', val)" />
           </div>
@@ -483,7 +483,7 @@ function updateRowCondition(row: MatrixRowConfig, value: unknown) {
       </div>
 
       <div class="column q-gutter-sm">
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Visualização</span>
           <q-btn-toggle
             :model-value="elementStates.matrixView"
@@ -495,47 +495,47 @@ function updateRowCondition(row: MatrixRowConfig, value: unknown) {
             @update:model-value="updateMatrixView"
           />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Largura mínima da coluna</span>
           <q-input :model-value="elementStates.minColumnWidth" type="number" suffix="px" placeholder="auto" hide-bottom-space filled dense class="mw-120" @update:model-value="val => updateProp('minColumnWidth', val ? Number(val) : '')" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Largura máxima da coluna</span>
           <q-input :model-value="elementStates.maxColumnWidth" type="number" suffix="px" placeholder="auto" hide-bottom-space filled dense class="mw-120" @update:model-value="val => updateProp('maxColumnWidth', val ? Number(val) : '')" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Espaçamento das células</span>
           <q-input :model-value="elementStates.cellGap" type="number" suffix="px" hide-bottom-space filled dense class="mw-120" @update:model-value="val => updateProp('cellGap', val ? Number(val) : '')" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Preenchimento horizontal</span>
           <q-toggle :model-value="elementStates.horizontalPadding" color="primary" @update:model-value="val => updateProp('horizontalPadding', val)" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Ocultar labels das linhas</span>
           <q-toggle :model-value="elementStates.hideRowLabels" color="primary" @update:model-value="val => updateProp('hideRowLabels', val)" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Permitir linhas multilinha</span>
           <q-toggle :model-value="elementStates.allowMultilineRows" color="primary" @update:model-value="val => updateProp('allowMultilineRows', val)" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Fixar labels das linhas</span>
           <q-toggle :model-value="elementStates.stickyRowLabels" color="primary" @update:model-value="val => updateProp('stickyRowLabels', val)" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Ocultar labels das colunas</span>
           <q-toggle :model-value="elementStates.hideColumnLabels" color="primary" @update:model-value="val => updateProp('hideColumnLabels', val)" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Permitir colunas multilinha</span>
           <q-toggle :model-value="elementStates.allowMultilineColumns" color="primary" @update:model-value="val => updateProp('allowMultilineColumns', val)" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Fixar cabeçalhos das colunas</span>
           <q-toggle :model-value="elementStates.stickyColumnHeaders" color="primary" @update:model-value="val => updateProp('stickyColumnHeaders', val)" />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <span class="text-body2">Tamanho</span>
           <q-btn-toggle
             :model-value="elementStates.matrixSize"

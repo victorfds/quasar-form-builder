@@ -17,7 +17,7 @@ const elementStates = reactive({
   <q-card flat>
     <q-card-section>
       <div class="column q-gutter-sm">
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label><span class="text-body2">Mínimo</span></label>
           <q-input
             :model-value="elementStates.min"
@@ -27,10 +27,10 @@ const elementStates = reactive({
             class="mw-200"
             color="cyan-8"
             dense
-            @update:model-value="val => { elementStates.min = val; onEnteredProp('min', Number(val)) }"
+            @update:model-value="val => { elementStates.min = Number(val); onEnteredProp('min', Number(val)) }"
           />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label><span class="text-body2">Máximo</span></label>
           <q-input
             :model-value="elementStates.max"
@@ -40,10 +40,10 @@ const elementStates = reactive({
             class="mw-200"
             color="cyan-8"
             dense
-            @update:model-value="val => { elementStates.max = val; onEnteredProp('max', Number(val)) }"
+            @update:model-value="val => { elementStates.max = Number(val); onEnteredProp('max', Number(val)) }"
           />
         </div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label><span class="text-body2">Passo</span></label>
           <q-input
             :model-value="elementStates.step"
@@ -53,10 +53,10 @@ const elementStates = reactive({
             class="mw-200"
             color="cyan-8"
             dense
-            @update:model-value="val => { elementStates.step = val; onEnteredProp('step', Number(val)) }"
+            @update:model-value="val => { elementStates.step = Number(val); onEnteredProp('step', Number(val)) }"
           />
         </div>
-        <div v-if="formStore.activeField?.$formkit === 'q-slider'" class="row align-center items-center justify-between">
+        <div v-if="formStore.activeField?.$formkit === 'q-slider'" class="qfb-settings-row">
           <label><span class="text-body2">Vertical</span></label>
           <q-toggle
             :model-value="elementStates.vertical"

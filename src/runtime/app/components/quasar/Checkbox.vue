@@ -3,6 +3,7 @@ import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QCheckboxProps } from 'quasar'
 import { computed } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
+import { withoutModelValue } from '#qfb/utils/quasarFieldDesign'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QCheckboxProps & { description?: string } } }>()
 
@@ -27,7 +28,7 @@ const errorActive = computed(() =>
       <q-checkbox
         :model-value="context.value"
         :label="context.label"
-        v-bind="context.attrs"
+        v-bind="withoutModelValue(context.attrs)"
         @update:model-value="(val) => context?.node.input(val)"
         @blur="checkForErrorMessages"
       />

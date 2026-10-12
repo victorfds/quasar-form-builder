@@ -1,5 +1,5 @@
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
 import type { BuilderDragPlacement, BuilderFieldListKey } from '#qfb/types'
+import type { QfbSchemaField } from '../types'
 import { useQuasar } from 'quasar'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { builderDragMime, clearBuilderDragActive, getBuilderDragFormKitType, hasRootOnlyBuilderDrag, isRootOnlyBuilderType, markBuilderDragType } from '#qfb/utils/builderDrag'
@@ -20,7 +20,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
   const formDroppableRef = ref<HTMLElement | null>(null)
   const formRefComponent = ref<HTMLElement | null>(null)
   const indexPointer = ref<number | null>(null)
-  const elementBeingDragged = ref<{ field?: FormKitSchemaDefinition, index?: number }>({})
+  const elementBeingDragged = ref<{ field?: QfbSchemaField, index?: number }>({})
   const originalFieldIndex = ref<number | null>(null)
   const originalStepName = ref<string | null>(null)
   const targetStepName = ref<string | null>(null)
@@ -162,7 +162,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
     return (ev ? getStructureCanvasListKey(ev) : null) || listKey || targetListKey.value || formStore.getActiveListKey
   }
 
-  function getRootStructureLabel(tool?: FormKitSchemaNode | FormKitSchemaDefinition | null) {
+  function getRootStructureLabel(tool?: QfbSchemaField | null) {
     return tool?.$formkit === 'q-stepper' ? 'Passos' : 'Abas'
   }
 
@@ -176,7 +176,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
     return formStore.getDefaultStructureListKey?.(rootOnlyStructure.name) || null
   }
 
-  function resolveDropListKeyForField(dropListKey: BuilderFieldListKey, field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+  function resolveDropListKeyForField(dropListKey: BuilderFieldListKey, field?: QfbSchemaField | null) {
     if (dropListKey !== 'root') return dropListKey
     if (!formStore.hasRootOnlyStructure) return dropListKey
     if (formStore.isRootOnlyStructure?.(field)) return dropListKey
@@ -249,7 +249,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
     return true
   }
 
-  function placeRootOnlyStructure(tool: FormKitSchemaNode) {
+  function placeRootOnlyStructure(tool: QfbSchemaField) {
     if (formStore.hasRootOnlyStructure) {
       confirmRootStructureReplacement(tool)
     }
@@ -259,7 +259,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
     }
   }
 
-  function confirmRootStructureReplacement(tool: FormKitSchemaNode) {
+  function confirmRootStructureReplacement(tool: QfbSchemaField) {
     const currentStructure = formStore.getRootOnlyStructure?.()
     const currentLabel = getRootStructureLabel(currentStructure)
     const nextLabel = getRootStructureLabel(tool)
@@ -361,7 +361,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
     activateStructureBodyAppendTarget(dropListKey)
   }
 
-  function canUseCurrentDropTarget(dropListKey: BuilderFieldListKey, field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+  function canUseCurrentDropTarget(dropListKey: BuilderFieldListKey, field?: QfbSchemaField | null) {
     if (formStore.isRootOnlyStructure?.(field)) {
       if (dropListKey !== 'root') return false
       const rootFields = getRootFieldsList()
@@ -378,7 +378,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
   }
 
   function moveInternalField(fieldName: string, dropListKey: BuilderFieldListKey) {
-    const field = formStore.getFieldByName?.(fieldName) || elementBeingDragged.value.field as FormKitSchemaDefinition | undefined
+    const field = formStore.getFieldByName?.(fieldName) || elementBeingDragged.value.field as QfbSchemaField | undefined
     const targetDropListKey = resolveDropListKeyForField(dropListKey, field)
     if (targetDropListKey !== dropListKey) {
       clearInsertionTarget()
@@ -392,7 +392,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
     return formStore.moveFieldToList(fieldName, targetDropListKey, indexPointer.value)
   }
 
-  function addCatalogField(tool: FormKitSchemaNode, dropListKey: BuilderFieldListKey) {
+  function addCatalogField(tool: QfbSchemaField, dropListKey: BuilderFieldListKey) {
     const targetDropListKey = resolveDropListKeyForField(dropListKey, tool)
     if (targetDropListKey !== dropListKey) {
       clearInsertionTarget()
@@ -412,7 +412,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
     const dropListKey = getDropListKey(ev, listKey)
 
     if (!toolData && internalFieldName && dropListKey) {
-      const internalField = formStore.getFieldByName?.(internalFieldName) || elementBeingDragged.value.field as FormKitSchemaDefinition | undefined
+      const internalField = formStore.getFieldByName?.(internalFieldName) || elementBeingDragged.value.field as QfbSchemaField | undefined
       if (!formStore.isRootOnlyStructure?.(internalField)) {
         if (listKey) activateExplicitEmptyDropTarget(dropListKey)
         activateDropTargetFromEvent(ev, dropListKey)
@@ -434,7 +434,7 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
 
     if (toolData) {
       try {
-        const tool: FormKitSchemaNode = JSON.parse(toolData)
+        const tool: QfbSchemaField = JSON.parse(toolData)
         if (formStore.isRootOnlyStructure?.(tool)) {
           if (!canUseCurrentDropTarget('root', tool)) return
           placeRootOnlyStructure(tool)
@@ -725,6 +725,8 @@ export function useFormBuilderDnd(formStore: any): FormBuilderDndControls {
   }
 
   function startResize(evt: MouseEvent, field: any) {
+    evt.preventDefault()
+    document.getSelection()?.removeAllRanges()
     const canonicalField = field?.name ? formStore.getFieldByName?.(field.name) : null
     setActiveStepConfig(null)
     setActiveTabConfig(null)

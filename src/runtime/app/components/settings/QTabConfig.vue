@@ -121,7 +121,7 @@ function updateTabCondition(prop: 'if' | 'validation' | 'disable' | 'readonly', 
     >
       <q-card>
         <q-card-section>
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="tab-label" @click="onClickLabel(labelInputRef)">
               <span class="text-body2">
                 Cabeçalho

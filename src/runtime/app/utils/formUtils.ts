@@ -98,7 +98,7 @@ function getConditionExpressions(condition: ProcessableLogicField): string[] {
   const { name, operator, value } = condition
 
   if (['$empty', '!$empty'].includes(operator)) {
-    return [`${operator}($${name})`]
+    return [operator === '!$empty' ? `$empty($${name}) == false` : `$empty($${name})`]
   }
 
   if (valueFunctionOperators.has(operator)) {
@@ -182,12 +182,12 @@ export function parseLogic(logicString?: string): LogicField[] {
   const logicFields: LogicField[] = []
 
   // Split by top-level "&&" to separate main conditions without breaking grouped ORs or function arguments.
-  const mainConditions = splitTopLevelLogic(logicString, '&&')
+  const mainConditions = flattenLogicalGroup(logicString, '&&')
 
   mainConditions.forEach((mainConditionString) => {
     const conditionGroup = stripWrappingParentheses(mainConditionString)
     // Split by top-level "||" to handle grouped "or" conditions.
-    const orConditionsStrings = splitTopLevelLogic(conditionGroup, '||')
+    const orConditionsStrings = flattenLogicalGroup(conditionGroup, '||')
     const mainCondition = parseCondition(orConditionsStrings.shift()!) // First is the main condition
 
     if (orConditionsStrings.length) {
@@ -202,6 +202,12 @@ export function parseLogic(logicString?: string): LogicField[] {
   })
 
   return logicFields
+}
+
+function flattenLogicalGroup(logicString: string, operator: '&&' | '||'): string[] {
+  const expression = stripWrappingParentheses(logicString)
+  const parts = splitTopLevelLogic(expression, operator)
+  return parts.length > 1 ? parts.flatMap(part => flattenLogicalGroup(part, operator)) : [expression]
 }
 
 function splitTopLevelLogic(logicString: string, operator: '&&' | '||'): string[] {
@@ -415,7 +421,7 @@ function getPathValue(source: unknown, path: string) {
   return { found: true, value: current }
 }
 
-function findNestedValue(source: unknown, targetKey: string, visited = new WeakSet<object>()) {
+function findNestedValue(source: unknown, targetKey: string, visited = new WeakSet<object>()): { found: boolean, value: unknown } {
   if (Array.isArray(source)) {
     for (const item of source) {
       if (isPlainRecord(item) || Array.isArray(item)) {
@@ -530,6 +536,9 @@ export function evaluateLogicString(logicString: string | undefined, source: Rec
 
 export function parseCondition(conditionString: string): LogicField {
   const normalizedCondition = stripWrappingParentheses(conditionString)
+
+  const notEmptyMatch = normalizedCondition.match(/^\$empty\(\$([^()]+)\)\s*==\s*false$/)
+  if (notEmptyMatch) return { name: notEmptyMatch[1]!, operator: 'notEmpty', value: '', values: [] }
 
   // Match function-like operators: $empty(name), !$empty(name), $contains(name,value), $isToday(name), ...
   const functionMatch = normalizedCondition.match(/^(!?\$[a-z]\w*)\((.*?)\)$/i)

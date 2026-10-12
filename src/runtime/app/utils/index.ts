@@ -1,16 +1,15 @@
-import type { FormKitSchemaDefinition } from '@formkit/core'
-import type { ComponentsTypes } from '#qfb/types'
+import type { QfbSchemaField } from '../types'
 import { fieldTypes } from '#qfb/constants'
 
 export * from './conditionOperators'
 
-export function nameExists(name: string, array: Array<FormKitSchemaDefinition>) {
+export function nameExists(name: string, array: Array<QfbSchemaField>) {
   return array.some(el => el.name === name)
 }
 
 export function generateUniqueName(
   name: string,
-  formFields: Array<FormKitSchemaDefinition>,
+  formFields: Array<QfbSchemaField>,
 ): string {
   const formLength = formFields.length
 
@@ -33,12 +32,12 @@ export function firstFilledArray<T>(...values: unknown[]): T[] {
   return arrays.find(value => value.length > 0) || arrays[0] || []
 }
 
-export function withStructureChildrenForRender<T extends FormKitSchemaDefinition>(field: T): T {
+export function withStructureChildrenForRender<T extends QfbSchemaField>(field: T): T {
   if (!field || typeof field !== 'object') return field
 
   const clone: any = { ...field }
   const normalizeChildren = (children?: unknown) => Array.isArray(children)
-    ? children.map(child => withStructureChildrenForRender(child as FormKitSchemaDefinition))
+    ? children.map(child => withStructureChildrenForRender(child as QfbSchemaField))
     : []
 
   if (Array.isArray(clone.children)) {
@@ -72,7 +71,7 @@ export function withStructureChildrenForRender<T extends FormKitSchemaDefinition
   return clone
 }
 
-export function withStructureChildrenListForRender<T extends FormKitSchemaDefinition>(fields: T[]): T[] {
+export function withStructureChildrenListForRender<T extends QfbSchemaField>(fields: T[]): T[] {
   return fields.map(field => withStructureChildrenForRender(field))
 }
 
@@ -83,14 +82,14 @@ export function hasOnlyOneKeyWithName(obj: Record<string, any>, keyName: string)
 
 // moved: contains() now lives in ~/utils/logic
 
-export function getTypesBasedOnFieldType(fieldType: ComponentsTypes): { label: string, value: string }[] {
+export function getTypesBasedOnFieldType(fieldType?: string): { label: string, value: string }[] {
   if (!fieldType) return []
 
   return fieldTypes[fieldType] || []
 }
 
 export function getLengthLimitsFromValidation(
-  validation: string | { if: string, then: string, else: string },
+  validation: string | { if: string, then: string, else?: string } | undefined,
   startsWith: string,
 ): { min?: number | string, max?: number | string, exact?: number | string } {
   if (!validation) return { min: '', max: '', exact: '' }

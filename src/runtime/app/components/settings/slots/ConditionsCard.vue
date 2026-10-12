@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { ConditionValueInputMode, LogicField } from '#qfb/types'
+import type { MatrixOption } from '../../../types'
 import { useQuasar } from 'quasar'
 import { computed, reactive, ref } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
@@ -49,7 +49,7 @@ function toggleConditionDialog() {
   }
 }
 
-function getOptionsBasedOnField(fieldName: string): FormKitSchemaDefinition {
+function getOptionsBasedOnField(fieldName: string): MatrixOption[] {
   if (!fieldName) return []
 
   const field = formStore.allFields.find(element => element.name === fieldName)
@@ -239,7 +239,7 @@ function hasSubtitle(): boolean {
             {{ conditionsDialogSubtitle }}
           </h6>
           <div class="text-body1" :class="dark.isActive ? 'text-grey-7' : 'text-blue-grey-6'">
-            {{ elementStates.name }}
+            {{ activeElement?.name }}
           </div>
         </div>
         <q-space />
@@ -394,8 +394,8 @@ function hasSubtitle(): boolean {
             </div>
             <q-btn
               color="primary" label="Ou" no-caps class="q-mt-md" @click="() => {
-                elementStates.logicFields[index].or = elementStates.logicFields[index].or || []
-                elementStates.logicFields[index].or!.push({ name: '', operator: '', value: '', values: [], or: [] })
+                field.or = field.or || []
+                field.or.push({ name: '', operator: '', value: '', values: [], or: [] })
               }"
             />
           </div>

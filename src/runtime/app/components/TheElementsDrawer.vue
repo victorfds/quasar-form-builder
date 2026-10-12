@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { FormKitSchemaDefinition } from '@formkit/core'
 import type { BuilderCatalogCategory, BuilderCatalogItem, BuilderEventMap, BuilderFieldListKey, StructureCell } from '#qfb/types'
+import type { QfbSchemaField } from '../types'
 import { useQuasar } from 'quasar'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { getBuilderCatalogByCategory } from '#qfb/constants/fieldCatalog'
@@ -81,9 +81,9 @@ function catalogItemMatchesSearch(tool: BuilderCatalogItem, includeDescription =
 }
 
 const directlyMatchedToolsByCategory = computed<Record<BuilderCatalogCategory, BuilderCatalogItem[]>>(() => ({
-  fields: toolsByCategory.value.fields.filter(catalogItemMatchesSearch),
-  statics: toolsByCategory.value.statics.filter(catalogItemMatchesSearch),
-  structures: toolsByCategory.value.structures.filter(catalogItemMatchesSearch),
+  fields: toolsByCategory.value.fields.filter(tool => catalogItemMatchesSearch(tool)),
+  statics: toolsByCategory.value.statics.filter(tool => catalogItemMatchesSearch(tool)),
+  structures: toolsByCategory.value.structures.filter(tool => catalogItemMatchesSearch(tool)),
 }))
 
 const hasDirectSearchMatches = computed(() =>
@@ -105,7 +105,7 @@ const filteredTools = computed<BuilderCatalogItem[]>(() =>
   catalogTabs.flatMap(catalogTab => filteredToolsByCategory.value[catalogTab.name]),
 )
 
-function cloneSchema(schema: FormKitSchemaDefinition): FormKitSchemaDefinition {
+function cloneSchema(schema: QfbSchemaField): QfbSchemaField {
   return JSON.parse(JSON.stringify(schema))
 }
 
@@ -140,7 +140,7 @@ const catalogDroppableSelector = [
 ].join(',')
 let catalogPointerDrag: CatalogPointerDragState | null = null
 
-function setCatalogDragData(dataTransfer: DataTransfer, schema: FormKitSchemaDefinition) {
+function setCatalogDragData(dataTransfer: DataTransfer, schema: QfbSchemaField) {
   const clonedSchema = cloneSchema(schema)
   const schemaData = JSON.stringify(clonedSchema)
 
@@ -362,14 +362,14 @@ function getStringValue(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : ''
 }
 
-function getFieldNodeName(field: FormKitSchemaDefinition) {
+function getFieldNodeName(field: QfbSchemaField) {
   return getStringValue(field.name)
     || getStringValue(field.label)
     || getStringValue(field.children)
     || 'elemento'
 }
 
-function getFieldCaption(field: FormKitSchemaDefinition, fieldName: string) {
+function getFieldCaption(field: QfbSchemaField, fieldName: string) {
   const label = getStringValue(field.label)
   const children = getStringValue(field.children)
   const description = getStringValue(field.description)
@@ -381,7 +381,7 @@ function getFieldCaption(field: FormKitSchemaDefinition, fieldName: string) {
     || ''
 }
 
-function getFieldIcon(field: FormKitSchemaDefinition) {
+function getFieldIcon(field: QfbSchemaField) {
   if (field.$formkit === 'q-stepper') return 'o_dynamic_form'
   if (field.$formkit === 'q-tabs') return 'o_tab'
   if (['q-grid', 'q-table-structure'].includes(String(field.$formkit))) return 'o_grid_view'
@@ -393,11 +393,11 @@ function getFieldIcon(field: FormKitSchemaDefinition) {
   return 'widgets'
 }
 
-function buildFieldNodes(fields: FormKitSchemaDefinition[] = [], context: TreeBuildContext): BuilderTreeNode[] {
+function buildFieldNodes(fields: QfbSchemaField[] = [], context: TreeBuildContext): BuilderTreeNode[] {
   return fields.map(field => buildFieldNode(field, context))
 }
 
-function buildStepperNodes(field: FormKitSchemaDefinition, _context: TreeBuildContext): BuilderTreeNode[] {
+function buildStepperNodes(field: QfbSchemaField, _context: TreeBuildContext): BuilderTreeNode[] {
   const fieldName = getFieldNodeName(field)
   if (!Array.isArray(field.steps)) return []
 
@@ -414,7 +414,7 @@ function buildStepperNodes(field: FormKitSchemaDefinition, _context: TreeBuildCo
   }))
 }
 
-function buildTabNodes(field: FormKitSchemaDefinition, context: TreeBuildContext): BuilderTreeNode[] {
+function buildTabNodes(field: QfbSchemaField, context: TreeBuildContext): BuilderTreeNode[] {
   const fieldName = getFieldNodeName(field)
   if (!Array.isArray(field.tabs)) return []
 
@@ -435,7 +435,7 @@ function buildTabNodes(field: FormKitSchemaDefinition, context: TreeBuildContext
   }))
 }
 
-function buildRootFieldNodes(fields: FormKitSchemaDefinition[] = []) {
+function buildRootFieldNodes(fields: QfbSchemaField[] = []) {
   return fields.flatMap((field) => {
     if (field.$formkit === 'q-stepper') return buildStepperNodes(field, { listKey: 'root' })
     if (field.$formkit === 'q-tabs') return buildTabNodes(field, { listKey: 'root' })
@@ -443,7 +443,7 @@ function buildRootFieldNodes(fields: FormKitSchemaDefinition[] = []) {
   })
 }
 
-function buildFieldNode(field: FormKitSchemaDefinition, context: TreeBuildContext): BuilderTreeNode {
+function buildFieldNode(field: QfbSchemaField, context: TreeBuildContext): BuilderTreeNode {
   const fieldName = getFieldNodeName(field)
   const children: BuilderTreeNode[] = []
 

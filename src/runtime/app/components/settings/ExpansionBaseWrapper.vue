@@ -61,7 +61,7 @@ function syncExpansionState() {
   }, {} as Record<string, boolean>)
 }
 
-function cachingDefaultClosed(slotKey: keyof typeof slots, isOpen: boolean) {
+function cachingDefaultClosed(slotKey: SectionKey, isOpen: boolean) {
   const elementClosed = readClosedElements()
   if (!slotKey || !Array.isArray(elementClosed))
     return
@@ -138,11 +138,11 @@ onMounted(syncExpansionState)
         <div class="q-gutter-xs">
           <q-btn
             size="sm" flat dense round icon="o_content_copy" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            @click="copyField(null, formStore.activeField)"
+            @click="formStore.activeField && copyField(null, formStore.activeField)"
           />
           <q-btn
             size="sm" flat dense round icon="o_delete" :color="dark.isActive ? 'grey-5' : 'blue-grey-8'"
-            @click="removeField(formStore.activeField)"
+            @click="formStore.activeField && removeField(formStore.activeField)"
           />
           <q-btn
             size="sm" flat dense round :icon="allExpanded ? 'minimize' : 'o_expand'"

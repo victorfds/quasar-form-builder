@@ -3,6 +3,7 @@ import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QRangeProps } from 'quasar'
 import { computed } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
+import { withoutModelValue } from '#qfb/utils/quasarFieldDesign'
 
 interface RangeValue {
   min: number
@@ -48,7 +49,7 @@ const modelValue = computed<RangeValue>(() => {
           label
           label-always
           color="primary"
-          v-bind="rangeAttrs"
+          v-bind="withoutModelValue(rangeAttrs)"
           @update:model-value="(val) => context?.node.input(val)"
           @change="checkForErrorMessages"
         />

@@ -1,47 +1,59 @@
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import type { ComputedRef, Ref } from 'vue'
 import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, BuilderSelectionChangeDetail, ColumnsType, FormSettingsType, FormViewportType, StructureCell } from '#qfb/types'
+import type { QfbSchemaField } from '../types'
 import { defineStore } from 'pinia'
 import { useQuasar } from 'quasar'
 import { computed, nextTick, reactive, ref } from 'vue'
+import { adoptQfbSchema, cloneQfbSchemaAsTemplate, createQfbId, duplicateQfbSchema, QfbSchemaError, renameQfbField, validateQfbConditions, validateQfbSchema, walkQfbSchema } from '#qfb/schema'
+import { removeQfbConditionsReferencing, rewriteQfbConditions } from '#qfb/schema/expressions'
 import { useFormHistoryStore } from '#qfb/stores/formHistoryStore'
+import { isQfbConditionalRule } from '#qfb/types'
 import { generateUniqueName, isEmptyObject, nameExists } from '#qfb/utils'
 import { getBrowserJsonItem, setBrowserStorageItem } from '#qfb/utils/browserStorage'
 import { dispatchBuilderEvent } from '#qfb/utils/builderEvents'
 import { getFormBuilderStorageConfig } from '#qfb/utils/storageConfig'
 
 export interface StepDefinition {
+  fieldId?: string
   name: string
   label?: string
   showPrevious?: boolean
   prevLabel?: string
   nextLabel?: string
   if?: string
-  children?: FormKitSchemaDefinition[]
+  children?: QfbSchemaField[]
 }
 
 export interface TabDefinition {
+  fieldId?: string
   name: string
   label?: string
   if?: string
-  children?: FormKitSchemaDefinition[]
+  children?: QfbSchemaField[]
 }
 
-export type FormStoreApi = Record<string, any>
+export interface FieldLocation {
+  listKey: BuilderFieldListKey
+  list: QfbSchemaField[]
+  index: number
+  field: QfbSchemaField
+}
 
-export const useFormStore = defineStore('formStore', (): FormStoreApi => {
+export const useFormStore = defineStore('formStore', () => {
   const { notify } = useQuasar()
   const formHistoryStore = useFormHistoryStore()
   const { formFieldsKey: formFieldsStorageKey } = getFormBuilderStorageConfig()
 
-  const formSettings = ref<FormSettingsType>({
+  const formSettings: Ref<FormSettingsType> = ref({
     formName: 'Meu Formulário',
     preview: { width: 432, isFullWidth: false },
     previewMode: 'editing',
     columns: 'default',
   })
 
-  const formFields = ref<FormKitSchemaDefinition[]>([])
-  const activeField = ref<ActiveFieldType>(null)
+  const formFields: Ref<QfbSchemaField[]> = ref([])
+  const schemaErrors = computed(() => [...validateQfbSchema(formFields.value), ...validateQfbConditions(formFields.value)])
+  const activeField: Ref<ActiveFieldType> = ref(null)
   const activeStepName = ref('')
   const activeStepConfigName = ref<string | null>(null)
   const activeTabsFieldName = ref<string | null>(null)
@@ -59,11 +71,11 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     stepperType,
   ]
 
-  type StepperField = FormKitSchemaDefinition & {
+  type StepperField = QfbSchemaField & {
     steps?: StepDefinition[]
   }
 
-  type TabsField = FormKitSchemaDefinition & {
+  type TabsField = QfbSchemaField & {
     tabs?: TabDefinition[]
   }
 
@@ -72,7 +84,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     value: string
   }
 
-  type StructureRegionField = FormKitSchemaDefinition & {
+  type StructureRegionField = QfbSchemaField & {
     cells?: StructureCell[]
     rows?: TableOption[]
     columnsConfig?: TableOption[]
@@ -80,14 +92,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     columnsCount?: number
   }
 
-  interface FieldLocation {
-    listKey: BuilderFieldListKey
-    list: FormKitSchemaDefinition[]
-    index: number
-    field: FormKitSchemaDefinition
-  }
-
-  type FieldWithColumns = FormKitSchemaDefinition & {
+  type FieldWithColumns = QfbSchemaField & {
     columns?: ColumnsType & Record<string, any>
   }
 
@@ -97,7 +102,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     dispatchBuilderEvent('builder:selection-change', detail)
   }
 
-  function isStructureField(field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+  function isStructureField(field?: QfbSchemaField | null) {
     return Boolean(field?.$formkit && structureTypes.includes(String(field.$formkit)))
   }
 
@@ -146,8 +151,8 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     field.columns = columns
   }
 
-  function cloneFieldForInsert(field: FormKitSchemaNode) {
-    return JSON.parse(JSON.stringify(field)) as FormKitSchemaNode
+  function cloneFieldForInsert(field: QfbSchemaField) {
+    return cloneQfbSchemaAsTemplate([field])[0] as QfbSchemaField
   }
 
   const getStepper = () => formFields.value.find(field => field.$formkit === stepperType) as StepperField | undefined
@@ -178,7 +183,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
       return
     }
     if (!activeStepConfigName.value || !steps.some(step => step.name === activeStepConfigName.value)) {
-      activeStepConfigName.value = activeStepName.value || steps[0].name
+      activeStepConfigName.value = activeStepName.value || steps[0]!.name
     }
   }
 
@@ -187,14 +192,14 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return getStepByName(activeStepConfigName.value) || null
   })
 
-  function isRootOnlyStructure(field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+  function isRootOnlyStructure(field?: QfbSchemaField | null) {
     return rootOnlyStructureTypes.includes(String(field?.$formkit || ''))
   }
 
   const getRootOnlyStructure = () => formFields.value.find(field => isRootOnlyStructure(field)) as StepperField | TabsField | undefined
   const hasRootOnlyStructure = computed(() => Boolean(getRootOnlyStructure()))
 
-  function getRootOnlyStructureLabel(field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+  function getRootOnlyStructureLabel(field?: QfbSchemaField | null) {
     return field?.$formkit === stepperType ? 'Passos' : 'Abas'
   }
 
@@ -212,9 +217,9 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return getTabByName(activeTabsFieldName.value, activeTabConfigName.value)
   })
 
-  const ensureChildren = (field: FormKitSchemaDefinition) => {
+  const ensureChildren = (field: QfbSchemaField) => {
     if (!Array.isArray(field.children)) field.children = []
-    return field.children as FormKitSchemaDefinition[]
+    return field.children as QfbSchemaField[]
   }
 
   const ensureStepChildren = (step: StepDefinition) => {
@@ -242,7 +247,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return listKey?.split(':')[1] || null
   }
 
-  function replaceCellChildren(list: FormKitSchemaDefinition[], field: FormKitSchemaDefinition) {
+  function replaceCellChildren(list: QfbSchemaField[], field: QfbSchemaField) {
     list.splice(0, list.length, field)
   }
 
@@ -341,12 +346,12 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return field.cells
   }
 
-  function normalizeStructureFields(fields: FormKitSchemaDefinition[]) {
+  function normalizeStructureFields(fields: QfbSchemaField[]) {
     fields.forEach((field) => {
       ensureStructureCells(field as StructureRegionField)
 
       if (Array.isArray(field.children)) {
-        normalizeStructureFields(field.children as FormKitSchemaDefinition[])
+        normalizeStructureFields(field.children as QfbSchemaField[])
       }
 
       ;((field as StepperField).steps || []).forEach((step) => {
@@ -363,7 +368,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     })
   }
 
-  function getStructureChildrenForMigration(field: FormKitSchemaDefinition): FormKitSchemaDefinition[] {
+  function getStructureChildrenForMigration(field: QfbSchemaField): QfbSchemaField[] {
     if (field.$formkit === stepperType) {
       return ((field as StepperField).steps || []).flatMap(step => step.children || [])
     }
@@ -396,7 +401,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return hasStepper.value && activeStepName.value ? `step:${activeStepName.value}` : 'root'
   })
 
-  const resolveFieldList = (listKey?: BuilderFieldListKey | null): FormKitSchemaDefinition[] | null => {
+  const resolveFieldList = (listKey?: BuilderFieldListKey | null): QfbSchemaField[] | null => {
     const key = listKey || getActiveListKey.value
     if (key === 'root') return formFields.value
 
@@ -422,7 +427,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     if (isCellListKey(key)) {
       const [, fieldName, cellName] = key.split(':')
       const field = getFieldByName(fieldName || '') as StructureRegionField | undefined
-      const cell = ensureStructureCells(field || {}).find(item => item.name === cellName)
+      const cell = field ? ensureStructureCells(field).find(item => item.name === cellName) : undefined
       return cell ? ensureCellChildren(cell) : null
     }
 
@@ -457,9 +462,9 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return null
   }
 
-  const collectNestedFields = (fields: FormKitSchemaDefinition[]): FormKitSchemaDefinition[] => {
+  const collectNestedFields = (fields: QfbSchemaField[]): QfbSchemaField[] => {
     return fields.flatMap((field) => {
-      const nested: FormKitSchemaDefinition[] = []
+      const nested: QfbSchemaField[] = []
 
       if (field.$formkit === stepperType) {
         const stepper = field as StepperField
@@ -490,18 +495,19 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   const findFieldInList = (
-    fields: FormKitSchemaDefinition[],
+    fields: QfbSchemaField[],
     fieldName: string,
     listKey: BuilderFieldListKey,
+    byId = false,
   ): FieldLocation | null => {
     for (let index = 0; index < fields.length; index += 1) {
       const field = fields[index]!
-      if (field.name === fieldName) return { listKey, list: fields, index, field }
+      if ((byId ? field.fieldId : field.name) === fieldName) return { listKey, list: fields, index, field }
 
       if (field.$formkit === stepperType) {
         const stepper = field as StepperField
         for (const step of stepper.steps || []) {
-          const result = findFieldInList(step.children || [], fieldName, `step:${step.name}`)
+          const result = findFieldInList(step.children || [], fieldName, `step:${step.name}`, byId)
           if (result) return result
         }
       }
@@ -509,20 +515,20 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
       if (field.$formkit === tabsType) {
         const tabs = field as TabsField
         for (const tab of tabs.tabs || []) {
-          const result = findFieldInList(tab.children || [], fieldName, `tab:${field.name}:${tab.name}`)
+          const result = findFieldInList(tab.children || [], fieldName, `tab:${field.name}:${tab.name}`, byId)
           if (result) return result
         }
       }
 
       if (Array.isArray(field.children)) {
-        const result = findFieldInList(field.children, fieldName, `children:${field.name}`)
+        const result = findFieldInList(field.children, fieldName, `children:${field.name}`, byId)
         if (result) return result
       }
 
       if (Array.isArray((field as StructureRegionField).cells)) {
         const cells = (field as StructureRegionField).cells || []
         for (const cell of cells) {
-          const result = findFieldInList(cell.children || [], fieldName, `cell:${field.name}:${cell.name}`)
+          const result = findFieldInList(cell.children || [], fieldName, `cell:${field.name}:${cell.name}`, byId)
           if (result) return result
         }
       }
@@ -531,17 +537,21 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return null
   }
 
-  const activeFields = computed<FormKitSchemaDefinition[]>(() => {
+  const activeFields = computed<QfbSchemaField[]>(() => {
     return resolveFieldList(getActiveListKey.value) || []
   })
 
-  const allFields = computed<FormKitSchemaDefinition[]>(() => collectNestedFields(formFields.value))
+  const allFields = computed<QfbSchemaField[]>(() => collectNestedFields(formFields.value))
 
-  const getFieldLocationByName = (fieldName: string) => findFieldInList(formFields.value, fieldName, 'root')
+  const getFieldLocationById = (fieldId: string) => findFieldInList(formFields.value, fieldId, 'root', true)
+  const getFieldLocationByName = (fieldName: string) => {
+    const field = getFieldByName(fieldName)
+    return field?.fieldId ? getFieldLocationById(field.fieldId) : findFieldInList(formFields.value, fieldName, 'root')
+  }
 
   const getFieldListKeyByName = (fieldName: string): BuilderFieldListKey | null => getFieldLocationByName(fieldName)?.listKey || null
 
-  const updateFieldByName = (fieldName: string, updater: (field: FormKitSchemaDefinition) => FormKitSchemaDefinition) => {
+  const updateFieldByName = (fieldName: string, updater: (field: QfbSchemaField) => QfbSchemaField) => {
     const location = getFieldLocationByName(fieldName)
     if (!location) return null
 
@@ -585,7 +595,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     setActiveField(null)
   }
 
-  const buildStepper = (fields: FormKitSchemaDefinition[], stepperSchema?: FormKitSchemaNode) => {
+  const buildStepper = (fields: QfbSchemaField[], stepperSchema?: QfbSchemaField) => {
     const stepName = generateStepName()
     const sourceSteps = Array.isArray(stepperSchema?.steps)
       ? JSON.parse(JSON.stringify(stepperSchema.steps)) as StepDefinition[]
@@ -614,7 +624,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     } as StepperField
   }
 
-  const buildTabs = (fields: FormKitSchemaDefinition[], tabsSchema?: FormKitSchemaNode) => {
+  const buildTabs = (fields: QfbSchemaField[], tabsSchema?: QfbSchemaField) => {
     const sourceTabs = Array.isArray(tabsSchema?.tabs)
       ? JSON.parse(JSON.stringify(tabsSchema.tabs)) as TabDefinition[]
       : []
@@ -639,7 +649,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     } as TabsField
   }
 
-  function replaceRootOnlyStructure(structureSchema: FormKitSchemaNode) {
+  function replaceRootOnlyStructure(structureSchema: QfbSchemaField) {
     if (!isRootOnlyStructure(structureSchema)) return false
 
     const migratedFields = getRootStructureMigrationFields()
@@ -661,10 +671,9 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   const getSchema = computed(() => {
-    // @ts-expect-error the following lines is envolved in differents types, but certainly they should not fail
-    return formFields.value.reduce((acc, { name, ...rest }) => {
-      // @ts-expect-error this is fine since we know our node schema always have object style definition
-      acc[name] = rest
+    if (schemaErrors.value.length) throw new QfbSchemaError(schemaErrors.value)
+    return formFields.value.reduce<Record<string, Omit<QfbSchemaField, 'name'>>>((acc, { name, ...rest }) => {
+      if (name) acc[name] = rest
       return acc
     }, {})
   })
@@ -674,10 +683,9 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     ensureActiveStepConfig()
   }
 
-  const getFields = computed(() => {
+  const getFields: ComputedRef<QfbSchemaField[]> = computed(() => {
     return formFields.value.map((formField) => {
       if (formSettings.value.previewMode === 'editing' && formField && Object.keys(formField).some(objKey => objKey.includes('if'))) {
-        // @ts-expect-error clone is an object
         const { if: _condition, ...rest } = formField
         return { ...rest, hasCondition: true }
       }
@@ -695,13 +703,24 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   })
 
   function cacheFormFields() {
+    walkQfbSchema(formFields.value, (field) => {
+      if ((field.name || field.$formkit) && !field.fieldId) field.fieldId = createQfbId()
+    })
+    if (schemaErrors.value.length) {
+      notify({ color: 'negative', message: schemaErrors.value[0]!.message })
+      return false
+    }
     formHistoryStore.addToMemory(formFields.value)
     setBrowserStorageItem(formFieldsStorageKey, JSON.stringify(formFields.value))
+    return true
   }
 
-  const setFormFields = (newFields: FormKitSchemaDefinition[]) => {
-    normalizeStructureFields(newFields)
-    formFields.value = newFields
+  const setFormFields = (newFields: QfbSchemaField[]) => {
+    const selectedId = activeField.value?.fieldId
+    const nextFields = JSON.parse(JSON.stringify(newFields)) as QfbSchemaField[]
+    normalizeStructureFields(nextFields)
+    formFields.value = adoptQfbSchema(nextFields).fields
+    if (selectedId) activeField.value = getFieldById(selectedId) as ActiveFieldType
     if (hasStepper.value) {
       ensureActiveStep()
       ensureActiveStepConfig()
@@ -713,11 +732,11 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
       activeTabsFieldName.value = null
       activeTabConfigName.value = null
     }
-    setBrowserStorageItem(formFieldsStorageKey, JSON.stringify(newFields))
+    if (!schemaErrors.value.length) setBrowserStorageItem(formFieldsStorageKey, JSON.stringify(formFields.value))
   }
 
   function hydrateFromStorage() {
-    const cachedFields = getBrowserJsonItem<FormKitSchemaDefinition[]>(formFieldsStorageKey, [])
+    const cachedFields = getBrowserJsonItem<QfbSchemaField[]>(formFieldsStorageKey, [])
     if (!Array.isArray(cachedFields)) return
     setFormFields(cachedFields)
   }
@@ -726,12 +745,33 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return allFields.value.find(formField => formField.name === fieldName)
   }
 
+  function getFieldById(fieldId: string): QfbSchemaField | null {
+    let result: QfbSchemaField | null = null
+    walkQfbSchema(formFields.value, (field) => {
+      if (field.fieldId === fieldId) result = field as QfbSchemaField
+    })
+    return result
+  }
+
+  function exportSchema() {
+    if (schemaErrors.value.length) throw new QfbSchemaError(schemaErrors.value)
+    return JSON.parse(JSON.stringify(formFields.value)) as QfbSchemaField[]
+  }
+
+  function replaceFieldIdentity(fieldId: string) {
+    const field = getFieldById(fieldId)
+    if (!field) return
+    field.fieldId = createQfbId()
+    cacheFormFields()
+    return field.fieldId
+  }
+
   function getCellListOwnerField(listKey?: BuilderFieldListKey | null) {
     const ownerName = getCellListOwnerName(listKey)
     return ownerName ? getFieldByName(ownerName) : null
   }
 
-  function isGridField(field?: FormKitSchemaDefinition | FormKitSchemaNode | null) {
+  function isGridField(field?: QfbSchemaField | null) {
     return field?.$formkit === 'q-grid'
   }
 
@@ -742,7 +782,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return isGridField(getCellListOwnerField(location?.listKey))
   }
 
-  function canPlaceFieldInList(field: FormKitSchemaDefinition | FormKitSchemaNode, targetListKey?: BuilderFieldListKey | null) {
+  function canPlaceFieldInList(field: QfbSchemaField, targetListKey?: BuilderFieldListKey | null) {
     if (!isGridField(field) || !isCellListKey(targetListKey)) return true
 
     const ownerField = getCellListOwnerField(targetListKey)
@@ -753,7 +793,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return false
   }
 
-  function canPlaceRootOnlyStructure(field: FormKitSchemaNode, _pos?: number | null, listKey?: BuilderFieldListKey | null) {
+  function canPlaceRootOnlyStructure(field: QfbSchemaField, _pos?: number | null, listKey?: BuilderFieldListKey | null) {
     if (!isRootOnlyStructure(field)) return true
 
     const label = getRootOnlyStructureLabel(field)
@@ -774,7 +814,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   function resolveRootInsertionListKey(
-    field: FormKitSchemaDefinition | FormKitSchemaNode,
+    field: QfbSchemaField,
     targetListKey: BuilderFieldListKey,
   ): BuilderFieldListKey {
     if (targetListKey !== 'root') return targetListKey
@@ -783,7 +823,8 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return getRootOnlyStructureContentListKey() || targetListKey
   }
 
-  const addField = (field: FormKitSchemaNode, pos?: number | null, listKey?: BuilderFieldListKey | null) => {
+  const addField = (field: QfbSchemaField, pos?: number | null, listKey?: BuilderFieldListKey | null) => {
+    field = cloneFieldForInsert(field)
     if (!canPlaceRootOnlyStructure(field, pos, listKey)) return false
 
     if (isRootOnlyStructure(field)) {
@@ -797,7 +838,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     const formLength = fieldsList.length
     const destinationIndex = pos === undefined || pos === null ? formLength : Number(pos)
 
-    field.name = generateUniqueName(field?.name, allFields.value)
+    field.name = generateUniqueName(field.name || 'field', allFields.value)
     ensureStructureCells(field as StructureRegionField)
 
     if (isCellListKey(targetListKey)) {
@@ -823,7 +864,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   const updateFieldIndex = ({ draggedField, originalPosition, destinationIndex }: {
-    draggedField: FormKitSchemaDefinition
+    draggedField: QfbSchemaField
     originalPosition: number
     destinationIndex: number
   }) => {
@@ -926,7 +967,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return true
   }
 
-  function getFieldRowRange(list: FormKitSchemaDefinition[], targetIndex: number) {
+  function getFieldRowRange(list: QfbSchemaField[], targetIndex: number) {
     let rowStart = 0
     let rowSpan = 0
 
@@ -964,7 +1005,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return { start: targetIndex, end: targetIndex + 1 }
   }
 
-  function distributeFieldsAcrossRow(fields: FormKitSchemaDefinition[]) {
+  function distributeFieldsAcrossRow(fields: QfbSchemaField[]) {
     const fieldsToResize = fields.slice(0, 12)
     const baseSpan = Math.max(1, Math.floor(12 / fieldsToResize.length))
     const remainder = 12 % fieldsToResize.length
@@ -975,7 +1016,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   function getBesideInsertIndex(
-    list: FormKitSchemaDefinition[],
+    list: QfbSchemaField[],
     targetIndex: number,
     placement: Extract<BuilderDragPlacement, 'left' | 'right'>,
   ) {
@@ -990,9 +1031,9 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   function applyBesideRowColumnLayout(
-    list: FormKitSchemaDefinition[],
+    list: QfbSchemaField[],
     rowRangeBeforeInsert: { start: number, end: number },
-    insertedField: FormKitSchemaDefinition,
+    insertedField: QfbSchemaField,
   ) {
     const rowFieldsCountBeforeInsert = rowRangeBeforeInsert.end - rowRangeBeforeInsert.start
 
@@ -1027,7 +1068,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   function addFieldBeside(
-    field: FormKitSchemaNode,
+    field: QfbSchemaField,
     targetFieldName: string,
     placement: Extract<BuilderDragPlacement, 'left' | 'right'>,
     targetListKey?: BuilderFieldListKey | null,
@@ -1042,7 +1083,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     if (!canPlaceFieldInList(field, context.listKey)) return false
 
     const nextField = cloneFieldForInsert(field)
-    nextField.name = generateUniqueName(nextField?.name, allFields.value)
+    nextField.name = generateUniqueName(nextField.name || 'field', allFields.value)
     ensureStructureCells(nextField as StructureRegionField)
 
     if (isCellListKey(context.listKey)) {
@@ -1122,11 +1163,11 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     moveFieldToList(fieldName, `step:${targetStepName}`, destinationIndex)
   }
 
-  const replaceStepper = (stepperSchema?: FormKitSchemaNode) => {
+  const replaceStepper = (stepperSchema?: QfbSchemaField) => {
     return replaceRootOnlyStructure(stepperSchema || { $formkit: stepperType, name: 'stepper' })
   }
 
-  const removeField = (field: FormKitSchemaNode | null, index?: number) => {
+  const removeField = (field: QfbSchemaField | null, index?: number) => {
     if (!field) return
 
     const location = getFieldLocationByName(field?.name || '')
@@ -1137,10 +1178,10 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     removeAllConditionsUses(field)
 
     const migratedChildren = isStructureField(field)
-      ? getStructureChildrenForMigration(field as FormKitSchemaDefinition)
+      ? getStructureChildrenForMigration(field as QfbSchemaField)
       : []
     fieldsList.splice(fieldIndex, 1, ...migratedChildren)
-    const removedNames = collectNestedFields([field as FormKitSchemaDefinition]).map(item => item.name).filter(Boolean)
+    const removedNames = collectNestedFields([field as QfbSchemaField]).map(item => item.name).filter(Boolean)
 
     if (activeField.value?.name && removedNames.includes(activeField.value.name)) {
       setActiveField(null)
@@ -1159,41 +1200,11 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     cacheFormFields()
   }
 
-  const cloneFieldWithUniqueNames = (field: FormKitSchemaNode, usedFields: FormKitSchemaDefinition[]) => {
-    const clone: FormKitSchemaNode = JSON.parse(JSON.stringify(field))
-    const assignUniqueNames = (item: FormKitSchemaNode) => {
-      const baseName = item.name?.split('_').at(0) || item.name || 'field'
-      item.name = generateUniqueName(baseName, usedFields)
-      usedFields.push(item as FormKitSchemaDefinition)
-
-      if (Array.isArray(item.children)) {
-        item.children.forEach(child => assignUniqueNames(child as FormKitSchemaNode))
-      }
-
-      if (Array.isArray(item.tabs)) {
-        item.tabs.forEach((tab: TabDefinition) => {
-          tab.children?.forEach(child => assignUniqueNames(child as FormKitSchemaNode))
-        })
-      }
-
-      if (Array.isArray(item.steps)) {
-        item.steps.forEach((step: StepDefinition) => {
-          step.children?.forEach(child => assignUniqueNames(child as FormKitSchemaNode))
-        })
-      }
-
-      if (Array.isArray((item as StructureRegionField).cells)) {
-        ;(item as StructureRegionField).cells?.forEach((cell) => {
-          cell.children?.forEach(child => assignUniqueNames(child as FormKitSchemaNode))
-        })
-      }
-    }
-
-    assignUniqueNames(clone)
-    return clone
+  const cloneFieldWithUniqueNames = (field: QfbSchemaField, usedFields: QfbSchemaField[]) => {
+    return duplicateQfbSchema([field], usedFields.map(item => String(item.name || ''))).fields[0] as QfbSchemaField
   }
 
-  const copyField = (index: number | null, fieldElement?: FormKitSchemaNode, listKey?: BuilderFieldListKey | null) => {
+  const copyField = (index: number | null, fieldElement?: QfbSchemaField, listKey?: BuilderFieldListKey | null) => {
     const sourceLocation = fieldElement?.name ? getFieldLocationByName(fieldElement.name) : null
     const targetListKey = listKey || sourceLocation?.listKey || getActiveListKey.value
     const fieldsList = resolveFieldList(targetListKey) || activeFields.value
@@ -1214,6 +1225,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     activeField.value = newField
     dispatchBuilderSelectionChange({
       fieldName: newField?.name || null,
+      fieldId: newField?.fieldId || null,
     })
   }
 
@@ -1226,7 +1238,16 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
 
     if (nameExists(newName, allFields.value)) return new Error('name already exists', { cause: 500 })
 
-    updateFieldByName(oldName, field => ({ ...field, name: newName }))
+    const target = getFieldByName(oldName)
+    if (!target?.fieldId) return new Error('field identity not found')
+    const selectedId = activeField.value?.fieldId
+    try {
+      formFields.value = renameQfbField(formFields.value, target.fieldId, newName)
+      if (selectedId) activeField.value = getFieldById(selectedId) as ActiveFieldType
+    }
+    catch (error) {
+      return error instanceof Error ? error : new Error(String(error))
+    }
 
     if (activeTabsFieldName.value === oldName) {
       activeTabsFieldName.value = newName
@@ -1236,14 +1257,15 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   const insertValidationRule = (
-    validation: boolean | string | { if: string, then: string, else: string },
+    validation: unknown,
     newRule: string | boolean,
   ): string => {
-    const rules = typeof validation === 'string' ? validation.split('|') : typeof validation !== 'string' && typeof validation !== 'boolean' ? validation.then.split('|') : []
+    const current = isQfbConditionalRule(validation) ? validation.then : validation
+    const rules: Array<string | boolean> = typeof current === 'string' ? current.split('|') : []
     const ruleName = typeof newRule === 'string' ? newRule.split(':')[0] : newRule
 
     const updatedRules = rules.map(rule =>
-      rule.startsWith(`${ruleName}:`) ? newRule : rule,
+      typeof rule === 'string' && rule.startsWith(`${ruleName}:`) ? newRule : rule,
     )
 
     if (!updatedRules.includes(newRule)) {
@@ -1254,17 +1276,18 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   const removeValidationRule = (
-    validation: string | { if: string, then: string, else: string },
+    validation: unknown,
     ruleToRemove: string,
   ): string => {
-    const rules = validation && typeof validation === 'string' ? validation.split('|') : validation && typeof validation !== 'string' ? validation.then.split('|') : []
+    const current = isQfbConditionalRule(validation) ? validation.then : validation
+    const rules = typeof current === 'string' ? current.split('|') : []
 
     const updatedRules = rules.filter(rule => !rule.includes(ruleToRemove))
     return updatedRules.join('|')
   }
 
-  const updatePropFromActiveField = async (fieldElement: FormKitSchemaNode | null, propName?: string, newPropValue?: any) => {
-    if (!propName || !fieldElement) return
+  const updatePropFromActiveField = async (fieldElement: QfbSchemaField | null, propName?: string, newPropValue?: any) => {
+    if (!propName || !fieldElement?.name) return
 
     if (!activeField.value) return
 
@@ -1273,7 +1296,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
       : propName === 'attrs' && newPropValue
         ? typeof newPropValue === 'string'
           ? {
-              ...fieldElement[propName],
+              ...fieldElement.attrs,
               ...Object.fromEntries([newPropValue.split(':').map(part => part.trim())]),
             }
           : newPropValue
@@ -1289,8 +1312,9 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     cacheFormFields()
   }
 
-  function handleValidationUpdate(fieldElement: FormKitSchemaNode, propName: string, newPropValue: any) {
-    if (!fieldElement[propName]?.if && newPropValue.if) {
+  function handleValidationUpdate(fieldElement: QfbSchemaField, propName: string, newPropValue: any) {
+    const current = fieldElement[propName]
+    if (!isQfbConditionalRule(current) && newPropValue.if) {
       // If the current validation doesn't have 'if' and the new property has 'if'
       return {
         ...newPropValue,
@@ -1303,15 +1327,17 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   }
 
   // Function to update the validation element of a form element
-  function updateValidationElement(fieldElement: FormKitSchemaNode, propName: string, newPropValue: any) {
+  function updateValidationElement(fieldElement: QfbSchemaField, propName: string, newPropValue: any) {
+    const current = fieldElement[propName]
+    const condition = isQfbConditionalRule(current) ? current : undefined
     if (newPropValue?.if === '') {
       // If the new property has an empty 'if', return the 'then' part of the validation
-      return fieldElement[propName]?.then
+      return condition?.then
     }
 
     if (newPropValue?.if) {
       // If the new property has 'if', merge it with the current validation
-      return { ...fieldElement[propName], ...newPropValue }
+      return { ...condition, ...newPropValue }
     }
 
     // Get the appropriate validation element based on the new property and current validation
@@ -1330,10 +1356,10 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
       }
     }
 
-    if (fieldElement[propName]?.if) {
+    if (condition?.if) {
       // If the current validation has 'if', return a new validation object with 'then' and 'else'
       return {
-        ...fieldElement[propName],
+        ...condition,
         then: validationElement,
         else: convertToBoolean(toggleToFalse(removeRequiredRule(validationElement))),
       }
@@ -1343,14 +1369,14 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     return validationElement
   }
 
-  function getValidationElement(fieldElement: FormKitSchemaNode, propName: string, newPropValue: any): string {
+  function getValidationElement(fieldElement: QfbSchemaField, propName: string, newPropValue: any): string {
     return newPropValue && newPropValue?.startsWith?.('-')
       ? removeValidationRule(fieldElement[propName], newPropValue.substring(1))
       : insertValidationRule(fieldElement[propName] || '', newPropValue)
   }
 
-  function removeRequiredRule(validation: string) {
-    return String(validation)?.match?.('required')?.length ? validation?.replace?.(/(^required\||\|required$|^required$|\|required\|)/, '') : String(validation)
+  function removeRequiredRule(validation: unknown) {
+    return String(validation).replace(/(^required\||\|required$|^required$|\|required\|)/, '')
   }
 
   function toggleToFalse(validation: any) {
@@ -1385,49 +1411,15 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     }
 
     updateFieldByName(fieldName, (field) => {
-      const { [propName]: __, ...restField } = field
+      const restField = { ...field }
+      delete restField[propName]
       return restField
     })
   }
 
-  function deleteFieldPropertyByName(prop: string, fieldName: string) {
-    const field = getFieldByName(fieldName)
-
-    if (!field) return
-
-    if (activeField.value?.name === fieldName) {
-      const { [prop]: activeProp, ...restActive } = activeField.value
-      activeField.value = activeProp?.else
-        ? ({ [prop]: activeProp.else, ...restActive } as ActiveFieldType)
-        : restActive
-    }
-
-    const { [prop]: fieldProp, ...restField } = field
-    const updatedField = fieldProp?.else
-      ? { [prop]: fieldProp.else, ...restField }
-      : restField
-
-    updateFieldByName(fieldName, () => updatedField)
-  }
-
-  function removeAllConditionsUses(field: FormKitSchemaNode) {
-    const ifConditionNames = allFields.value
-      .filter(formField => formField.if && formField.if.includes(field.name))
-      .map(fieldForm => fieldForm.name)
-    const validationConditionNames = allFields.value
-      .filter(formField => formField.validation && formField.validation.if && formField.validation.if.includes(field.name))
-      .map(fieldForm => fieldForm.name)
-    const disableConditionNames = allFields.value
-      .filter(formField => formField.disable && formField.disable.if && formField.disable.if.includes(field.name))
-      .map(fieldForm => fieldForm.name)
-    const readonlyConditionNames = allFields.value
-      .filter(formField => formField.readonly && formField.readonly.if && formField.readonly.if.includes(field.name))
-      .map(fieldForm => fieldForm.name)
-
-    ifConditionNames.forEach(name => deleteFieldPropertyByName('if', name))
-    validationConditionNames.forEach(name => deleteFieldPropertyByName('validation', name))
-    disableConditionNames.forEach(name => deleteFieldPropertyByName('disable', name))
-    readonlyConditionNames.forEach(name => deleteFieldPropertyByName('readonly', name))
+  function removeAllConditionsUses(field: QfbSchemaField) {
+    if (!field.name) return
+    removeQfbConditionsReferencing(formFields.value, field.name)
   }
 
   function shouldDeleteProperty(newPropValue: any, propName?: string) {
@@ -1561,11 +1553,9 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     if (index === -1) return
 
     const source = tabsField.tabs[index]
-    const clone: TabDefinition = JSON.parse(JSON.stringify(source))
-    const usedFields = [...allFields.value]
+    const clone = duplicateQfbSchema([source], allFields.value.map(field => String(field.name || ''))).fields[0] as TabDefinition
     clone.name = generateTabName(tabsField)
     clone.label = `${source?.label || source?.name || 'Aba'} cópia`
-    clone.children = (clone.children || []).map(child => cloneFieldWithUniqueNames(child as FormKitSchemaNode, usedFields) as FormKitSchemaDefinition)
 
     tabsField.tabs.splice(index + 1, 0, clone)
     setActiveTabConfig(tabsFieldName, clone.name)
@@ -1644,15 +1634,9 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     if (index === -1) return
 
     const source = stepper.steps[index]
-    const clone: StepDefinition = JSON.parse(JSON.stringify(source))
-    const usedFields = [...allFields.value]
+    const clone = duplicateQfbSchema([source], allFields.value.map(field => String(field.name || ''))).fields[0] as StepDefinition
     clone.name = generateStepName()
-    clone.children = (clone.children || []).map((child) => {
-      const baseName = child.name?.split('_').at(0) || child.name || 'field'
-      const newName = generateUniqueName(baseName, usedFields)
-      usedFields.push({ ...child, name: newName })
-      return { ...child, name: newName }
-    })
+    if (source) rewriteQfbConditions([clone], { [source.name]: clone.name }, formFields.value)
 
     stepper.steps.splice(index + 1, 0, clone)
     activeStepName.value = clone.name
@@ -1689,7 +1673,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
   const removeStepper = () => {
     const stepper = getStepper()
     if (!stepper) return
-    removeField(stepper as FormKitSchemaNode)
+    removeField(stepper as QfbSchemaField)
   }
 
   const renameStep = (stepName: string, label: string) => {
@@ -1730,13 +1714,15 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
 
   const updateActiveFieldOnFormFields = () => {
     if (!activeField.value?.name) return
-    updateFieldByName(activeField.value.name, () => ({ ...activeField.value }))
+    const field = activeField.value
+    updateFieldByName(field.name!, () => ({ ...field }))
     cacheFormFields()
   }
 
   const onEnteredProp = (propName: string, propValue?: unknown,
   ) => {
     if (!propName) return
+    if (propName === 'fieldId') return
 
     updatePropFromActiveField(activeField.value, propName, propValue)
   }
@@ -1744,6 +1730,7 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     values,
     formSettings,
     formFields,
+    schemaErrors,
     activeFields,
     allFields,
     activeStepName,
@@ -1769,6 +1756,10 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     hydrateFromStorage,
     setFormFields,
     getFieldByName,
+    getFieldById,
+    getFieldLocationById,
+    exportSchema,
+    replaceFieldIdentity,
     addField,
     replaceStepper,
     replaceRootOnlyStructure,
@@ -1810,3 +1801,5 @@ export const useFormStore = defineStore('formStore', (): FormStoreApi => {
     onEnteredProp,
   }
 })
+
+export type FormStoreApi = ReturnType<typeof useFormStore>

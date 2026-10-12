@@ -42,7 +42,7 @@ function updateSubmitData(value: boolean) {
 <template>
   <q-card flat>
     <q-card-section>
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="hidden-default-value" @click="focusInput(defaultValueRef)">
           <span class="text-body2">
             Valor padrão
@@ -62,7 +62,7 @@ function updateSubmitData(value: boolean) {
         />
       </div>
 
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <label for="hidden-expression-value">
           <span class="text-body2">
             Usar valor de expressão
@@ -76,7 +76,7 @@ function updateSubmitData(value: boolean) {
         />
       </div>
 
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <label for="hidden-force-numeric">
           <span class="text-body2">
             Forçar valores numéricos
@@ -90,7 +90,7 @@ function updateSubmitData(value: boolean) {
         />
       </div>
 
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <label for="hidden-submit-data">
           <span class="text-body2">
             Submeter dados

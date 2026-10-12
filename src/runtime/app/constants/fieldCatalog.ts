@@ -1,4 +1,4 @@
-import type { BuilderCatalogCategory, BuilderCatalogItem } from '#qfb/types'
+import type { BuilderCatalogCategory, BuilderCatalogItem, MatrixColumnConfig } from '#qfb/types'
 
 const defaultOptions = [
   { label: 'Opção 1', value: 'option_1' },
@@ -10,7 +10,7 @@ const defaultMatrixRows = [
   { label: 'Linha 2', value: 'row_2' },
 ]
 
-const defaultMatrixColumns = [
+const defaultMatrixColumns: MatrixColumnConfig[] = [
   { label: 'Coluna 1', value: 'column_1', type: 'default' },
   { label: 'Coluna 2', value: 'column_2', type: 'default' },
 ]
@@ -301,7 +301,7 @@ export const builderFieldCatalog: BuilderCatalogItem[] = [
     icon: 'image',
     title: 'Enviar imagem',
     description: 'Envio de arquivo apenas imagem',
-    schema: { $formkit: 'q-file', name: 'image', label: 'Imagem', inputType: 'image', accept: 'image/*', clearable: true },
+    schema: { $formkit: 'q-file', name: 'image', label: 'Imagem', inputType: 'image', mediaKind: 'image', accept: 'image/*', clearable: true },
   },
   {
     category: 'fields',
@@ -309,7 +309,7 @@ export const builderFieldCatalog: BuilderCatalogItem[] = [
     icon: 'collections',
     title: 'Enviar imagens',
     description: 'Envio de múltiplas imagens',
-    schema: { $formkit: 'q-file', name: 'images', label: 'Imagens', inputType: 'image', accept: 'image/*', multiple: true, useChips: true, clearable: true },
+    schema: { $formkit: 'q-file', name: 'images', label: 'Imagens', inputType: 'image', mediaKind: 'image', accept: 'image/*', multiple: true, useChips: true, clearable: true },
   },
   {
     category: 'fields',
@@ -317,8 +317,11 @@ export const builderFieldCatalog: BuilderCatalogItem[] = [
     icon: 'photo_library',
     title: 'Galeria',
     description: 'Upload de imagens com pré-visualização',
-    schema: { $formkit: 'q-file', name: 'gallery', label: 'Galeria', inputType: 'gallery', accept: 'image/*', multiple: true, useChips: true, gallery: true, clearable: true },
+    schema: { $formkit: 'q-file', name: 'gallery', label: 'Galeria', inputType: 'gallery', mediaKind: 'image', accept: 'image/*', multiple: true, useChips: true, gallery: true, clearable: true },
   },
+  { name: 'video_upload', icon: 'video_file', title: 'Vídeo', description: 'Vídeo selecionado', category: 'fields', schema: { $formkit: 'q-file', name: 'video', label: 'Vídeo', mediaKind: 'video', accept: 'video/*', clearable: true } },
+  { name: 'audio_upload', icon: 'audio_file', title: 'Áudio', description: 'Áudio selecionado', category: 'fields', schema: { $formkit: 'q-file', name: 'audio', label: 'Áudio', mediaKind: 'audio', accept: 'audio/*', clearable: true } },
+  { name: 'audio_recorder', icon: 'mic', title: 'Gravador de áudio', description: 'Gravação de áudio', category: 'fields', schema: { $formkit: 'q-audio-recorder', name: 'recording', label: 'Gravação', mediaKind: 'audio', maxDurationSeconds: 300 } },
   {
     category: 'fields',
     name: 'hidden',

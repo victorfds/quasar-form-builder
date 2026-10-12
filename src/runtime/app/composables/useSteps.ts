@@ -1,15 +1,16 @@
 import type { FormKitNode } from '@formkit/core'
-import { createMessage, getNode } from '@formkit/core'
+import { createMessage } from '@formkit/core'
 import { reactive, ref, toRef } from 'vue'
 
 export default function useSteps() {
   const activeStep = ref('')
-  const steps = reactive({})
+  const steps = reactive<Record<string, { valid?: boolean, errorCount?: number, blockingCount?: number }>>({})
   const visitedSteps = ref<string[]>([]) // track visited steps
+  const nodes = new Map<string, FormKitNode>()
 
   function revealVisitedStepErrors() {
     visitedSteps.value.forEach((step) => {
-      const node = getNode(step)
+      const node = nodes.get(step)
       node?.walk((n) => {
         n.store.set(
           createMessage({
@@ -39,26 +40,27 @@ export default function useSteps() {
 
   const stepPlugin = (node: FormKitNode) => {
     if (node.props.type === 'group') {
+      nodes.set(node.name, node)
+      node.on('destroying', () => {
+        nodes.delete(node.name)
+        delete steps[node.name]
+      })
       // builds an object of the top-level groups
-      // @ts-expect-error all step props are runtime defined
       steps[node.name] = steps[node.name] || {}
 
       node.on('created', () => {
         // use 'on created' to ensure context object is available
-        // @ts-expect-error all step props are runtime defined
-        steps[node.name].valid = toRef(node.context.state, 'valid')
+        if (node.context) Object.assign(steps[node.name]!, { valid: toRef(node.context.state, 'valid') })
       })
 
       // listen for changes in error count and store it
       node.on('count:errors', ({ payload: count }) => {
-        // @ts-expect-error all step props are runtime defined
-        steps[node.name].errorCount = count
+        steps[node.name]!.errorCount = Number(count)
       })
 
       // listen for changes in count of blocking validations messages
       node.on('count:blocking', ({ payload: count }) => {
-        // @ts-expect-error all step props are runtime defined
-        steps[node.name].blockingCount = count
+        steps[node.name]!.blockingCount = Number(count)
       })
 
       // set the active tab to the 1st tab

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
+import { formatMediaSize, positiveNumber } from '../../../media/policy'
 
 const formStore = useFormStore()
 const { onEnteredProp } = formStore
@@ -15,6 +16,9 @@ const elementStates = reactive({
   counter: Boolean(formStore.activeField?.counter) || false,
   clearable: Boolean(formStore.activeField?.clearable) || false,
   disable: Boolean(formStore.activeField?.disable) || false,
+  mediaKind: formStore.activeField?.mediaKind || 'file',
+  capture: formStore.activeField?.capture || null,
+  gallery: Boolean(formStore.activeField?.gallery),
 })
 
 const acceptInputRef = ref<HTMLInputElement | null>(null)
@@ -25,13 +29,31 @@ const maxFilesInputRef = ref<HTMLInputElement | null>(null)
 function onClickLabel(refElement: HTMLInputElement | null) {
   refElement?.focus()
 }
+function updateLimit(key: 'maxFileSize' | 'maxTotalSize' | 'maxFiles', value: unknown) {
+  const parsed = positiveNumber(value)
+  const next = key === 'maxFiles' && parsed ? Math.floor(parsed) || undefined : parsed
+  elementStates[key] = next ?? ''
+  onEnteredProp(key, next)
+}
 </script>
 
 <template>
   <q-card flat>
     <q-card-section>
       <div class="column q-gutter-sm">
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
+          <label for="file-media-kind" class="text-body2">Tipo de mídia</label>
+          <q-select v-model="elementStates.mediaKind" for="file-media-kind" :options="[{ label: 'Arquivo', value: 'file' }, { label: 'Imagem', value: 'image' }, { label: 'Vídeo', value: 'video' }, { label: 'Áudio', value: 'audio' }]" emit-value map-options dense filled @update:model-value="value => onEnteredProp('mediaKind', value)" />
+        </div>
+        <div class="qfb-settings-row">
+          <label for="file-capture" class="text-body2">Captura</label>
+          <q-select v-model="elementStates.capture" for="file-capture" :options="[{ label: 'Sem preferência', value: null }, { label: 'Câmera frontal', value: 'user' }, { label: 'Câmera traseira', value: 'environment' }]" emit-value map-options dense filled @update:model-value="value => onEnteredProp('capture', value || undefined)" />
+        </div>
+        <div class="qfb-settings-row">
+          <label for="file-gallery" class="text-body2">Galeria</label>
+          <q-toggle id="file-gallery" v-model="elementStates.gallery" color="primary" @update:model-value="value => onEnteredProp('gallery', value)" />
+        </div>
+        <div class="qfb-settings-row">
           <label for="file-accept" @click="onClickLabel(acceptInputRef)">
             <span class="text-body2">Accept</span>
           </label>
@@ -40,11 +62,11 @@ function onClickLabel(refElement: HTMLInputElement | null) {
             ref="acceptInputRef"
             :model-value="elementStates.accept" hide-bottom-space filled class="mw-200" color="cyan-8" dense
             placeholder="e.g. image/*, .pdf, .docx"
-            @update:model-value="val => { elementStates.accept = val; onEnteredProp('accept', val) }"
+            @update:model-value="val => { elementStates.accept = String(val ?? ''); onEnteredProp('accept', val) }"
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="file-multiple">
             <span class="text-body2">Multiple files</span>
           </label>
@@ -55,7 +77,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="file-max-size" @click="onClickLabel(maxFileSizeInputRef)">
             <span class="text-body2">Max file size (bytes)</span>
           </label>
@@ -63,11 +85,12 @@ function onClickLabel(refElement: HTMLInputElement | null) {
             id="file-max-size"
             ref="maxFileSizeInputRef"
             :model-value="elementStates.maxFileSize" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
-            @update:model-value="val => { elementStates.maxFileSize = val; onEnteredProp('maxFileSize', val) }"
+            :hint="positiveNumber(elementStates.maxFileSize) ? formatMediaSize(Number(elementStates.maxFileSize)) : undefined"
+            @update:model-value="val => updateLimit('maxFileSize', val)"
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="file-max-total-size" @click="onClickLabel(maxTotalSizeInputRef)">
             <span class="text-body2">Max total size (bytes)</span>
           </label>
@@ -75,11 +98,12 @@ function onClickLabel(refElement: HTMLInputElement | null) {
             id="file-max-total-size"
             ref="maxTotalSizeInputRef"
             :model-value="elementStates.maxTotalSize" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
-            @update:model-value="val => { elementStates.maxTotalSize = val; onEnteredProp('maxTotalSize', val) }"
+            :hint="positiveNumber(elementStates.maxTotalSize) ? formatMediaSize(Number(elementStates.maxTotalSize)) : undefined"
+            @update:model-value="val => updateLimit('maxTotalSize', val)"
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="file-max-files" @click="onClickLabel(maxFilesInputRef)">
             <span class="text-body2">Max files</span>
           </label>
@@ -87,11 +111,11 @@ function onClickLabel(refElement: HTMLInputElement | null) {
             id="file-max-files"
             ref="maxFilesInputRef"
             :model-value="elementStates.maxFiles" type="number" hide-bottom-space filled class="mw-200" color="cyan-8" dense
-            @update:model-value="val => { elementStates.maxFiles = val; onEnteredProp('maxFiles', val) }"
+            @update:model-value="val => updateLimit('maxFiles', val)"
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="file-use-chips">
             <span class="text-body2">Use chips for selected files</span>
           </label>
@@ -102,7 +126,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="file-counter">
             <span class="text-body2">Show counter</span>
           </label>
@@ -113,7 +137,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="file-clearable">
             <span class="text-body2">Clearable</span>
           </label>
@@ -124,7 +148,7 @@ function onClickLabel(refElement: HTMLInputElement | null) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="file-disable">
             <span class="text-body2">Disable</span>
           </label>

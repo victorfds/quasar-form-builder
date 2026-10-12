@@ -16,10 +16,10 @@ const elementStates = reactive<{
   href?: string
 }>({
   type: htmlTypes.find(htmlType => htmlType.value === formStore.activeField?.$el),
-  content: formStore.activeField?.children || '',
-  src: formStore.activeField?.attrs?.src || '',
-  alt: formStore.activeField?.attrs?.alt || '',
-  href: formStore.activeField?.attrs?.href || '',
+  content: typeof formStore.activeField?.children === 'string' ? formStore.activeField.children : '',
+  src: String(formStore.activeField?.attrs?.src || ''),
+  alt: String(formStore.activeField?.attrs?.alt || ''),
+  href: String(formStore.activeField?.attrs?.href || ''),
 })
 
 const propTypeRef = ref<HTMLInputElement | null>(null)
@@ -49,7 +49,7 @@ function updateAttr(name: string, value?: string) {
 <template>
   <q-card flat>
     <q-card-section>
-      <div class="row align-center items-center justify-between q-mt-sm">
+      <div class="qfb-settings-row q-mt-sm">
         <label for="form-type" @click="onClickLabel(propTypeRef)">
           <span class="text-body2">
             Tipo

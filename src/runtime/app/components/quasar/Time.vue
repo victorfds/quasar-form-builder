@@ -4,6 +4,7 @@ import type { QInputProps, QTimeProps } from 'quasar'
 import { useQuasar } from 'quasar'
 import { computed } from 'vue'
 import { useValidationMessages } from '#qfb/composables/useValidationMessages'
+import { withoutModelValue } from '#qfb/utils/quasarFieldDesign'
 
 const props = defineProps<{ context: FormKitFrameworkContext & { attrs: QInputProps & QTimeProps } }>()
 
@@ -36,7 +37,7 @@ const timeAttrs = computed(() => ({
         <q-popup-proxy cover transition-show="scale" transition-hide="scale">
           <q-time
             :model-value="context.value as string"
-            v-bind="timeAttrs"
+            v-bind="withoutModelValue(timeAttrs)"
             @update:model-value="(val) => context?.node.input(val)"
           >
             <div class="row items-center justify-end">

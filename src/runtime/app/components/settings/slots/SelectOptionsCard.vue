@@ -66,7 +66,7 @@ function updateNewValueMode(value: string) {
   <q-card flat class="select-options-card">
     <q-card-section>
       <div class="column q-gutter-sm">
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-clearable">
             <span class="text-body2">Limpável</span>
           </label>
@@ -78,7 +78,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-multiple">
             <span class="text-body2">Múltiplo</span>
           </label>
@@ -90,7 +90,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-use-chips">
             <span class="text-body2">Usar chips</span>
           </label>
@@ -102,7 +102,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-use-input">
             <span class="text-body2">Permitir digitação</span>
           </label>
@@ -114,7 +114,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-fill-input">
             <span class="text-body2">Preencher input</span>
           </label>
@@ -126,7 +126,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-hide-selected">
             <span class="text-body2">Ocultar selecionados</span>
           </label>
@@ -138,7 +138,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-counter">
             <span class="text-body2">Contador</span>
           </label>
@@ -150,7 +150,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-options-dense">
             <span class="text-body2">Opções densas</span>
           </label>
@@ -162,7 +162,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-options-cover">
             <span class="text-body2">Menu cobre campo</span>
           </label>
@@ -174,7 +174,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-new-value-mode">
             <span class="text-body2">Novos valores</span>
           </label>
@@ -193,7 +193,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-behavior">
             <span class="text-body2">Exibição</span>
           </label>
@@ -212,7 +212,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-max-values" @click="onClickLabel(maxValuesInputRef)">
             <span class="text-body2">Máximo de valores</span>
           </label>
@@ -230,7 +230,7 @@ function updateNewValueMode(value: string) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="select-input-debounce" @click="onClickLabel(inputDebounceInputRef)">
             <span class="text-body2">Debounce filtro</span>
           </label>

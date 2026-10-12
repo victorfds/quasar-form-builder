@@ -60,7 +60,9 @@ function onBlurName(_: Event) {
 
   if (response?.message === 'name already exists') {
     elementStates.nameError = 'Este nome já existe'
+    return
   }
+  if (response instanceof Error) elementStates.nameError = response.message
 }
 
 function onTypeUpdateModelValue(val: any) {
@@ -82,7 +84,7 @@ function onTypeUpdateModelValue(val: any) {
   <q-card flat>
     <q-card-section>
       <div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="form-name" @click="onClickLabel(propNameInputRef)">
             <span class="text-body2">
               Nome
@@ -94,7 +96,7 @@ function onTypeUpdateModelValue(val: any) {
             class="mw-200" color="secondary" dense type="text" @blur="onBlurName"
           />
         </div>
-        <div v-if="hasInputType" class="row align-center items-center justify-between q-mt-sm">
+        <div v-if="hasInputType" class="qfb-settings-row q-mt-sm">
           <label for="form-type" @click="onClickLabel(propTypeInputRef)">
             <span class="text-body2">
               Tipo de entrada
@@ -112,7 +114,7 @@ function onTypeUpdateModelValue(val: any) {
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section>
       <div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="form-label" @click="onClickLabel(propLabelInputRef)">
             <span class="text-body2">
               Cabeçalho
@@ -123,7 +125,7 @@ function onTypeUpdateModelValue(val: any) {
             class="mw-200" color="cyan-8" dense type="text" @update:model-value="val => onEnteredProp('label', val)"
           />
         </div>
-        <div v-if="hasTooltip" class="row align-center items-center justify-between q-mt-sm">
+        <div v-if="hasTooltip" class="qfb-settings-row q-mt-sm">
           <label for="form-tooltip" @click="onClickLabel(propTooltipInputRef)">
             <span class="text-body2">
               Texto auxiliar
@@ -140,7 +142,7 @@ function onTypeUpdateModelValue(val: any) {
             @update:model-value="val => onEnteredProp('info', val)"
           />
         </div>
-        <div v-if="hasPlaceholder" class="row align-center items-center justify-between q-mt-sm">
+        <div v-if="hasPlaceholder" class="qfb-settings-row q-mt-sm">
           <label for="form-placeholder" @click="onClickLabel(propPlaceholderInputRef)">
             <span class="text-body2">
               Placeholder
@@ -156,7 +158,7 @@ function onTypeUpdateModelValue(val: any) {
     </q-card-section>
     <q-separator :color="dark.isActive ? 'grey-9' : 'blue-grey-1'" />
     <q-card-section v-if="hasDescription">
-      <div class="row align-center items-center justify-between">
+      <div class="qfb-settings-row">
         <label for="form-description" @click="onClickLabel(propDescriptionInputRef)">
           <span class="text-body2">
             Descrição

@@ -59,7 +59,7 @@ function setReverseFillMask(value: boolean) {
   <q-card flat class="input-options-card">
     <q-card-section>
       <div class="column q-gutter-sm">
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="input-clearable">
             <span class="text-body2">Limpável</span>
           </label>
@@ -71,7 +71,7 @@ function setReverseFillMask(value: boolean) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="input-counter">
             <span class="text-body2">Contador</span>
           </label>
@@ -83,7 +83,7 @@ function setReverseFillMask(value: boolean) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="input-loading">
             <span class="text-body2">Carregando</span>
           </label>
@@ -95,7 +95,7 @@ function setReverseFillMask(value: boolean) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="input-stack-label">
             <span class="text-body2">Label fixo</span>
           </label>
@@ -107,7 +107,7 @@ function setReverseFillMask(value: boolean) {
           />
         </div>
 
-        <div v-if="isTextarea" class="row align-center items-center justify-between">
+        <div v-if="isTextarea" class="qfb-settings-row">
           <label for="input-autogrow">
             <span class="text-body2">Auto expandir</span>
           </label>
@@ -119,7 +119,7 @@ function setReverseFillMask(value: boolean) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="input-prefix" @click="onClickLabel(prefixInputRef)">
             <span class="text-body2">Prefixo</span>
           </label>
@@ -136,7 +136,7 @@ function setReverseFillMask(value: boolean) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="input-suffix" @click="onClickLabel(suffixInputRef)">
             <span class="text-body2">Sufixo</span>
           </label>
@@ -153,7 +153,7 @@ function setReverseFillMask(value: boolean) {
           />
         </div>
 
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="input-debounce" @click="onClickLabel(debounceInputRef)">
             <span class="text-body2">Debounce</span>
           </label>
@@ -173,7 +173,7 @@ function setReverseFillMask(value: boolean) {
         </div>
 
         <template v-if="supportsMask">
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="input-mask" @click="onClickLabel(maskInputRef)">
               <span class="text-body2">Máscara</span>
             </label>
@@ -191,7 +191,7 @@ function setReverseFillMask(value: boolean) {
             />
           </div>
 
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="input-fill-mask">
               <span class="text-body2">Preencher máscara</span>
             </label>
@@ -203,7 +203,7 @@ function setReverseFillMask(value: boolean) {
             />
           </div>
 
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="input-reverse-fill-mask">
               <span class="text-body2">Preencher reverso</span>
             </label>
@@ -215,7 +215,7 @@ function setReverseFillMask(value: boolean) {
             />
           </div>
 
-          <div class="row align-center items-center justify-between">
+          <div class="qfb-settings-row">
             <label for="input-unmasked-value">
               <span class="text-body2">Valor sem máscara</span>
             </label>

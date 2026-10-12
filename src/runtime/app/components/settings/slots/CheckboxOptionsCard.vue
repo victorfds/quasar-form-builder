@@ -11,8 +11,8 @@ const elementStates = reactive<{
   leftLabel?: boolean
   toggleIndeterminate?: boolean
 }>({
-  trueValue: formStore.activeField?.['true-value'],
-  falseValue: formStore.activeField?.['false-value'],
+  trueValue: String(formStore.activeField?.['true-value'] ?? ''),
+  falseValue: String(formStore.activeField?.['false-value'] ?? ''),
   leftLabel: Boolean(formStore.activeField?.leftLabel),
   toggleIndeterminate: Boolean(formStore.activeField?.toggleIndeterminate),
 })
@@ -31,7 +31,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
   <q-card flat>
     <q-card-section>
       <div>
-        <div class="row align-center items-center justify-between">
+        <div class="qfb-settings-row">
           <label for="form-true-value" @click="onClickLabel(propTrueValueInputRef)">
             <span class="text-body2">
               Valor verdadeiro
@@ -46,7 +46,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             }"
           />
         </div>
-        <div class="row align-center items-center justify-between q-mt-sm">
+        <div class="qfb-settings-row q-mt-sm">
           <label for="form-false-value" @click="onClickLabel(propFalseValueInputRef)">
             <span class="text-body2">
               Valor falso
@@ -61,7 +61,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             }"
           />
         </div>
-        <div class="row align-center items-center justify-between q-mt-sm">
+        <div class="qfb-settings-row q-mt-sm">
           <label for="form-left-label">
             <span class="text-body2">
               Label à esquerda
@@ -77,7 +77,7 @@ function onClickLabel(refElement: HTMLInputElement | null, { select = false }: {
             }"
           />
         </div>
-        <div v-if="formStore.activeField?.$formkit === 'q-checkbox'" class="row align-center items-center justify-between q-mt-sm">
+        <div v-if="formStore.activeField?.$formkit === 'q-checkbox'" class="qfb-settings-row q-mt-sm">
           <label for="form-toggle-indeterminate">
             <span class="text-body2">
               Indeterminado

@@ -23,6 +23,7 @@ const SettingsDefaultNoConfigComponent = resolveComponent('SettingsDefaultNoConf
 const SettingsQDateConfigComponent = resolveComponent('SettingsQDateConfig')
 const SettingsQTimeConfigComponent = resolveComponent('SettingsQTimeConfig')
 const SettingsQFileConfigComponent = resolveComponent('SettingsQFileConfig')
+const SettingsQAudioRecorderConfigComponent = resolveComponent('SettingsQAudioRecorderConfig')
 const SettingsQStepperConfigComponent = resolveComponent('SettingsQStepperConfig')
 const SettingsQTabConfigComponent = resolveComponent('SettingsQTabConfig')
 const SettingsQOptionsConfigComponent = resolveComponent('SettingsQOptionsConfig')
@@ -39,11 +40,19 @@ const htmlValues = computed(() => {
   return useHighlight(validValues, dark.isActive)
 })
 
+const htmlActiveConfig = computed(() => {
+  const config = formStore.activeField || formStore.activeStepConfig || formStore.activeTabConfig
+  if (!config) return ''
+  const displayConfig = JSON.parse(JSON.stringify(config, (key, value) => key === 'fieldId' ? undefined : value))
+  return useHighlight(displayConfig, dark.isActive)
+})
+
 const getComponentSettings = computed(() => {
   if (formStore.activeField?.$formkit === 'q-btn') return SettingsQBtnConfigComponent
   if (formStore.activeField?.$formkit === 'q-input' && formStore.activeField?.inputType !== 'file') return SettingsQInputConfigComponent
   if (formStore.activeField?.$formkit === 'q-input' && formStore.activeField?.inputType === 'file') return SettingsQFileConfigComponent
   if (formStore.activeField?.$formkit === 'q-file') return SettingsQFileConfigComponent
+  if (formStore.activeField?.$formkit === 'q-audio-recorder') return SettingsQAudioRecorderConfigComponent
   if (formStore.activeField?.$formkit === 'q-select') return SettingsQSelectConfigComponent
   if (['q-option-group', 'q-btn-toggle'].includes(formStore.activeField?.$formkit as string)) return SettingsQOptionsConfigComponent
   if (formStore.activeField?.$formkit === 'q-checkbox') return SettingsQCheckboxConfigComponent
@@ -87,17 +96,20 @@ function onClickLabelFormName() {
   <q-drawer v-model="model" class="no-scroll" show-if-above persistent side="right" :width="340" data-drawer="right">
     <q-scroll-area class="fit" visible>
       <slot v-if="$slots.before" name="before" v-bind="drawerSlotProps" />
+      <div v-for="error in formStore.schemaErrors" :key="error.path.join('.')" role="alert" class="text-negative text-caption q-pa-sm">
+        {{ error.message }}
+      </div>
       <div v-if="formStore.formSettings.previewMode === 'editing' && formStore.activeField">
         <component :is="getComponentSettings" :key="activeConfigKey" />
-        <div v-if="isDevelopment" v-html="useHighlight(formStore.activeField, dark.isActive)" />
+        <div v-if="isDevelopment" v-html="htmlActiveConfig" />
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && formStore.activeStepConfig">
         <component :is="SettingsQStepperConfigComponent" :key="activeConfigKey" />
-        <div v-if="isDevelopment" v-html="useHighlight(formStore.activeStepConfig, dark.isActive)" />
+        <div v-if="isDevelopment" v-html="htmlActiveConfig" />
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && formStore.activeTabConfig">
         <component :is="SettingsQTabConfigComponent" :key="activeConfigKey" />
-        <div v-if="isDevelopment" v-html="useHighlight(formStore.activeTabConfig, dark.isActive)" />
+        <div v-if="isDevelopment" v-html="htmlActiveConfig" />
       </div>
       <div v-else-if="formStore.formSettings.previewMode === 'editing' && !formStore.activeField">
         <q-list separator>
@@ -108,7 +120,7 @@ function onClickLabelFormName() {
             <q-card>
               <q-card-section>
                 <div>
-                  <div class="row align-center items-center justify-between">
+                  <div class="qfb-settings-row">
                     <label @click="onClickLabelFormName">
                       Nome
                     </label>
@@ -118,7 +130,7 @@ function onClickLabelFormName() {
                     />
                   </div>
 
-                  <div class="row align-center items-center justify-between q-mt-sm">
+                  <div class="qfb-settings-row q-mt-sm">
                     <div>
                       <label class="">Pré-visualizar largura</label>
                       <q-checkbox

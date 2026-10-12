@@ -96,7 +96,7 @@ const hasStructureHeader = computed(() => Boolean(structureLabel.value || struct
           <th class="text-left">
             {{ row.label }}
           </th>
-          <td v-for="column in columns" :key="column.value" class="structure-table__cell">
+          <td v-for="column in columns" :key="getCell(row.value, column.value)?.fieldId || column.value" class="structure-table__cell">
             <BuilderStructureCanvas
               :fields="getCell(row.value, column.value)?.children || []"
               :list-key="getCellListKey(row.value, column.value)"

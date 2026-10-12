@@ -1,6 +1,8 @@
-import { addComponent, addComponentsDir, addImports, addImportsDir, addPlugin, addTypeTemplate, createResolver, defineNuxtModule } from '@nuxt/kit'
+import { addComponent, addComponentsDir, addImports, addImportsDir, addPlugin, addTypeTemplate, createResolver, defineNuxtModule, resolveModule } from '@nuxt/kit'
 import { defu } from 'defu'
 
+export type * from './runtime/app/media/types'
+export type { QfbSchemaDiagnostic } from './runtime/app/schema/identity'
 export type {
   FormBuilderAppConfig,
   FormBuilderLabelsConfig,
@@ -11,6 +13,9 @@ export type {
   FormViewerSubmitInvalidPayload,
   FormViewerValues,
   FormViewerValuesUpdatePayload,
+  QfbSchemaField,
+  QfbSchemaMetadata,
+  QfbSchemaSection,
 } from './runtime/app/types'
 
 export interface ModuleOptions {
@@ -76,7 +81,7 @@ export default defineNuxtModule<ModuleOptions>({
     name: 'nuxt-quasar-form-builder',
     configKey: 'formBuilder',
     compatibility: {
-      nuxt: '>=4.0.0',
+      nuxt: '>=4.5.1 <5',
     },
   },
   defaults: {
@@ -100,16 +105,21 @@ export default defineNuxtModule<ModuleOptions>({
 
     nuxt.options.alias ||= {}
     nuxt.options.alias['#qfb'] = runtimeAppDir
+    // A nested consumer must share the host Pinia with plugins resolved from ancestor packages.
+    nuxt.options.alias.pinia ||= resolveModule('pinia', { paths: [`${nuxt.options.rootDir}/`] })
+    nuxt.options.vite.resolve ||= {}
+    nuxt.options.vite.resolve.dedupe = [...new Set([...(nuxt.options.vite.resolve.dedupe || []), 'vue', 'pinia'])]
     nuxt.options.build.transpile ||= []
     nuxt.options.build.transpile.push(runtimeDir)
     nuxt.options.build.transpile.push('@formkit/vue')
+    nuxt.options.build.transpile.push('shiki')
 
     nuxt.hook('prepare:types', (opts) => {
       opts.references.push({ types: '@formkit/vue' })
     })
 
     nuxt.options.runtimeConfig.public.formBuilder = defu(
-      nuxt.options.runtimeConfig.public.formBuilder,
+      nuxt.options.runtimeConfig.public.formBuilder as Record<string, unknown> | undefined,
       {
         storage: options.storage,
       },
@@ -141,6 +151,8 @@ export default defineNuxtModule<ModuleOptions>({
         name: `${prefix}FormViewer`,
         filePath: resolver.resolve('./runtime/app/components/FormViewer.vue'),
       })
+      addComponent({ name: `${prefix}AudioRecorder`, filePath: resolver.resolve('./runtime/app/components/AudioRecorder.vue') })
+      addComponent({ name: `${prefix}MediaAttachments`, filePath: resolver.resolve('./runtime/app/components/MediaAttachments.vue') })
       addComponent({
         name: `${prefix}ElementsDrawer`,
         filePath: resolver.resolve('./runtime/app/components/TheElementsDrawer.vue'),
@@ -154,6 +166,10 @@ export default defineNuxtModule<ModuleOptions>({
     addImportsDir(runtimeComposablesDir)
     addImportsDir(runtimeUtilsDir)
     addImports([
+      { name: 'useEventListener', from: resolver.resolve('./runtime/app/composables/useEventListener'), priority: 10 },
+      { name: 'useEventListener', as: 'useQfbEventListener', from: resolver.resolve('./runtime/app/composables/useEventListener') },
+      ...['createQfbIndexedDbStorage', 'createQfbHttpMediaTransport'].map(name => ({ name, from: resolver.resolve('./runtime/app/media/index') })),
+      ...['adoptQfbSchema', 'cloneQfbSchemaAsTemplate'].map(name => ({ name, from: resolver.resolve('./runtime/app/schema/index') })),
       {
         name: 'useFormStore',
         from: resolver.resolve('./runtime/app/stores/formStore'),
