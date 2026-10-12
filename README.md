@@ -389,11 +389,23 @@ O playground em `.playground` consome `src/module.ts` diretamente. `test:consume
 
 ## Validação Para Produção
 
-Execute os comandos abaixo antes de publicar:
+Para o ciclo local rápido:
 
 ```bash
 pnpm check
 ```
+
+`pnpm check` executa lint, tipos, unidades, toolchain, build do módulo, SDK e 12 casos E2E essenciais em Chromium e Firefox. Para repetir somente esses casos, use `pnpm test:e2e:local`; para um ciclo ainda menor, use `pnpm test:unit`.
+
+Os E2E iniciam o playground com `--envName e2e`, que desativa apenas o HMR para evitar recargas automáticas durante os testes. A verificação de erros JavaScript continua ativa, e `pnpm dev` mantém o HMR normal. Se reutilizar um servidor na porta 3010, inicie-o com `pnpm exec nuxi dev .playground --envName e2e --host 127.0.0.1 --port 3010`.
+
+Antes de publicar, execute `pnpm check:full`. Esse perfil acrescenta o build de produção, todos os E2E em Chromium/Firefox/WebKit, consumidores empacotados SSR/SPA e auditoria. A CI exige esse perfil completo em Node 22 e 24; o perfil local não substitui o aceite de release.
+
+O runner verifica apenas os navegadores exigidos pelo perfil. Em Linux, se eles não puderem iniciar e houver Docker disponível, usa a imagem oficial do Playwright na versão instalada. A primeira execução pode baixar essa imagem; o container temporário é removido ao terminar ou falhar. Isso não instala bibliotecas do sistema nem ignora testes com falha.
+
+Use `pnpm check:native` ou `pnpm check:docker` para escolher o runtime local. Para exigir todos os navegadores nativos, use `pnpm check:full --browsers=native`. Para preparar uma distribuição suportada, execute `pnpm exec playwright install --with-deps`; em Arch, prefira Docker às instruções `apt` destinadas a Ubuntu/Debian.
+
+Um servidor Playwright externo pode ser informado com `QFB_BROWSER_WS=ws://127.0.0.1:4010/ pnpm check:full`. Sua versão precisa corresponder à instalada; o comando não encerra servidores fornecidos pelo usuário. O modo automático escolhe o perfil completo em CI, mesmo se chamado como `pnpm check`.
 
 Para testar o pacote em outro projeto antes do publish, gere um tarball local:
 
