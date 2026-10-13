@@ -2,7 +2,7 @@
 
 Módulo Nuxt para criar, configurar e visualizar formulários com Quasar, FormKit e Pinia.
 
-Este checkout prepara a versão `0.2.1`, ainda não publicada por esta atualização. Para testar essa versão em outro projeto, use o tarball local descrito em Validação Para Produção.
+Este checkout prepara a versão `0.2.2`, ainda não publicada por esta atualização. Para testar essa versão em outro projeto, use o tarball local descrito em Validação Para Produção.
 
 O módulo registra Quasar, Pinia, FormKit, estilos globais, componentes públicos do builder, composables e inputs FormKit baseados em Quasar. O projeto consumidor precisa instalar o módulo, adicioná-lo ao `nuxt.config.ts` e usar a rota pronta ou os componentes exportados.
 
@@ -416,7 +416,7 @@ pnpm pack
 Depois instale o arquivo gerado no projeto consumidor:
 
 ```bash
-pnpm add ./nuxt-quasar-form-builder-0.2.1.tgz
+pnpm add ./nuxt-quasar-form-builder-0.2.2.tgz
 ```
 
 ## Publicação

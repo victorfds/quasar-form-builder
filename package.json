@@ -1,7 +1,7 @@
 {
   "name": "nuxt-quasar-form-builder",
   "type": "module",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "packageManager": "pnpm@12.11.2",
   "description": "Nuxt module that provides a Quasar and FormKit based form builder.",
   "license": "MIT",
