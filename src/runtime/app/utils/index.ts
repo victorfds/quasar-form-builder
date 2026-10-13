@@ -1,5 +1,7 @@
-import type { QfbSchemaField } from '../types'
+import type { QfbSchemaField } from '../../types'
 import { fieldTypes } from '#qfb/constants'
+import { createQfbSchemaError } from '../../utils/schemaIdentity'
+import { normalizeQfbStructureAliases } from '../../utils/schemaStructure'
 
 export * from './conditionOperators'
 
@@ -35,7 +37,10 @@ export function firstFilledArray<T>(...values: unknown[]): T[] {
 export function withStructureChildrenForRender<T extends QfbSchemaField>(field: T): T {
   if (!field || typeof field !== 'object') return field
 
-  const clone: any = { ...field }
+  const normalized = normalizeQfbStructureAliases([field])
+  const ambiguous = normalized.issues.filter(issue => issue.code === 'AMBIGUOUS_SCHEMA_CHILDREN')
+  if (ambiguous.length) throw createQfbSchemaError(ambiguous.map(issue => ({ code: issue.code, message: 'Ambiguous schema children', path: issue.schemaPath })))
+  const clone: any = normalized.schema[0]
   const normalizeChildren = (children?: unknown) => Array.isArray(children)
     ? children.map(child => withStructureChildrenForRender(child as QfbSchemaField))
     : []
@@ -79,8 +84,6 @@ export function hasOnlyOneKeyWithName(obj: Record<string, any>, keyName: string)
   const keys = Object.keys(obj)
   return keys.length === 1 && keys[0] === keyName
 }
-
-// moved: contains() now lives in ~/utils/logic
 
 export function getTypesBasedOnFieldType(fieldType?: string): { label: string, value: string }[] {
   if (!fieldType) return []

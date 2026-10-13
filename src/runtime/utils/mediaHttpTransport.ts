@@ -4,9 +4,9 @@ import type {
   QfbMediaTransportAdapter,
   QfbMediaUploadOptions,
   QfbRemoteMedia,
-} from './types'
-import { QfbMediaError } from './errors'
-import { isQfbMediaValue } from './values'
+} from '../types/media'
+import { createQfbMediaError } from './mediaErrors'
+import { isQfbMediaValue } from './mediaValues'
 
 export interface QfbHttpMediaTransportOptions {
   urls: {
@@ -34,12 +34,12 @@ function assertRemote(item: QfbRemoteMedia): QfbRemoteMedia {
       || !item.field?.fieldId
       || !Array.isArray(item.field.fieldPath)
     ) {
-      throw new QfbMediaError('transport', 'DTO de mídia vinculada inválido')
+      throw createQfbMediaError('transport', 'DTO de mídia vinculada inválido')
     }
     return item
   }
   if (item.kind !== 'unassigned' || !item.document?.documentId)
-    throw new QfbMediaError('transport', 'DTO de anexo inválido')
+    throw createQfbMediaError('transport', 'DTO de anexo inválido')
   return {
     kind: 'unassigned',
     document: {
@@ -56,20 +56,20 @@ export function createQfbHttpMediaTransport(config: QfbHttpMediaTransportOptions
     const headers = new Headers(await config.headers?.())
     if (idempotencyKey) headers.set(config.idempotencyHeader || 'Idempotency-Key', idempotencyKey)
     const response = await fetch(url, { method, headers, signal, credentials: config.credentials })
-    if (!response.ok) throw new QfbMediaError('transport', `Falha HTTP ${response.status}`)
+    if (!response.ok) throw createQfbMediaError('transport', `Falha HTTP ${response.status}`)
     return response
   }
   return {
     async list(responseId, signal) {
       const body = await (await request(config.urls.list(responseId), signal)).json()
       const list = config.listFromResponse ? config.listFromResponse(body) : body
-      if (!Array.isArray(list)) throw new QfbMediaError('transport', 'A listagem de mídia deve ser um array')
+      if (!Array.isArray(list)) throw createQfbMediaError('transport', 'A listagem de mídia deve ser um array')
       return list.map(dto => assertRemote(config.toRemote(dto)))
     },
     async access(documentId, signal) {
       const source = config.toAccess(await (await request(config.urls.access(documentId), signal)).json())
       if (!source.url || typeof source.release !== 'function')
-        throw new QfbMediaError('transport', 'Fonte remota inválida')
+        throw createQfbMediaError('transport', 'Fonte remota inválida')
       return source
     },
     async remove(responseId, documentId, idempotencyKey, signal) {
@@ -77,7 +77,7 @@ export function createQfbHttpMediaTransport(config: QfbHttpMediaTransportOptions
     },
     async upload(options) {
       if (options.binary.kind !== 'blob' || typeof XMLHttpRequest === 'undefined') {
-        throw new QfbMediaError(
+        throw createQfbMediaError(
           'transport',
           'Este transporte exige Blob e XMLHttpRequest; use um adaptador customizado para URIs nativas',
           options.field,
@@ -86,7 +86,7 @@ export function createQfbHttpMediaTransport(config: QfbHttpMediaTransportOptions
       }
       const headers = new Headers(await config.headers?.())
       if (options.signal.aborted)
-        throw new QfbMediaError('cancelled', 'Envio cancelado', options.field, options.value.clientId)
+        throw createQfbMediaError('cancelled', 'Envio cancelado', options.field, options.value.clientId)
       const blob = options.binary.blob
       return new Promise<QfbLinkedRemoteMedia>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
@@ -107,23 +107,23 @@ export function createQfbHttpMediaTransport(config: QfbHttpMediaTransportOptions
         xhr.onerror = () => {
           cleanup()
           reject(
-            new QfbMediaError('transport', 'Falha de conexão durante o upload', options.field, options.value.clientId),
+            createQfbMediaError('transport', 'Falha de conexão durante o upload', options.field, options.value.clientId),
           )
         }
         xhr.onabort = () => {
           cleanup()
-          reject(new QfbMediaError('cancelled', 'Envio cancelado', options.field, options.value.clientId))
+          reject(createQfbMediaError('cancelled', 'Envio cancelado', options.field, options.value.clientId))
         }
         xhr.onload = () => {
           cleanup()
           if (xhr.status < 200 || xhr.status >= 300) {
-            reject(new QfbMediaError('transport', `Falha HTTP ${xhr.status}`, options.field, options.value.clientId))
+            reject(createQfbMediaError('transport', `Falha HTTP ${xhr.status}`, options.field, options.value.clientId))
             return
           }
           try {
             const result = assertRemote(config.toRemote(JSON.parse(xhr.responseText)))
             if (result.kind !== 'linked') {
-              throw new QfbMediaError(
+              throw createQfbMediaError(
                 'transport',
                 'O upload precisa retornar uma mídia vinculada',
                 options.field,

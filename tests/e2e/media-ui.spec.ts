@@ -1,12 +1,13 @@
 import type { Page } from '@playwright/test'
 import { Buffer } from 'node:buffer'
+import { readFileSync } from 'node:fs'
 import { expect } from '@playwright/test'
 import { test } from './fixtures'
 
 const first = { name: 'first.png', mimeType: 'image/png', buffer: Buffer.from('first image') }
 const second = { name: 'second.png', mimeType: 'image/png', buffer: Buffer.from('second image') }
-const audio = { name: 'first.webm', mimeType: 'audio/webm', buffer: Buffer.from('first audio') }
-const nextAudio = { ...audio, name: 'second.webm', buffer: Buffer.from('second audio') }
+const audio = { name: 'first.wav', mimeType: 'audio/wav', buffer: readFileSync(new URL('../fixtures/audio.wav', import.meta.url)) }
+const nextAudio = { ...audio, name: 'second.wav' }
 
 async function builder(page: Page, fields: unknown[]) {
   await page.goto('/')
@@ -156,8 +157,8 @@ for (const mode of ['legacy', 'offline']) {
     await expect.poll(async () => (await mediaValues(page)).voice?.length).toBe(2)
     await expect(page.getByRole('button', { name: `Baixar ${audio.name}` })).toBeVisible()
     await expect(page.getByRole('button', { name: `Baixar ${nextAudio.name}` })).toBeVisible()
-    await input.setInputFiles({ ...audio, name: 'third.webm' })
-    await expect(page.getByRole('alert').first()).toContainText('third.webm')
+    await input.setInputFiles({ ...audio, name: 'third.wav' })
+    await expect(page.getByRole('alert').first()).toContainText('third.wav')
     expect((await mediaValues(page)).voice).toHaveLength(2)
     await page.getByRole('button', { name: `Remover ${audio.name}` }).click()
     await expect.poll(async () => (await mediaValues(page)).voice?.length).toBe(1)

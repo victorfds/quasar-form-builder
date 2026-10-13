@@ -27,6 +27,12 @@ const formFields = [
   },
 ]
 
+const viewer = useTemplateRef<{ flush: () => Promise<Record<string, unknown>> }>('viewer')
+const flushed = ref('')
+const blocked = ref(false)
+const errors = ref<Array<{ fieldPath: string[], messages: string[] }>>([])
+async function flushEditor() { flushed.value = JSON.stringify(await viewer.value?.flush()) }
+
 const values = shallowRef<Record<string, unknown>>({})
 const updateCount = shallowRef(0)
 const fieldChangeCount = shallowRef(0)
@@ -76,6 +82,9 @@ function onSubmit(data: Record<string, unknown>) {
 <template>
   <main class="q-pa-lg">
     <QfbFormViewer
+      ref="viewer"
+      :readonly="blocked"
+      :field-errors="errors"
       v-model="values"
       :form-fields="formFields"
       @update-model-values="onUpdateModelValues"
@@ -85,6 +94,11 @@ function onSubmit(data: Record<string, unknown>) {
       @submit="onSubmit"
     />
 
+    <q-btn label="Alternar bloqueio" @click="blocked = !blocked" />
+    <q-btn label="Consolidar" @click="flushEditor" />
+    <q-btn label="Erro externo" @click="errors = [{ fieldPath: ['name'], messages: ['Corrija o nome'] }]" />
+    <q-btn label="Limpar erro externo" @click="errors = []" />
+    <pre data-testid="flushed">{{ flushed }}</pre>
     <dl class="q-mt-lg">
       <dt>Pronto</dt>
       <dd data-testid="ready-count">

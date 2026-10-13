@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createQfbAudioCapture } from '../../src/runtime/app/media/recorder'
+import { createQfbAudioCapture } from '../../src/runtime/app/composables/audioCapture'
 
 class Recorder {
   static current: Recorder

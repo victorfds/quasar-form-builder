@@ -1,10 +1,10 @@
 import type { Expression } from 'jsep'
 import type { QfbSchemaField } from '../types'
-import type { QfbSchemaDiagnostic } from './identity'
+import type { QfbSchemaDiagnostic } from './schemaIdentity'
 import { compile } from '@formkit/core'
 import jsep from 'jsep'
-import { extractFormData } from '../utils/formData'
-import { walkQfbSchema } from './identity'
+import { extractFormData } from './formData'
+import { walkQfbSchema } from './schemaIdentity'
 
 const helpers = new Set([
   'empty',

@@ -1,0 +1,336 @@
+[
+  {
+    "name": "root",
+    "schema": [
+      {
+        "$formkit": "q-file",
+        "name": "foto",
+        "fieldId": "11111111-1111-4111-8111-111111111111",
+        "mediaKind": "image"
+      }
+    ],
+    "expectedPath": [
+      "foto"
+    ]
+  },
+  {
+    "name": "group",
+    "schema": [
+      {
+        "name": "estrutura",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "$formkit": "group",
+        "children": [
+          {
+            "$formkit": "q-file",
+            "name": "foto",
+            "fieldId": "11111111-1111-4111-8111-111111111111",
+            "mediaKind": "image"
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "estrutura",
+      "foto"
+    ]
+  },
+  {
+    "name": "q-stepper",
+    "schema": [
+      {
+        "name": "estrutura",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "$formkit": "q-stepper",
+        "steps": [
+          {
+            "name": "parte",
+            "fieldId": "33333333-3333-4333-8333-333333333333",
+            "children": [
+              {
+                "$formkit": "q-file",
+                "name": "foto",
+                "fieldId": "11111111-1111-4111-8111-111111111111",
+                "mediaKind": "image"
+              }
+            ],
+            "label": "parte"
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "estrutura",
+      "parte",
+      "foto"
+    ]
+  },
+  {
+    "name": "q-tabs",
+    "schema": [
+      {
+        "name": "estrutura",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "$formkit": "q-tabs",
+        "tabs": [
+          {
+            "name": "parte",
+            "fieldId": "33333333-3333-4333-8333-333333333333",
+            "children": [
+              {
+                "$formkit": "q-file",
+                "name": "foto",
+                "fieldId": "11111111-1111-4111-8111-111111111111",
+                "mediaKind": "image"
+              }
+            ],
+            "label": "parte"
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "estrutura",
+      "foto"
+    ]
+  },
+  {
+    "name": "q-grid",
+    "schema": [
+      {
+        "name": "estrutura",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "$formkit": "q-grid",
+        "cells": [
+          {
+            "name": "row_1__column_1",
+            "fieldId": "33333333-3333-4333-8333-333333333333",
+            "children": [
+              {
+                "$formkit": "q-file",
+                "name": "foto",
+                "fieldId": "11111111-1111-4111-8111-111111111111",
+                "mediaKind": "image"
+              }
+            ],
+            "row": "row_1",
+            "column": "column_1",
+            "label": "row_1__column_1"
+          }
+        ],
+        "rowsCount": 1,
+        "columnsCount": 1
+      }
+    ],
+    "expectedPath": [
+      "estrutura",
+      "foto"
+    ]
+  },
+  {
+    "name": "q-table-structure",
+    "schema": [
+      {
+        "name": "estrutura",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "$formkit": "q-table-structure",
+        "cells": [
+          {
+            "name": "row_1__column_1",
+            "fieldId": "33333333-3333-4333-8333-333333333333",
+            "children": [
+              {
+                "$formkit": "q-file",
+                "name": "foto",
+                "fieldId": "11111111-1111-4111-8111-111111111111",
+                "mediaKind": "image"
+              }
+            ],
+            "row": "row_1",
+            "column": "column_1",
+            "label": "row_1__column_1"
+          }
+        ],
+        "rows": [
+          {
+            "label": "Linha 1",
+            "value": "row_1"
+          }
+        ],
+        "columnsConfig": [
+          {
+            "label": "Coluna 1",
+            "value": "column_1"
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "estrutura",
+      "foto"
+    ]
+  },
+  {
+    "name": "q-container",
+    "schema": [
+      {
+        "name": "estrutura",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "$formkit": "q-container",
+        "structureChildren": [
+          {
+            "$formkit": "q-file",
+            "name": "foto",
+            "fieldId": "11111111-1111-4111-8111-111111111111",
+            "mediaKind": "image"
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "estrutura",
+      "foto"
+    ]
+  },
+  {
+    "name": "q-list-structure",
+    "schema": [
+      {
+        "$formkit": "q-list-structure",
+        "name": "estrutura",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "children": [
+          {
+            "$formkit": "q-file",
+            "name": "foto",
+            "label": "Foto histórica",
+            "fieldId": "11111111-1111-4111-8111-111111111111",
+            "mediaKind": "image"
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "estrutura",
+      "foto"
+    ]
+  },
+  {
+    "name": "list-static-input",
+    "schema": [
+      {
+        "$formkit": "list",
+        "name": "itens",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "children": [
+          {
+            "$formkit": "q-file",
+            "name": "foto",
+            "label": "Foto histórica",
+            "fieldId": "11111111-1111-4111-8111-111111111111",
+            "mediaKind": "image"
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "itens",
+      "0"
+    ]
+  },
+  {
+    "name": "list-repeated-group",
+    "schema": [
+      {
+        "$formkit": "list",
+        "name": "itens",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "children": [
+          {
+            "$formkit": "group",
+            "name": "linha",
+            "fieldId": "33333333-3333-4333-8333-333333333333",
+            "for": [
+              "linha",
+              "index",
+              "$itens"
+            ],
+            "children": [
+              {
+                "$formkit": "q-file",
+                "name": "foto",
+                "label": "Foto histórica",
+                "fieldId": "11111111-1111-4111-8111-111111111111",
+                "mediaKind": "image"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "itens",
+      "*",
+      "foto"
+    ]
+  },
+  {
+    "name": "conditional",
+    "schema": [
+      {
+        "if": "$visible",
+        "then": [
+          {
+            "$formkit": "q-file",
+            "name": "foto",
+            "label": "Foto histórica",
+            "fieldId": "11111111-1111-4111-8111-111111111111",
+            "mediaKind": "image"
+          }
+        ],
+        "else": []
+      }
+    ],
+    "expectedPath": [
+      "foto"
+    ]
+  },
+  {
+    "name": "nested-structures",
+    "schema": [
+      {
+        "$formkit": "q-stepper",
+        "name": "estrutura",
+        "fieldId": "22222222-2222-4222-8222-222222222222",
+        "steps": [
+          {
+            "name": "parte",
+            "fieldId": "33333333-3333-4333-8333-333333333333",
+            "children": [
+              {
+                "$formkit": "q-container",
+                "name": "detalhes",
+                "fieldId": "44444444-4444-4444-8444-444444444444",
+                "children": [
+                  {
+                    "$formkit": "q-file",
+                    "name": "foto",
+                    "label": "Foto histórica",
+                    "fieldId": "11111111-1111-4111-8111-111111111111",
+                    "mediaKind": "image"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "expectedPath": [
+      "estrutura",
+      "parte",
+      "detalhes",
+      "foto"
+    ]
+  }
+]

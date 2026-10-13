@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { QfbMediaController, QfbMediaValue } from '../../media/types'
+import type { QfbMediaController, QfbMediaValue } from '../../../types/media'
 import MediaItem from './MediaItem.vue'
 
 withDefaults(

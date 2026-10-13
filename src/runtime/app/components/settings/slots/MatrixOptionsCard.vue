@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig, MatrixSize, MatrixViewMode } from '#qfb/types'
+import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig, MatrixSize, MatrixViewMode } from '../../../../types'
 import { useQuasar } from 'quasar'
 import { reactive, toRaw } from 'vue'
 import { getEffectiveMatrixColumnType, matrixColumnTypeOptions, matrixColumnTypeUsesOptions, matrixSizeOptions, matrixViewOptions } from '#qfb/constants/matrix'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
-import { positiveNumber } from '../../../media/policy'
+import { positiveNumber } from '../../../../utils/mediaPolicy'
 
 const store = useFormStore()
 const duration = shallowRef(store.activeField?.maxDurationSeconds || 300)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
-import { isQfbConditionalRule } from '#qfb/types'
+import { isQfbConditionalRule } from '../../../../utils/schemaGuards'
 
 defineProps<{ showReadonly?: boolean }>()
 const formStore = useFormStore()

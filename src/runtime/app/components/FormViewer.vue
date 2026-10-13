@@ -1,24 +1,17 @@
 <script setup lang="ts">
 import type { FormKitNode } from '@formkit/core'
-import type {
-  ColumnsType,
-  FormViewerFieldChangePayload,
-  FormViewerReadyPayload,
-  FormViewerSubmitInvalidPayload,
-  FormViewerValues,
-  FormViewerValuesUpdatePayload,
-} from '#qfb/types'
-import type { QfbMediaChange, QfbMediaController, QfbMediaErrorDescription } from '../media/types'
-import type { QfbSchemaField } from '../types'
-import { computed, nextTick, onMounted, provide, shallowRef, toRaw, watch } from 'vue'
+import type { ColumnsType, FormViewerFieldChangePayload, FormViewerReadyPayload, FormViewerSubmitInvalidPayload, FormViewerValues, FormViewerValuesUpdatePayload, QfbFormFieldError, QfbSchemaField } from '../../types'
+import type { QfbMediaChange, QfbMediaController, QfbMediaErrorDescription, QfbMediaFieldContext } from '../../types/media'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, shallowRef, toRaw, watch } from 'vue'
 import { useFieldLayout } from '#qfb/composables/useFieldLayout'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { withStructureChildrenListForRender } from '#qfb/utils'
-import { createFormSchemaData, extractFormData } from '#qfb/utils/formData'
-import { describeMediaError } from '../media/errors'
-import { qfbMediaControllerKey, qfbMediaErrorKey, qfbViewerReadonlyKey } from '../media/injection'
-import { getValueAtPath } from '../media/values'
-import { walkQfbSchema } from '../schema/identity'
+import { createFormSchemaData, extractFormData } from '../../utils/formData'
+import { describeMediaError } from '../../utils/mediaErrors'
+import { getValueAtPath } from '../../utils/mediaValues'
+import { walkQfbSchema } from '../../utils/schemaIdentity'
+import { qfbMediaControllerKey, qfbMediaErrorKey, qfbViewerReadonlyKey } from '../constants/injectionKeys'
+import { applyQfbExternalErrors } from '../utils/fieldErrors'
 
 type ViewerField = QfbSchemaField & {
   fieldId?: string
@@ -35,6 +28,8 @@ const props = defineProps<{
   formFields: QfbSchemaField[]
   readonly?: boolean
   mediaController?: QfbMediaController
+  formErrors?: string[]
+  fieldErrors?: QfbFormFieldError[]
 }>()
 const emit = defineEmits<{
   (e: 'submit', data: any): void
@@ -48,7 +43,16 @@ const emit = defineEmits<{
 const values = defineModel<any>({ default: () => ({}) })
 const formNode = shallowRef<FormKitNode>()
 let mounted = false
+async function flush(): Promise<FormViewerValues> {
+  await nextTick()
+  const node = formNode.value
+  if (node) await node.settled
+  const current = cloneFormValue(node?.value ?? values.value)
+  if (!props.readonly && !props.mediaController?.readonly.value) updateModelValues(current)
+  return current
+}
 defineExpose({
+  flush,
   submit: () => {
     if (!props.readonly && !props.mediaController?.readonly.value) formNode.value?.submit()
   },
@@ -84,38 +88,73 @@ watch(
   { immediate: true, flush: 'sync' },
 )
 
-watch(
-  [() => props.mediaController, () => JSON.stringify(props.formFields)],
-  ([controller], _previous, cleanup) => {
-    if (!controller) return
-    const definitions = new Map<string, Record<string, any>>()
-    walkQfbSchema(props.formFields, (field) => {
-      if (field.fieldId) definitions.set(field.fieldId, field)
-    })
-    const unregister: Array<() => void> = []
-    for (const answer of extractFormData(props.formFields, values.value).answers) {
-      if (!['q-file', 'q-audio-recorder'].includes(answer.type || '')) continue
-      if (!answer.fieldId) {
-        emit('mediaError', {
-          code: 'field-unavailable',
-          message: `Adote e persista os fieldIds antes de usar mídia integrada: ${answer.name}`,
-          recoverable: false,
-        })
-        continue
-      }
-      const field = { fieldId: answer.fieldId, fieldPath: answer.fieldPath }
-      unregister.push(
-        controller.registerField(
-          field,
-          () => definitions.get(answer.fieldId!) || {},
-          () => getValueAtPath(values.value, answer.fieldPath),
-        ),
-      )
+const nodeContexts = shallowRef<QfbMediaFieldContext[]>([])
+const definitions = computed(() => {
+  const fields = new Map<string, Record<string, any>>()
+  walkQfbSchema(props.formFields, (field) => {
+    if (field.fieldId) fields.set(String(field.fieldId).toLowerCase(), field)
+  })
+  return fields
+})
+const mediaContexts = computed(() => {
+  const contexts = new Map<string, QfbMediaFieldContext>()
+  for (const answer of extractFormData(props.formFields, values.value).answers) {
+    if (!['q-file', 'q-audio-recorder'].includes(answer.type || '') || !answer.fieldId) continue
+    const context = { fieldId: answer.fieldId, fieldPath: answer.fieldPath }
+    contexts.set(JSON.stringify([context.fieldId.toLowerCase(), context.fieldPath]), context)
+  }
+  for (const context of nodeContexts.value) contexts.set(JSON.stringify([context.fieldId.toLowerCase(), context.fieldPath]), context)
+  return [...contexts.values()]
+})
+const registrations = new Map<string, () => void>()
+let registeredController: QfbMediaController | undefined
+function clearRegistrations() {
+  for (const unregister of registrations.values()) unregister()
+  registrations.clear()
+}
+watch([() => props.mediaController, () => JSON.stringify(mediaContexts.value), () => JSON.stringify(props.formFields)], ([controller]) => {
+  if (controller !== registeredController) {
+    clearRegistrations()
+    registeredController = controller
+  }
+  if (!controller) return
+  const keys = new Set<string>()
+  for (const field of mediaContexts.value) {
+    const key = JSON.stringify([field.fieldId.toLowerCase(), field.fieldPath])
+    keys.add(key)
+    if (registrations.has(key)) continue
+    registrations.set(key, controller.registerField(field, () => {
+      const definition = definitions.value.get(field.fieldId.toLowerCase()) || {}
+      return { ...definition.props, ...definition.attrs, ...definition }
+    }, () => getValueAtPath(values.value, field.fieldPath)))
+  }
+  for (const [key, unregister] of registrations) {
+    if (!keys.has(key)) {
+      unregister()
+      registrations.delete(key)
     }
-    cleanup(() => unregister.forEach(remove => remove()))
-  },
-  { immediate: true },
-)
+  }
+}, { immediate: true, flush: 'post' })
+watch(formNode, (node, _previous, cleanup) => {
+  if (!node) return
+  const reconcile = () => {
+    const contexts: QfbMediaFieldContext[] = []
+    node.walk((child) => {
+      const fieldId = child.props.fieldId || child.context?.fieldId || child.props.attrs?.fieldId
+      if (fieldId && ['q-file', 'q-audio-recorder'].includes(String(child.props.type)))
+        contexts.push({ fieldId: String(fieldId), fieldPath: child.address.slice(node.address.length).map(String) })
+    })
+    nodeContexts.value = contexts
+    applyQfbExternalErrors(node, props.formErrors, props.fieldErrors)
+  }
+  const receipts = ['child.deep', 'childRemoved.deep', 'commit'].map(event => node.on(event, reconcile))
+  reconcile()
+  cleanup(() => receipts.forEach(receipt => node.off(receipt)))
+}, { flush: 'sync' })
+watch(() => [props.formErrors, props.fieldErrors], () => {
+  if (formNode.value) applyQfbExternalErrors(formNode.value, props.formErrors, props.fieldErrors)
+}, { deep: true })
+onBeforeUnmount(clearRegistrations)
 
 async function onSubmit(data: any, node: FormKitNode) {
   if (props.readonly || props.mediaController?.readonly.value) return
@@ -246,6 +285,7 @@ onMounted(async () => {
     <FormKit
       :model-value="inputValues"
       type="form"
+      :disabled="props.readonly || props.mediaController?.readonly.value"
       :actions="false"
       preserve
       validation-visibility="submit"

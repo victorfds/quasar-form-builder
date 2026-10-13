@@ -1,8 +1,8 @@
 import type { DBSchema, IDBPDatabase } from 'idb'
-import type { QfbMediaBinary, QfbMediaScope, QfbMediaStorageAdapter, QfbMediaValue } from './types'
+import type { QfbMediaBinary, QfbMediaScope, QfbMediaStorageAdapter, QfbMediaValue } from '../types/media'
 import { openDB } from 'idb'
-import { QfbMediaError } from './errors'
-import { copyMediaValue } from './values'
+import { createQfbMediaError } from './mediaErrors'
+import { copyMediaValue } from './mediaValues'
 
 interface MediaDatabase extends DBSchema {
   media: {
@@ -29,7 +29,7 @@ export function createQfbIndexedDbStorage(config: QfbIndexedDbStorageOptions = {
   ]
   function database() {
     if (typeof indexedDB === 'undefined')
-      return Promise.reject(new QfbMediaError('storage', 'IndexedDB não está disponível neste ambiente'))
+      return Promise.reject(createQfbMediaError('storage', 'IndexedDB não está disponível neste ambiente'))
     connection ||= openDB<MediaDatabase>(config.databaseName || 'qfb-media', config.databaseVersion || 1, {
       upgrade(db) {
         if (!db.objectStoreNames.contains('media')) db.createObjectStore('media')
@@ -43,22 +43,22 @@ export function createQfbIndexedDbStorage(config: QfbIndexedDbStorageOptions = {
       },
     }).catch((error) => {
       connection = undefined
-      throw new QfbMediaError('storage', error.message)
+      throw createQfbMediaError('storage', error.message)
     })
     return connection
   }
   async function read(scope: QfbMediaScope, clientId: string): Promise<QfbMediaBinary> {
     const row = await (await database()).get('media', key(scope, clientId))
-    if (!row) throw new QfbMediaError('missing-source', 'Arquivo local não encontrado', undefined, clientId)
+    if (!row) throw createQfbMediaError('missing-source', 'Arquivo local não encontrado', undefined, clientId)
     const blob = row.blob || (row.bytes && new Blob([row.bytes], { type: row.value.mimeType }))
     if (!blob || blob.size !== row.value.size)
-      throw new QfbMediaError('storage', 'Arquivo local incompleto', undefined, clientId)
+      throw createQfbMediaError('storage', 'Arquivo local incompleto', undefined, clientId)
     return { kind: 'blob', blob }
   }
   return {
     async write(scope, value, binary) {
       if (binary.kind !== 'blob')
-        throw new QfbMediaError('storage', 'URIs nativas exigem um adaptador de armazenamento nativo')
+        throw createQfbMediaError('storage', 'URIs nativas exigem um adaptador de armazenamento nativo')
       // WebKit cannot reliably persist temporary File-backed Blobs. Read before opening the transaction.
       const bytes = await binary.blob.arrayBuffer()
       const transaction = (await database()).transaction('media', 'readwrite')
@@ -88,7 +88,7 @@ export function createQfbIndexedDbStorage(config: QfbIndexedDbStorageOptions = {
     },
     async source(scope, clientId) {
       const binary = await read(scope, clientId)
-      if (binary.kind !== 'blob') throw new QfbMediaError('storage', 'Fonte local incompatível')
+      if (binary.kind !== 'blob') throw createQfbMediaError('storage', 'Fonte local incompatível')
       const url = URL.createObjectURL(binary.blob)
       let released = false
       return {

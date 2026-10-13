@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
-import type { QfbSchemaField } from '../../types'
+import type { QfbSchemaField } from '../../../types'
 import { useQuasar } from 'quasar'
 import { computed, inject } from 'vue'
 import { builderModeKey } from '#qfb/constants/injectionKeys'

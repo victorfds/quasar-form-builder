@@ -1,4 +1,4 @@
-import type { FormSettingsType } from '#qfb/types'
+import type { FormSettingsType } from '../../types'
 import { computed } from 'vue'
 import { useState } from '#imports'
 import { useThemeMode } from '#qfb/composables/useThemeMode'

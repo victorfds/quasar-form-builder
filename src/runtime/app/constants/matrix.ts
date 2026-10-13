@@ -1,4 +1,4 @@
-import type { MatrixColumnType, MatrixSize, MatrixViewMode } from '#qfb/types'
+import type { MatrixColumnType, MatrixSize, MatrixViewMode } from '../../types'
 
 export const matrixColumnTypeOptions: Array<{ label: string, value: MatrixColumnType }> = [
   { label: 'Padrão', value: 'default' },

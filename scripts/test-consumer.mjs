@@ -2,7 +2,6 @@ import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
-import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -22,6 +21,7 @@ const port = await new Promise((resolvePort, reject) => {
 })
 const baseURL = `http://127.0.0.1:${port}`
 const nuxtVersion = process.env.QFB_TEST_NUXT_VERSION || '4.6.1'
+const publicExports = JSON.parse(await readFile(join(rootDir, 'tests/fixtures/public-exports.json'), 'utf8'))
 
 function run(command, args, options = {}) {
   return new Promise((resolveRun, reject) => {
@@ -136,6 +136,15 @@ const fields = [
     ],
   },
 ]
+const now = new Date()
+const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-')
+const sdkAutoImports = [
+  extractFormData(fields, { name: 'packed' }).answers[0]?.value === 'packed',
+  createFormSchemaData(fields, { name: 'packed' }).name === 'packed',
+  contains('packed', 'ack'), startsWith('packed', 'pack'), endsWith('packed', 'ked'),
+  isToday(today), !isTomorrow(today), !isYesterday(today),
+  !isDayAfterTomorrow(today), !isDayBeforeYesterday(today),
+]
 </script>
 
 <template>
@@ -143,6 +152,7 @@ const fields = [
     <h1>Visualizador consumidor</h1>
     <QfbFormViewer v-model="values" :form-fields="fields" />
     <pre data-testid="viewer-values">{{ JSON.stringify(values) }}</pre>
+    <pre data-testid="sdk-auto-imports">{{ JSON.stringify(sdkAutoImports) }}</pre>
   </main>
 </template>
 `,
@@ -203,7 +213,7 @@ void [fieldId, binary, invalid, snapshot, answers]
   )
 }
 
-async function assertConsumerPages(engine) {
+async function assertConsumerPages(engine, mode) {
   const browser = process.env.QFB_BROWSER_WS
     ? await engine.connect(process.env.QFB_BROWSER_WS)
     : await engine.launch()
@@ -222,12 +232,49 @@ async function assertConsumerPages(engine) {
     await page.getByText('Construtor de Formulários').waitFor()
     await page.getByText('Elementos', { exact: true }).waitFor()
 
+    let serverIds
+    if (mode === 'ssr') {
+      const htmls = await Promise.all(Array.from({ length: 8 }, async () => {
+        const response = await fetch(`${baseURL}/viewer`)
+        if (!response.ok) throw new Error(`Concurrent SSR returned ${response.status}`)
+        return response.text()
+      }))
+      const snapshots = await page.evaluate(htmls => htmls.map((html) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html')
+        return {
+          forms: Array.from(doc.querySelectorAll('form'), form => form.id),
+          names: Array.from(doc.querySelectorAll('form'), form => form.name),
+          labels: Array.from(doc.querySelectorAll('label.formkit-label'), label => label.htmlFor),
+        }
+      }), htmls)
+      serverIds = snapshots[0]
+      if (!serverIds.forms.length || !serverIds.labels.length || snapshots.some(ids => JSON.stringify(ids) !== JSON.stringify(serverIds)))
+        throw new Error(`Concurrent SSR generated inconsistent FormKit IDs: ${JSON.stringify(snapshots)}`)
+    }
+
     await page.goto(`${baseURL}/viewer`, { waitUntil: 'networkidle' })
     await page.getByText('Visualizador consumidor').waitFor()
     await page.getByLabel('Nome').waitFor()
     await page.locator('.q-stepper').waitFor()
     await page.getByText('Passo 1').waitFor()
     await page.getByLabel('Campo interno').waitFor()
+    if (serverIds) {
+      const hydratedIds = await page.evaluate(() => ({
+        forms: Array.from(document.querySelectorAll('form'), form => form.id),
+        names: Array.from(document.querySelectorAll('form'), form => form.name),
+        labels: Array.from(document.querySelectorAll('label.formkit-label'), label => label.htmlFor),
+      }))
+      // Stepper fields mount lazily; only nodes present in SSR must already match.
+      if (JSON.stringify(hydratedIds.forms) !== JSON.stringify(serverIds.forms)
+        || JSON.stringify(hydratedIds.names) !== JSON.stringify(serverIds.names)
+        || !serverIds.labels.every(id => hydratedIds.labels.includes(id))
+        || new Set(hydratedIds.labels).size !== hydratedIds.labels.length) {
+        throw new Error(`FormKit IDs changed during hydration: ${JSON.stringify({ serverIds, hydratedIds })}`)
+      }
+    }
+    const autoImports = JSON.parse(await page.getByTestId('sdk-auto-imports').textContent())
+    if (autoImports.length !== 10 || autoImports.some(value => value !== true))
+      throw new Error(`Moved SDK helpers returned unexpected results: ${JSON.stringify(autoImports)}`)
 
     await page.goto(`${baseURL}/media`)
     await page.getByLabel('Arquivos persistentes', { exact: true }).waitFor()
@@ -316,14 +363,14 @@ await run(
   [
     '--input-type=module',
     '-e',
-    `const media = await import('nuxt-quasar-form-builder/media'); const schema = await import('nuxt-quasar-form-builder/schema'); if (typeof media.createQfbIndexedDbStorage !== 'function' || typeof schema.adoptQfbSchema !== 'function') throw new Error('Missing public exports'); media.createQfbIndexedDbStorage(); console.log('Public media/schema exports import without browser globals');`,
+    `const { deepStrictEqual } = await import('node:assert'); const expected = ${JSON.stringify(publicExports.runtime)}; const media = await import('nuxt-quasar-form-builder/media'); const schema = await import('nuxt-quasar-form-builder/schema'); deepStrictEqual(Object.keys(media).sort(), expected.media); deepStrictEqual(Object.keys(schema).sort(), expected.schema); media.createQfbIndexedDbStorage(); media.createQfbAudioCapture().dispose(); if (!(media.createQfbMediaError('storage', 'test') instanceof media.QfbMediaError) || !(schema.createQfbSchemaError([]) instanceof schema.QfbSchemaError)) throw new Error('Error constructor identity changed'); console.log('Public media/schema exports import without browser globals');`,
   ],
   { cwd: appDir },
 )
 
 for (const mode of ['ssr', 'spa']) {
   await run('pnpm', ['build'], { cwd: appDir, env: { ...process.env, QFB_TEST_SPA: mode === 'spa' ? '1' : '0' } })
-  const serverTmpDir = await mkdtemp(join(tmpdir(), 'qfb-consumer-'))
+  const serverTmpDir = await mkdtemp(join(tmpRoot, 'server-'))
   const server = spawn('node', [join(appDir, '.output/server/index.mjs')], {
     cwd: appDir,
     env: {
@@ -339,7 +386,7 @@ for (const mode of ['ssr', 'spa']) {
   try {
     await waitForServer(`${baseURL}/form-builder`)
     for (const engine of [chromium, firefox, webkit]) {
-      await assertConsumerPages(engine)
+      await assertConsumerPages(engine, mode)
       console.log(`Packed consumer Nuxt ${nuxtVersion} ${mode} ${engine.name()} passed on ${process.version}`)
     }
   }

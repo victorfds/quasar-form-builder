@@ -1,4 +1,5 @@
-import type { QfbMediaFieldContext, QfbMediaScope, QfbMediaValue } from './types'
+import type { QfbMediaFieldContext, QfbMediaScope, QfbMediaValue } from '../types/media'
+import { baseMimeType } from './mediaPolicy'
 
 const blockedSegments = new Set(['__proto__', 'constructor', 'prototype'])
 export function isQfbMediaValue(value: unknown): value is QfbMediaValue {
@@ -30,7 +31,7 @@ export function copyMediaValue(value: QfbMediaValue): QfbMediaValue {
     version: 1,
     clientId: value.clientId,
     name: value.name,
-    mimeType: value.mimeType,
+    mimeType: baseMimeType(value.mimeType),
     size: value.size,
     ...(value.documentId ? { documentId: value.documentId } : {}),
     ...(value.durationMs !== undefined ? { durationMs: value.durationMs } : {}),
@@ -42,7 +43,7 @@ export function sameScope(left: QfbMediaScope, right: QfbMediaScope): boolean {
 }
 
 export function sameField(left: QfbMediaFieldContext, right: QfbMediaFieldContext): boolean {
-  return left.fieldId === right.fieldId && JSON.stringify(left.fieldPath) === JSON.stringify(right.fieldPath)
+  return left.fieldId.toLowerCase() === right.fieldId.toLowerCase() && JSON.stringify(left.fieldPath) === JSON.stringify(right.fieldPath)
 }
 
 export function getValueAtPath(values: unknown, path: string[]): unknown {

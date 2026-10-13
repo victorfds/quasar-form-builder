@@ -1,4 +1,4 @@
-import type { ColumnsType, FormViewportType } from '#qfb/types'
+import type { ColumnsType, FormViewportType } from '../../types'
 import { useFieldUi } from '#qfb/composables/useFieldUi'
 
 interface HasColumns { columns?: ColumnsType & Record<string, any> }

@@ -1,4 +1,4 @@
-import type { BuilderCatalogCategory, BuilderCatalogItem, MatrixColumnConfig } from '#qfb/types'
+import type { BuilderCatalogCategory, BuilderCatalogItem, MatrixColumnConfig } from '../../types'
 
 const defaultOptions = [
   { label: 'Opção 1', value: 'option_1' },
@@ -52,7 +52,7 @@ export const builderFieldCatalog: BuilderCatalogItem[] = [
     name: 'email',
     icon: 'alternate_email',
     title: 'Endereço de email',
-    description: 'Entrada de texto que espera um email',
+    description: 'Entrada de texto do tipo email',
     schema: { $formkit: 'q-input', name: 'email', label: 'Email', inputType: 'email', validation: 'email' },
   },
   {
@@ -68,7 +68,7 @@ export const builderFieldCatalog: BuilderCatalogItem[] = [
     name: 'password',
     icon: 'password',
     title: 'Senha',
-    description: 'Entrada de texto que espera uma senha',
+    description: 'Entrada de texto do tipo senha',
     schema: { $formkit: 'q-input', name: 'password', label: 'Senha', inputType: 'password' },
   },
   {
@@ -76,7 +76,7 @@ export const builderFieldCatalog: BuilderCatalogItem[] = [
     name: 'url',
     icon: 'link',
     title: 'URL',
-    description: 'Entrada de texto que espera uma URL',
+    description: 'Entrada de texto do tipo URL',
     schema: { $formkit: 'q-input', name: 'url', label: 'URL', inputType: 'url', validation: 'url' },
   },
   {

@@ -1,8 +1,8 @@
-import type { QfbMediaCandidate, QfbMediaPolicy } from './types'
+import type { QfbMediaCandidate, QfbMediaPolicy } from '../../types/media'
 import { shallowRef } from 'vue'
-import { createQfbId } from '../schema/identity'
-import { QfbMediaError } from './errors'
-import { baseMimeType, mimeMatches } from './policy'
+import { createQfbMediaError } from '../../utils/mediaErrors'
+import { baseMimeType, mimeMatches } from '../../utils/mediaPolicy'
+import { createQfbId } from '../../utils/schemaIdentity'
 
 export type QfbAudioCaptureState = 'idle' | 'requesting' | 'recording' | 'paused' | 'stopping' | 'ready' | 'error'
 export interface QfbAudioCaptureOptions {
@@ -73,7 +73,7 @@ export function createQfbAudioCapture(options: QfbAudioCaptureOptions = {}) {
     }
     chunks = []
     cleanup()
-    rejectStop?.(new QfbMediaError('capture', error.value))
+    rejectStop?.(createQfbMediaError('capture', error.value))
   }
   function finish() {
     const mimeType = recorder?.mimeType || chunks.find(chunk => chunk.type)?.type || ''
@@ -98,9 +98,9 @@ export function createQfbAudioCapture(options: QfbAudioCaptureOptions = {}) {
       || typeof MediaRecorder === 'undefined'
       || !globalThis.isSecureContext
     ) {
-      throw new QfbMediaError('capture', 'Gravação não disponível neste ambiente; selecione um áudio existente')
+      throw createQfbMediaError('capture', 'Gravação não disponível neste ambiente; selecione um áudio existente')
     }
-    if (captureOwners.has(owner)) throw new QfbMediaError('capture', 'Outro campo está usando o microfone')
+    if (captureOwners.has(owner)) throw createQfbMediaError('capture', 'Outro campo está usando o microfone')
     const preferences = options.preferredMimeTypes?.length
       ? options.preferredMimeTypes
       : ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4']
@@ -116,7 +116,7 @@ export function createQfbAudioCapture(options: QfbAudioCaptureOptions = {}) {
             ))),
     )
     if (!supported)
-      throw new QfbMediaError('capture', 'Nenhum formato de gravação é aceito pelo navegador e pela política')
+      throw createQfbMediaError('capture', 'Nenhum formato de gravação é aceito pelo navegador e pela política')
     captureOwners.add(owner)
     state.value = 'requesting'
     error.value = undefined
@@ -166,7 +166,7 @@ export function createQfbAudioCapture(options: QfbAudioCaptureOptions = {}) {
     }
     catch (problem) {
       if (operation === generation) fail(problem)
-      throw new QfbMediaError('capture', error.value || 'Falha ao iniciar a gravação')
+      throw createQfbMediaError('capture', error.value || 'Falha ao iniciar a gravação')
     }
   }
   function pause() {
@@ -185,7 +185,7 @@ export function createQfbAudioCapture(options: QfbAudioCaptureOptions = {}) {
   async function stop() {
     if (state.value === 'ready' && candidate.value) return candidate.value
     if (state.value === 'stopping' && stopped) return stopped
-    if (!recorder || !stopped) throw new QfbMediaError('capture', 'Não existe gravação para encerrar')
+    if (!recorder || !stopped) throw createQfbMediaError('capture', 'Não existe gravação para encerrar')
     measure()
     activeMs = durationMs.value
     state.value = 'stopping'
@@ -207,7 +207,7 @@ export function createQfbAudioCapture(options: QfbAudioCaptureOptions = {}) {
     error.value = undefined
     durationMs.value = 0
     state.value = 'idle'
-    rejectStop?.(new QfbMediaError('cancelled', 'Gravação descartada'))
+    rejectStop?.(createQfbMediaError('cancelled', 'Gravação descartada'))
   }
   return { state, durationMs, candidate, error, start, pause, resume, stop, discard, dispose: discard }
 }

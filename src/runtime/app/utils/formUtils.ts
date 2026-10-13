@@ -1,5 +1,5 @@
-import type { ConditionOperatorValue, LogicField } from '#qfb/types'
-import { contains, endsWith, startsWith } from './logic'
+import type { ConditionOperatorValue, LogicField } from '../../types'
+import { contains, endsWith, startsWith } from '../../utils/logic'
 
 const valueFunctionOperators = new Set(['$contains', '$startsWith', '$endsWith'])
 const multiValueOperators = new Set(['==', '!='])

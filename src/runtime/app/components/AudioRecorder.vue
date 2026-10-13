@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { QfbMediaController, QfbMediaFieldValue } from '../media/types'
+import type { QfbMediaController, QfbMediaFieldValue } from '../../types/media'
 import { computed, provide } from 'vue'
-import { qfbMediaControllerKey, qfbMediaErrorKey, qfbViewerReadonlyKey } from '../media/injection'
+import { qfbMediaControllerKey, qfbMediaErrorKey, qfbViewerReadonlyKey } from '../constants/injectionKeys'
 
 const props = withDefaults(
   defineProps<{
@@ -22,7 +22,7 @@ const props = withDefaults(
   }>(),
   { name: 'audio', maxDurationSeconds: 300 },
 )
-const emit = defineEmits<{ mediaError: [error: import('../media/types').QfbMediaErrorDescription] }>()
+const emit = defineEmits<{ mediaError: [error: import('../../types/media').QfbMediaErrorDescription] }>()
 const value = defineModel<QfbMediaFieldValue | File | File[]>({ default: null })
 provide(
   qfbMediaControllerKey,

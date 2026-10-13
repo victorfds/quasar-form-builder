@@ -1,4 +1,4 @@
-import type { ColumnsType, FormViewportType } from '#qfb/types'
+import type { ColumnsType, FormViewportType } from '../../types'
 
 export interface BuilderField {
   name?: string

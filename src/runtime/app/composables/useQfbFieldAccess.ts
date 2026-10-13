@@ -1,6 +1,6 @@
 import type { FormKitFrameworkContext } from '@formkit/core'
 import { computed, inject } from 'vue'
-import { qfbViewerReadonlyKey } from '../media/injection'
+import { qfbViewerReadonlyKey } from '../constants/injectionKeys'
 import { getFormKitContextAttrs } from '../utils/quasarFieldDesign'
 
 export function useQfbFieldAccess(context: FormKitFrameworkContext) {
