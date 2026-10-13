@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.2 - Unreleased
+
+### Corrections
+
+- Freeze Vite dependency discovery only in the E2E environment and prebundle
+  required dependencies together, preventing stale optimized URLs and startup
+  hydration failures in concurrent browser workers.
+- Wait for builder hydration before seeding persisted test schemas.
+- Enter pending condition values and save atomically, preserving the regression
+  checks without interference from headless-window focus changes.
+
+### Validation
+
+- Add a regression proving normal development retains dependency discovery.
+- Verify 67 unit tests and 36 repeated Chromium/Firefox smoke cases without
+  retries, new skips or increased timeouts.
+
+Public runtime APIs, media/schema contracts and dependency requirements are
+unchanged from 0.2.1.
+
 ## 0.2.1 - Unreleased
 
 ### Corrections

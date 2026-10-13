@@ -78,6 +78,7 @@ const componentSchemas = [
 
 async function loadBuilder(page: Page, fields: unknown[]) {
   await page.goto('/')
+  await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 10000 })
   await page.evaluate((schema: unknown[]) => {
     localStorage.clear()
     localStorage.setItem('form-fields', JSON.stringify(schema))
@@ -913,12 +914,23 @@ test('saving equality conditions commits the focused pending tag input', { tag: 
 
     const dialog = conditionsDialog(page)
     const valueInput = dialog.getByLabel('valor')
-    await valueInput.fill(scenario.value)
-    // Another headless Firefox window can own OS focus without blurring this input.
-    await expect.poll(() => valueInput.evaluate(input => input.ownerDocument.activeElement === input)).toBe(true)
-    await expect(valueInput).toHaveValue(scenario.value)
     await expect(dialog.locator('.q-chip')).toHaveCount(0)
-    await dialog.getByRole('button', { name: 'Salvar' }).evaluate((button: HTMLElement) => button.click())
+    const saveButton = await dialog.getByRole('button', { name: 'Salvar' }).elementHandle()
+    // Keep input and save in one task so another browser window cannot commit a blur tag.
+    const pending = await valueInput.evaluate((input: HTMLInputElement, { value, saveButton }) => {
+      if (!(saveButton instanceof HTMLButtonElement)) throw new Error('Condition save button is missing')
+      input.focus()
+      input.value = value
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+      const state = {
+        value: input.value,
+        focused: input.ownerDocument.activeElement === input,
+        tags: input.closest('.q-card')!.querySelectorAll('.q-chip').length,
+      }
+      saveButton.click()
+      return state
+    }, { value: scenario.value, saveButton })
+    expect(pending).toEqual({ value: scenario.value, focused: true, tags: 0 })
 
     await expect.poll(async () => {
       const fields = await readFields(page)
