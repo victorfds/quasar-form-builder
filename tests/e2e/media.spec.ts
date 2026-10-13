@@ -29,11 +29,11 @@ async function open(page: Page, mode = 'offline') {
   page.on('pageerror', error => errors.push(error.message))
   await page.goto(`/media?response=${responseId}&mode=${mode}`)
   await expect(page.getByRole('heading', { name: 'Mídia', exact: true })).toBeVisible()
-  await expect(page.getByLabel('Arquivos', { exact: true }).first()).toBeEnabled()
+  await expect(page.getByLabel('Arquivos', { exact: true }).first()).toBeEnabled({ timeout: 30_000 })
   return { responseId, errors }
 }
 
-test('stages durable references and restores real image previews after reload', async ({ page }) => {
+test('stages durable references and restores real image previews after reload', { tag: '@smoke' }, async ({ page }) => {
   const { errors } = await open(page)
   await page.getByLabel('Arquivos', { exact: true }).setInputFiles(photo)
   await expect.poll(async () => (await values(page)).attachments?.length).toBe(1)
@@ -49,6 +49,10 @@ test('stages durable references and restores real image previews after reload', 
   await page.reload()
   await expect.poll(async () => (await values(page)).attachments?.[0]?.clientId).toBe(original.clientId)
   await expect(page.locator('img[alt="photo.png"]')).toBeVisible()
+  await expect
+    .poll(() => page.locator('img[alt="photo.png"]').evaluate((element: HTMLImageElement) => element.naturalWidth))
+    .toBeGreaterThan(0)
+  expect((await values(page)).attachments[0]).toEqual(original)
   expect(errors).toEqual([])
 })
 
@@ -73,7 +77,7 @@ test('uploads and reopens in another browser context using remote sources', asyn
   expect(errors).toEqual([])
 })
 
-test('preserves conditional and nested media without visual path segments', async ({ page }) => {
+test('preserves conditional and nested media without visual path segments', { tag: '@smoke' }, async ({ page }) => {
   const { errors } = await open(page)
   await page.getByLabel('Arquivo condicional', { exact: true }).setInputFiles(text)
   await page.getByLabel('Arquivo no grupo', { exact: true }).setInputFiles(photo)
@@ -90,7 +94,7 @@ test('preserves conditional and nested media without visual path segments', asyn
   expect(errors).toEqual([])
 })
 
-test('enforces readonly at root and inside structures', async ({ page }) => {
+test('enforces readonly at root and inside structures', { tag: '@smoke' }, async ({ page }) => {
   await open(page)
   await page.getByRole('switch', { name: 'Somente leitura' }).click()
   await expect(page.getByLabel('Pergunta original', { exact: true })).toBeDisabled()

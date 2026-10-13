@@ -2,14 +2,15 @@ import { Buffer } from 'node:buffer'
 import { expect } from '@playwright/test'
 import { test } from './fixtures'
 
-test('multiple button choices retain rapid selections and remove only the clicked choice', async ({ page }) => {
+test('multiple button choices retain rapid selections and remove only the clicked choice', { tag: '@smoke' }, async ({ page }) => {
   await page.goto('/')
+  await expect(page.locator('.my-form-wrapper')).toBeVisible({ timeout: 30_000 })
   await page.evaluate(() => localStorage.setItem('form-fields', JSON.stringify([
     { $formkit: 'q-btn-toggle', name: 'choices', label: 'Escolhas', multiple: true, options: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }] },
     { $formkit: 'q-input', name: 'both', label: 'Ambos', if: '$contains($choices, "a") && $contains($choices, "b")' },
   ])))
   await page.reload()
-  await expect(page.locator('[data-field-name="choices"]')).toBeVisible()
+  await expect(page.locator('[data-field-name="choices"]')).toBeVisible({ timeout: 30_000 })
   await page.locator('.q-page-sticky').first().locator('.q-tab').nth(1).click()
   await expect(page.locator('.preview-form-container .overlay-preview-element').first()).toBeHidden()
   const preview = page.locator('.preview-form-container')
@@ -22,7 +23,7 @@ test('multiple button choices retain rapid selections and remove only the clicke
   await expect(preview.getByRole('button', { name: 'B', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
 
-test('reads previous IndexedDB Blob rows without changing media references', async ({ page, browserName }) => {
+test('reads previous IndexedDB Blob rows without changing media references', { tag: '@smoke' }, async ({ page, browserName }) => {
   test.skip(browserName === 'webkit', 'This Linux WebKit cannot create Blob rows; ArrayBuffer persistence is covered by media round trips')
   const response = `old-blob-${Date.now()}`
   await page.goto(`/media?response=${response}`)

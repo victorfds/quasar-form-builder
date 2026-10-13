@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.2.1 - Unreleased
+
+### Corrections
+
+- Run E2E with an isolated Nuxt environment that disables startup HMR reloads
+  and prevents Nuxt CLI from re-enabling HMR, without changing normal development
+  behavior or suppressing JavaScript errors.
+- Wait for client-ready builder and media controls before seeding saved schemas.
+- Verify pending equality values using DOM focus instead of OS window focus in
+  concurrent Firefox runs.
+- Check image decoding and complete durable references after reloading media.
+
+### Development and Validation
+
+- Add a fast local check profile and retain the full production, three-browser,
+  packed-consumer and audit gate for CI and release preparation.
+- Preflight required browsers and support native, supplied remote and optional
+  version-matched Linux Docker runtimes with owned-resource cleanup.
+- Cover runtime selection, error propagation, cleanup and the Nuxt CLI HMR guard
+  with 12 new unit tests.
+- Record successful local checks, repeated Firefox runs and full validation;
+  retain the documented pre-existing Linux WebKit Blob test limitation.
+
+Public runtime APIs, media/schema data contracts, dependency versions and minimum
+consumer requirements are unchanged from 0.2.0.
+
 ## 0.2.0 - Unreleased
 
 ### Compatibility

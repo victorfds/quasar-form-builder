@@ -64,10 +64,24 @@ globally to reproduce this repository's build configuration.
 
 ## Validation Boundary
 
-`pnpm check` runs preparation, lint, app/server types, unit/toolchain tests,
+`pnpm check` is the fast local profile: preparation, lint, app/server types,
+unit/toolchain tests, module packaging, TypeScript 7 SDK checks and smoke E2E in
+Chromium/Firefox. `pnpm test:e2e:local` reruns only the 12 smoke cases.
+
+`pnpm check:full` runs preparation, lint, app/server types, unit/toolchain tests,
 module packaging, TypeScript 7 SDK checks, playground build, E2E, packed consumer
 tests and audit. Consumer tests cover Nuxt 4.5.1/4.6.1, SSR/SPA and three browser
-engines. CI repeats this on Node 22 and 24.
+engines. CI requires the full profile on Node 22 and 24. Use the complete profile
+before publication; the faster local gate does not replace release acceptance.
+
+The check runner first verifies the engines selected by the profile. On Linux it can use an
+owned, temporary official Playwright Docker runtime if native browsers lack
+system dependencies. `check:native` requires local engines; `check:docker`
+explicitly selects Docker on a Linux host. `QFB_BROWSER_WS` selects an existing
+remote server in automatic mode. The image version matches the installed
+Playwright package. Managed containers are removed on completion/failure; an
+externally supplied server is never stopped. CI uses full/native mode with installed
+system dependencies. No mode removes a browser project or ignores failed tests.
 
 Recording tests use real MediaRecorder where exposed. The Linux Playwright
 WebKit build does not expose capture APIs; these cases verify an explicit error

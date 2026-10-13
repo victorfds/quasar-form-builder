@@ -32,5 +32,14 @@ export default defineNuxtConfig({
     },
   },
 
+  $env: {
+    e2e: {
+      vite: {
+        // Startup HMR reloads can abort imports before Firefox hydration finishes.
+        server: { hmr: false },
+      },
+    },
+  },
+
   compatibilityDate: '2025-01-28',
 })
