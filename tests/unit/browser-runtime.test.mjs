@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import playwrightConfig from '../../playwright.config'
 import { verifyBrowserRuntime, withBrowserRuntime } from '../../scripts/browser-runtime.mjs'
 
 function fixture(extra = {}) {
@@ -16,6 +17,10 @@ function fixture(extra = {}) {
 }
 
 describe('quality-check browser runtime', () => {
+  it('prevents Nuxt CLI from re-enabling HMR in the managed E2E server', () => {
+    expect(playwrightConfig.webServer.env.NUXI_DISABLE_VITE_HMR).toBe('1')
+    expect(playwrightConfig.webServer.command).toContain('--envName e2e')
+  })
   it('checks only the engines required by the local profile', async () => {
     const browser = { close: vi.fn() }
     const engines = Object.fromEntries(['chromium', 'firefox', 'webkit'].map(name => [name, { launch: vi.fn().mockResolvedValue(browser) }]))

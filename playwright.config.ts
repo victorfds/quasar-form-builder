@@ -12,6 +12,8 @@ export default defineConfig({
   },
   webServer: {
     command: 'pnpm exec nuxi dev .playground --envName e2e --host 127.0.0.1 --port 3010',
+    // Nuxt CLI otherwise replaces hmr: false while attaching its WebSocket server.
+    env: { NUXI_DISABLE_VITE_HMR: '1' },
     url: 'http://127.0.0.1:3010',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
