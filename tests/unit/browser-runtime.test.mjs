@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+import { loadNuxtConfig } from '@nuxt/kit'
 import { describe, expect, it, vi } from 'vitest'
 import playwrightConfig from '../../playwright.config'
 import { verifyBrowserRuntime, withBrowserRuntime } from '../../scripts/browser-runtime.mjs'
@@ -17,6 +19,14 @@ function fixture(extra = {}) {
 }
 
 describe('quality-check browser runtime', () => {
+  it('freezes dependency discovery only in the E2E playground environment', async () => {
+    const cwd = fileURLToPath(new URL('../../.playground/', import.meta.url))
+    const e2e = await loadNuxtConfig({ cwd, envName: 'e2e' })
+    const development = await loadNuxtConfig({ cwd, envName: 'development' })
+    expect(e2e.vite.optimizeDeps.noDiscovery).toBe(true)
+    expect(e2e.vite.optimizeDeps.include).toContain('jsep')
+    expect(development.vite.optimizeDeps.noDiscovery).not.toBe(true)
+  })
   it('prevents Nuxt CLI from re-enabling HMR in the managed E2E server', () => {
     expect(playwrightConfig.webServer.env.NUXI_DISABLE_VITE_HMR).toBe('1')
     expect(playwrightConfig.webServer.command).toContain('--envName e2e')

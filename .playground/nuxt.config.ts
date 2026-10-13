@@ -37,6 +37,11 @@ export default defineNuxtConfig({
       vite: {
         // Startup HMR reloads can abort imports before Firefox hydration finishes.
         server: { hmr: false },
+        // Late discovery invalidates dependency URLs already loading in other workers.
+        optimizeDeps: {
+          noDiscovery: true,
+          include: ['@formkit/core', '@formkit/i18n', '@formkit/utils', 'idb', 'jsep', 'uuid'],
+        },
       },
     },
   },
