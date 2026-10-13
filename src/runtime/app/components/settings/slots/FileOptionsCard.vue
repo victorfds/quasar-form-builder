@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'
-import { formatMediaSize, positiveNumber } from '../../../media/policy'
+import { formatMediaSize, positiveNumber } from '../../../../utils/mediaPolicy'
 
 const formStore = useFormStore()
 const { onEnteredProp } = formStore

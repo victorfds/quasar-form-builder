@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { QfbMediaController, QfbRemoteMedia } from '../media/types'
+import type { QfbMediaController, QfbRemoteMedia } from '../../types/media'
 import { computed, inject, shallowRef } from 'vue'
-import { qfbMediaControllerKey } from '../media/injection'
+import { qfbMediaControllerKey } from '../constants/injectionKeys'
 import MediaItem from './media/MediaItem.vue'
 
 const props = withDefaults(defineProps<{ items: QfbRemoteMedia[], mediaController?: QfbMediaController, readonly?: boolean, removable?: boolean, gallery?: boolean }>(), { readonly: true })

@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import type { BuilderEventMap } from '#qfb/types'
+import type { BuilderEventMap } from '../../types'
 import { unref } from 'vue'
 
 /**

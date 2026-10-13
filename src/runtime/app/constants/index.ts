@@ -1,4 +1,4 @@
-import type { ConditionOperatorOption } from '#qfb/types'
+import type { ConditionOperatorOption } from '../../types'
 
 export const operators: ConditionOperatorOption[] = [
   { value: 'empty', label: 'está vazio' },

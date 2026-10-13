@@ -1,7 +1,7 @@
 {
   "name": "nuxt-quasar-form-builder",
   "type": "module",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "packageManager": "pnpm@12.11.2",
   "description": "Nuxt module that provides a Quasar and FormKit based form builder.",
   "license": "MIT",
@@ -11,12 +11,12 @@
       "import": "./dist/module.mjs"
     },
     "./media": {
-      "types": "./dist/runtime/app/media/index.d.ts",
-      "import": "./dist/runtime/app/media/index.js"
+      "types": "./dist/runtime/media.d.ts",
+      "import": "./dist/runtime/media.js"
     },
     "./schema": {
-      "types": "./dist/runtime/app/schema/index.d.ts",
-      "import": "./dist/runtime/app/schema/index.js"
+      "types": "./dist/runtime/schema.d.ts",
+      "import": "./dist/runtime/schema.js"
     }
   },
   "main": "./dist/module.mjs",
@@ -90,6 +90,7 @@
     "typescript": "5.9.3",
     "vitest": "^5.0.4",
     "vue": "^3.5.43",
+    "vue-router": "^5.4.0",
     "vue-tsc": "^3.3.13"
   }
 }

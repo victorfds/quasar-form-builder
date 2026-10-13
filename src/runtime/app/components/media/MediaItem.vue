@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { QfbMediaController, QfbMediaSource, QfbMediaValue } from '../../media/types'
+import type { QfbMediaController, QfbMediaSource, QfbMediaValue } from '../../../types/media'
 import { computed, onMounted, onScopeDispose, shallowRef, watch } from 'vue'
-import { baseMimeType, formatMediaSize } from '../../media/policy'
+import { baseMimeType, formatMediaSize } from '../../../utils/mediaPolicy'
 
 const props = withDefaults(
   defineProps<{
@@ -21,6 +21,10 @@ const preview = shallowRef(false)
 const failure = shallowRef('')
 const mounted = shallowRef(false)
 let generation = 0
+let acquisition: Promise<QfbMediaSource | undefined> | undefined
+let renewal: Promise<void> | undefined
+let renewed = false
+let playback: { time: number, volume: number, muted: boolean, paused: boolean } | undefined
 const mime = computed(() => baseMimeType(props.item.mimeType))
 const image = computed(() =>
   ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/bmp'].includes(mime.value),
@@ -58,7 +62,7 @@ function release() {
   source.value?.release()
   source.value = undefined
 }
-async function acquire() {
+async function acquireFresh() {
   if (source.value && (!source.value.expiresAt || Date.parse(source.value.expiresAt) > Date.now() + 5000))
     return source.value
   release()
@@ -107,12 +111,21 @@ async function acquire() {
     if (operation === generation) loading.value = false
   }
 }
+function acquire(force = false) {
+  if (acquisition) return acquisition
+  if (force) release()
+  acquisition = acquireFresh().finally(() => {
+    acquisition = undefined
+  })
+  return acquisition
+}
 async function open() {
   if (preview.value) {
     preview.value = false
     release()
     return
   }
+  renewed = false
   if (await acquire()) preview.value = true
 }
 async function download() {
@@ -125,15 +138,48 @@ async function download() {
   anchor.target = '_blank'
   anchor.click()
 }
-function previewError() {
+function restorePlayback(event: Event) {
+  const element = event.target as HTMLMediaElement
+  if (!playback) return
+  const previous = playback
+  playback = undefined
+  element.volume = previous.volume
+  element.muted = previous.muted
+  element.currentTime = Number.isFinite(element.duration) ? Math.min(previous.time, element.duration) : previous.time
+  if (!previous.paused) {
+    void element.play().catch(() => {
+      failure.value = 'Toque em reproduzir para continuar.'
+    })
+  }
+}
+function previewError(event: Event) {
+  const element = event.target as HTMLMediaElement
+  const codecFailure = player.value && (element.error?.code === 3 || !canPlay.value)
+  if (!codecFailure && !renewed && props.item.documentId && source.value?.expiresAt) {
+    if (renewal) return
+    renewed = true
+    if (player.value) playback = { time: element.currentTime || 0, volume: element.volume, muted: element.muted, paused: element.paused }
+    renewal = (async () => {
+      const next = await acquire(true)
+      if (next) preview.value = true
+      else preview.value = false
+    })().finally(() => {
+      renewal = undefined
+    })
+    return
+  }
+  playback = undefined
   failure.value = 'Formato sem reprodução disponível. O download permanece disponível.'
   preview.value = false
 }
+
 watch(
   () => [props.item, props.controller, props.gallery],
   () => {
     release()
     preview.value = false
+    renewed = false
+    playback = undefined
     if (mounted.value && props.gallery && image.value) void open()
   },
 )
@@ -210,6 +256,7 @@ onScopeDispose(release)
       controls
       preload="metadata"
       :aria-label="item.name"
+      @loadedmetadata="restorePlayback"
       @error="previewError"
     />
     <video
@@ -219,6 +266,7 @@ onScopeDispose(release)
       controls
       preload="metadata"
       :aria-label="item.name"
+      @loadedmetadata="restorePlayback"
       @error="previewError"
     />
   </article>

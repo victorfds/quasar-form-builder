@@ -1,4 +1,4 @@
-import type { BuilderCatalogCategory, BuilderCatalogItem, MatrixColumnConfig } from '#qfb/types'
+import type { BuilderCatalogCategory, BuilderCatalogItem, MatrixColumnConfig } from '../../types'
 
 const defaultOptions = [
   { label: 'Opção 1', value: 'option_1' },

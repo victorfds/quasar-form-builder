@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { BuilderFieldListKey, ColumnsType } from '#qfb/types'
-import type { QfbSchemaField } from '../../types'
+import type { BuilderFieldListKey, ColumnsType, QfbSchemaField } from '../../../types'
 import { computed, inject, shallowRef, unref, watch } from 'vue'
 import { useFieldUi } from '#qfb/composables/useFieldUi'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'

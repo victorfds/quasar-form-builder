@@ -72,6 +72,7 @@ export interface QfbMediaFieldOptions {
   maxFileSize?: number
   maxTotalSize?: number
   maxFiles?: number
+  maxDurationSeconds?: number
   accept?: string
   mediaKind?: 'file' | 'image' | 'video' | 'audio'
   readonly?: boolean

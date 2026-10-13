@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { BuilderDragPlacement } from '#qfb/types'
-import type { QfbSchemaField } from '../../types'
+import type { BuilderDragPlacement, QfbSchemaField } from '../../../types'
 import { computed } from 'vue'
 import { useFieldUi } from '#qfb/composables/useFieldUi'
 import { useFormStore } from '#qfb/stores/formStore'

@@ -1,4 +1,4 @@
-import type { QfbSchemaField } from '../types'
+import type { QfbSchemaField } from '../../types'
 
 const rootOnlyStructureTypes = new Set(['q-stepper', 'q-tabs'])
 const builderDraggingClass = 'qfb-builder-dragging'

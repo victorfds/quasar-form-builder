@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { BuilderCatalogCategory, BuilderCatalogItem, BuilderEventMap, BuilderFieldListKey, StructureCell } from '#qfb/types'
-import type { QfbSchemaField } from '../types'
+import type { BuilderCatalogCategory, BuilderCatalogItem, BuilderEventMap, BuilderFieldListKey, QfbSchemaField, StructureCell } from '../../types'
 import { useQuasar } from 'quasar'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { getBuilderCatalogByCategory } from '#qfb/constants/fieldCatalog'

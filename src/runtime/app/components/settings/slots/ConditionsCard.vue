@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { ConditionValueInputMode, LogicField } from '#qfb/types'
-import type { MatrixOption } from '../../../types'
+import type { ConditionValueInputMode, LogicField, MatrixOption } from '../../../../types'
 import { useQuasar } from 'quasar'
 import { computed, reactive, ref } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'

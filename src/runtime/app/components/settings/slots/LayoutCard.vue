@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ColumnsType } from '#qfb/types'
+import type { ColumnsType } from '../../../../types'
 import { useQuasar } from 'quasar'
 import { computed, reactive } from 'vue'
 import { useFormStore } from '#qfb/stores/formStore'

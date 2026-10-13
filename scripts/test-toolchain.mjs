@@ -1,9 +1,26 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import ts from 'typescript'
+
+const root = fileURLToPath(new URL('../', import.meta.url))
+const manifest = JSON.parse(await readFile(join(root, 'tests/fixtures/public-exports.json'), 'utf8'))
+const entries = { module: 'src/module.ts', media: 'src/runtime/media.ts', schema: 'src/runtime/schema.ts' }
+const program = ts.createProgram(Object.values(entries).map(file => join(root, file)), {
+  target: ts.ScriptTarget.ESNext,
+  module: ts.ModuleKind.ESNext,
+  moduleResolution: ts.ModuleResolutionKind.Bundler,
+  skipLibCheck: true,
+})
+const checker = program.getTypeChecker()
+for (const [name, file] of Object.entries(entries)) {
+  const source = program.getSourceFile(join(root, file))
+  const exports = checker.getExportsOfModule(checker.getSymbolAtLocation(source)).map(symbol => symbol.name).sort()
+  assert.deepEqual(exports, manifest.types[name], `${name} public type/value exports changed`)
+}
+console.log('Public module/media/schema export manifests passed')
 
 const require = createRequire(import.meta.url)
 const cliRequire = createRequire(require.resolve('nuxt/package.json'))
@@ -22,7 +39,9 @@ console.log('Nuxt CLI CAC 7 completion adapter passed')
 
 const devtools = createRequire(cliRequire.resolve('@nuxt/devtools/package.json'))
 const { simpleGit: Git } = await import(pathToFileURL(devtools.resolve('simple-git')).href)
-const directory = await mkdtemp(join(tmpdir(), 'qfb-git-toolchain-'))
+const temporaryRoot = fileURLToPath(new URL('../.tmp/toolchain-test/', import.meta.url))
+await mkdir(temporaryRoot, { recursive: true })
+const directory = await mkdtemp(join(temporaryRoot, 'git-'))
 try {
   const git = Git(directory)
   await git.init()

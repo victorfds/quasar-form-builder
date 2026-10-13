@@ -6,13 +6,13 @@ import type {
   QfbMediaStorageAdapter,
   QfbMediaTransportAdapter,
   QfbMediaValue,
-} from '../../src/runtime/app/media/types'
+} from '../../src/runtime/types/media'
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
-import { useQfbMediaController } from '../../src/runtime/app/media/controller'
-import { createQfbHttpMediaTransport } from '../../src/runtime/app/media/http'
-import { createQfbIndexedDbStorage } from '../../src/runtime/app/media/indexedDb'
-import { isQfbMediaValue } from '../../src/runtime/app/media/values'
+import { useQfbMediaController } from '../../src/runtime/app/composables/useQfbMediaController'
+import { createQfbHttpMediaTransport } from '../../src/runtime/utils/mediaHttpTransport'
+import { createQfbIndexedDbStorage } from '../../src/runtime/utils/mediaIndexedDbStorage'
+import { isQfbMediaValue } from '../../src/runtime/utils/mediaValues'
 
 const scope = { userKey: 'user', formId: 'form', responseKey: 'draft' }
 const field = { fieldId: '00000000-0000-4000-8000-000000000001', fieldPath: ['group', 'photos'] }

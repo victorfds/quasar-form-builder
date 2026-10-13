@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
-import type { BuilderFieldListKey } from '#qfb/types'
-import type { QfbSchemaField } from '../../types'
+import type { BuilderFieldListKey, QfbSchemaField } from '../../../types'
 import { computed, inject, onMounted, onUpdated, shallowRef, unref } from 'vue'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { useFormStore } from '#qfb/stores/formStore'

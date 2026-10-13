@@ -1,5 +1,4 @@
-import type { BuilderDragPlacement, BuilderFieldListKey } from '#qfb/types'
-import type { QfbSchemaField } from '../types'
+import type { BuilderDragPlacement, BuilderFieldListKey, QfbSchemaField } from '../../types'
 import { useQuasar } from 'quasar'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { builderDragMime, clearBuilderDragActive, getBuilderDragFormKitType, hasRootOnlyBuilderDrag, isRootOnlyBuilderType, markBuilderDragType } from '#qfb/utils/builderDrag'

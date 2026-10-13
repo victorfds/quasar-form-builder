@@ -1,17 +1,16 @@
 import type { ComputedRef, Ref } from 'vue'
-import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, BuilderSelectionChangeDetail, ColumnsType, FormSettingsType, FormViewportType, StructureCell } from '#qfb/types'
-import type { QfbSchemaField } from '../types'
+import type { ActiveFieldType, BuilderDragPlacement, BuilderFieldListKey, BuilderSelectionChangeDetail, ColumnsType, FormSettingsType, FormViewportType, QfbSchemaField, StructureCell } from '../../types'
 import { defineStore } from 'pinia'
 import { useQuasar } from 'quasar'
 import { computed, nextTick, reactive, ref } from 'vue'
-import { adoptQfbSchema, cloneQfbSchemaAsTemplate, createQfbId, duplicateQfbSchema, QfbSchemaError, renameQfbField, validateQfbConditions, validateQfbSchema, walkQfbSchema } from '#qfb/schema'
-import { removeQfbConditionsReferencing, rewriteQfbConditions } from '#qfb/schema/expressions'
 import { useFormHistoryStore } from '#qfb/stores/formHistoryStore'
-import { isQfbConditionalRule } from '#qfb/types'
 import { generateUniqueName, isEmptyObject, nameExists } from '#qfb/utils'
 import { getBrowserJsonItem, setBrowserStorageItem } from '#qfb/utils/browserStorage'
 import { dispatchBuilderEvent } from '#qfb/utils/builderEvents'
 import { getFormBuilderStorageConfig } from '#qfb/utils/storageConfig'
+import { adoptQfbSchema, cloneQfbSchemaAsTemplate, createQfbId, duplicateQfbSchema, QfbSchemaError, renameQfbField, validateQfbConditions, validateQfbSchema, walkQfbSchema } from '../../schema'
+import { removeQfbConditionsReferencing, rewriteQfbConditions } from '../../utils/schemaExpressions'
+import { isQfbConditionalRule } from '../../utils/schemaGuards'
 
 export interface StepDefinition {
   fieldId?: string

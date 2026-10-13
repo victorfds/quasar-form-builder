@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormKitFrameworkContext } from '@formkit/core'
 import type { QInputProps } from 'quasar'
-import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig } from '#qfb/types'
+import type { MatrixColumnConfig, MatrixColumnType, MatrixOption, MatrixRowConfig } from '../../../types'
 import { computed, inject, unref } from 'vue'
 import { builderModeKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { getEffectiveMatrixColumnType, matrixColumnTypeUsesOptions } from '#qfb/constants/matrix'

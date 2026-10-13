@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { Buffer } from 'node:buffer'
+import { readFileSync } from 'node:fs'
 import { expect } from '@playwright/test'
 import { test } from './fixtures'
 
@@ -178,7 +179,7 @@ test('explains microphone denial and allows selecting an existing audio', async 
   }
   await page
     .getByLabel('Selecionar áudio', { exact: true })
-    .setInputFiles({ name: 'recording.webm', mimeType: 'audio/webm', buffer: Buffer.from('audio fixture') })
+    .setInputFiles({ name: 'recording.wav', mimeType: 'audio/wav', buffer: readFileSync(new URL('../fixtures/audio.wav', import.meta.url)) })
   await expect.poll(async () => (await values(page)).voice?.clientId).toBeTruthy()
 })
 

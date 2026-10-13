@@ -24,7 +24,7 @@ const result = shallowRef('')
 const attachments = shallowRef<QfbRemoteMedia[]>([])
 const scope = { userKey: 'playground-user', formId: 'media-demo', responseKey: responseId }
 const key = `qfb-media-demo:${responseId}`
-const policy = { maxFileSize: 1024 * 1024, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'text/plain', 'application/pdf', 'audio/webm', 'audio/ogg', 'audio/mp4', 'video/mp4', 'video/webm'], allowedExtensions: ['png', 'jpg', 'jpeg', 'webp', 'txt', 'pdf', 'webm', 'ogg', 'm4a', 'mp4'] }
+const policy = { maxFileSize: 1024 * 1024, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'text/plain', 'application/pdf', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/mp4', 'video/mp4', 'video/webm'], allowedExtensions: ['png', 'jpg', 'jpeg', 'webp', 'txt', 'pdf', 'wav', 'webm', 'ogg', 'm4a', 'mp4'] }
 const blocked = computed(() => readonly.value || (mode === 'online' && !connected.value))
 const http = createQfbHttpMediaTransport({
   urls: {

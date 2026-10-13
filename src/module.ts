@@ -1,8 +1,6 @@
 import { addComponent, addComponentsDir, addImports, addImportsDir, addPlugin, addTypeTemplate, createResolver, defineNuxtModule, resolveModule } from '@nuxt/kit'
 import { defu } from 'defu'
 
-export type * from './runtime/app/media/types'
-export type { QfbSchemaDiagnostic } from './runtime/app/schema/identity'
 export type {
   FormBuilderAppConfig,
   FormBuilderLabelsConfig,
@@ -13,10 +11,13 @@ export type {
   FormViewerSubmitInvalidPayload,
   FormViewerValues,
   FormViewerValuesUpdatePayload,
+  QfbFormFieldError,
   QfbSchemaField,
   QfbSchemaMetadata,
   QfbSchemaSection,
-} from './runtime/app/types'
+} from './runtime/types'
+export type * from './runtime/types/media'
+export type { QfbSchemaDiagnostic } from './runtime/utils/schemaIdentity'
 
 export interface ModuleOptions {
   /**
@@ -163,13 +164,19 @@ export default defineNuxtModule<ModuleOptions>({
       })
     }
 
-    addImportsDir(runtimeComposablesDir)
+    addImportsDir(`${runtimeComposablesDir}/use*.{ts,js}`)
     addImportsDir(runtimeUtilsDir)
     addImports([
       { name: 'useEventListener', from: resolver.resolve('./runtime/app/composables/useEventListener'), priority: 10 },
       { name: 'useEventListener', as: 'useQfbEventListener', from: resolver.resolve('./runtime/app/composables/useEventListener') },
-      ...['createQfbIndexedDbStorage', 'createQfbHttpMediaTransport'].map(name => ({ name, from: resolver.resolve('./runtime/app/media/index') })),
-      ...['adoptQfbSchema', 'cloneQfbSchemaAsTemplate'].map(name => ({ name, from: resolver.resolve('./runtime/app/schema/index') })),
+      ...[
+        { file: 'formData', names: ['extractFormData', 'createFormSchemaData'] },
+        { file: 'logic', names: ['contains', 'startsWith', 'endsWith'] },
+        { file: 'dateLogic', names: ['isToday', 'isTomorrow', 'isYesterday', 'isDayAfterTomorrow', 'isDayBeforeYesterday'] },
+      ].flatMap(({ file, names }) => names.map(name => ({ name, from: resolver.resolve(`./runtime/utils/${file}`) }))),
+      { name: 'QfbExtractOptions', from: resolver.resolve('./runtime/utils/formData'), type: true },
+      ...['createQfbIndexedDbStorage', 'createQfbHttpMediaTransport', 'createQfbMediaError', 'isQfbMediaError'].map(name => ({ name, from: resolver.resolve('./runtime/media') })),
+      ...['adoptQfbSchema', 'cloneQfbSchemaAsTemplate', 'createQfbSchemaError', 'isQfbSchemaError'].map(name => ({ name, from: resolver.resolve('./runtime/schema') })),
       {
         name: 'useFormStore',
         from: resolver.resolve('./runtime/app/stores/formStore'),

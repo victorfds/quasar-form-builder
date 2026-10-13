@@ -1,4 +1,4 @@
-import type { BuilderEventMap } from '#qfb/types'
+import type { BuilderEventMap } from '../../types'
 
 type BuilderEventDetail<EventName extends keyof BuilderEventMap>
   = BuilderEventMap[EventName] extends CustomEvent<infer Detail> ? Detail : never

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { FormKitNode } from '@formkit/core'
-import type { ColumnsType } from '#qfb/types'
-import type { QfbSchemaField } from '../types'
+import type { ColumnsType, QfbSchemaField } from '../../types'
 import { clearErrors, reset } from '@formkit/vue'
 import { useQuasar } from 'quasar'
 import { computed, onBeforeUnmount, onMounted, onUnmounted, provide } from 'vue'
@@ -12,7 +11,7 @@ import { useFormBuilderDnd } from '#qfb/composables/useFormBuilderDnd'
 import { builderModeKey, formBuilderDndKey, schemaDataKey } from '#qfb/constants/injectionKeys'
 import { useFormStore } from '#qfb/stores/formStore'
 import { withStructureChildrenListForRender } from '#qfb/utils'
-import { createFormSchemaData } from '#qfb/utils/formData'
+import { createFormSchemaData } from '../../utils/formData'
 
 type ViewerField = QfbSchemaField & {
   fieldId?: string

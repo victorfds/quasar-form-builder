@@ -2,12 +2,14 @@ import { compile } from '@formkit/core'
 import { empty } from '@formkit/utils'
 import { describe, expect, it } from 'vitest'
 import { reactive } from 'vue'
+import { parseLogic, saveLogic } from '../../src/runtime/app/utils/formUtils'
+import { extractFormData } from '../../src/runtime/utils/formData'
 import {
   normalizeQfbConditions,
   removeQfbConditionsReferencing,
   transformQfbExpression,
   validateQfbConditions,
-} from '../../src/runtime/app/schema/expressions'
+} from '../../src/runtime/utils/schemaExpressions'
 import {
   adoptQfbSchema,
   cloneQfbSchemaAsTemplate,
@@ -15,9 +17,7 @@ import {
   renameQfbField,
   validateQfbSchema,
   walkQfbSchema,
-} from '../../src/runtime/app/schema/identity'
-import { extractFormData } from '../../src/runtime/app/utils/formData'
-import { parseLogic, saveLogic } from '../../src/runtime/app/utils/formUtils'
+} from '../../src/runtime/utils/schemaIdentity'
 
 describe('schema identity', () => {
   it.each(['__proto__', 'constructor', 'prototype'])('rejects reserved field name %s', (name) => {

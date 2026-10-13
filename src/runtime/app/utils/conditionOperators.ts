@@ -1,5 +1,4 @@
-import type { ConditionOperatorOption, ConditionOperatorValue, ConditionValueInputMode } from '#qfb/types'
-import type { QfbSchemaField } from '../types'
+import type { ConditionOperatorOption, ConditionOperatorValue, ConditionValueInputMode, QfbSchemaField } from '../../types'
 import { allConditionOperators } from '#qfb/constants'
 
 type ConditionField = QfbSchemaField & Record<string, any>

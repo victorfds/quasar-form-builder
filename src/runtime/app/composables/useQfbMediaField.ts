@@ -1,10 +1,10 @@
 import type { FormKitFrameworkContext } from '@formkit/core'
-import type { QfbMediaCandidate, QfbMediaFieldContext, QfbMediaValue } from '../media/types'
+import type { QfbMediaCandidate, QfbMediaFieldContext, QfbMediaValue } from '../../types/media'
 import { computed, inject, onMounted, onScopeDispose, shallowRef, watch } from 'vue'
-import { describeMediaError, QfbMediaError } from '../media/errors'
-import { qfbMediaControllerKey, qfbMediaErrorKey } from '../media/injection'
-import { validateMediaFieldLimits } from '../media/policy'
-import { getValueAtPath, isQfbMediaValue, mediaValues, sameField } from '../media/values'
+import { createQfbMediaError, describeMediaError } from '../../utils/mediaErrors'
+import { validateMediaFieldLimits } from '../../utils/mediaPolicy'
+import { getValueAtPath, isQfbMediaValue, mediaValues, sameField } from '../../utils/mediaValues'
+import { qfbMediaControllerKey, qfbMediaErrorKey } from '../constants/injectionKeys'
 import { getFormKitContextAttrs } from '../utils/quasarFieldDesign'
 import { useQfbFieldAccess } from './useQfbFieldAccess'
 
@@ -37,6 +37,7 @@ export function useQfbMediaField(context: FormKitFrameworkContext) {
       'maxFileSize',
       'maxTotalSize',
       'maxFiles',
+      'maxDurationSeconds',
       'gallery',
       'mediaKind',
       'capture',
@@ -196,7 +197,7 @@ export function useQfbMediaField(context: FormKitFrameworkContext) {
   }
 
   function beginRecording() {
-    if (locked.value) throw new QfbMediaError('readonly', 'A gravação está bloqueada', field.value)
+    if (locked.value) throw createQfbMediaError('readonly', 'A gravação está bloqueada', field.value)
     clearErrors()
     message('Gravação ainda não confirmada')
     return controller.value?.beginCapture(field.value)
