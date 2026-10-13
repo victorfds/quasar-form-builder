@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.3 - Unreleased
+
+- Generate automatic FormKit DOM IDs and synthetic root form names with Vue's SSR-stable application IDs,
+  preserving explicit IDs and preventing concurrent requests from changing hydration.
+- Organize the runtime into conventional composables, utilities and type contracts;
+  preserve public `/media` and `/schema` facades, Nuxt auto-imports and injection keys.
+- Share structural traversal with GMF fixtures, including aliases, conditional branches and repeated FormKit collector addresses.
+- Preserve all field occurrences during extraction and update media contexts after list changes.
+- Add `FormViewer.flush()`, `formErrors` and `fieldErrors` without changing submit events.
+- Validate duration and historical field limits while applying the current upload policy only to new files.
+- Canonicalize MIME aliases and renew expiring playback sources once while preserving playback state.
+- Add functional error factories while retaining 0.2.x constructors and `instanceof` compatibility.
+- Validate the packed SSR and SPA consumer and public SDK exports.
+
 ## 0.2.2 - Unreleased
 
 ### Corrections
