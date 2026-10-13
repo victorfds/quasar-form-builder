@@ -7,7 +7,7 @@ Validated on 2026-10-12. No package publication was performed during validation.
 | pnpm 12.11.2 frozen installation | Passed with strict peer checks and reviewed supply-chain policy. |
 | ESLint | Passed; unused-variable checks remain enabled. |
 | Vue/TypeScript app and server checks | Passed without type errors. |
-| Unit tests | 65 passed across 6 files, including browser-runtime selection/cleanup. |
+| Unit tests | 66 passed across 6 files, including browser-runtime selection/cleanup and Nuxt CLI HMR configuration. |
 | Public SDK declarations | Passed with TypeScript 7.0.2, including root, media and schema exports. |
 | Toolchain smoke tests | Nuxt CAC completion and patched Devtools Git API passed. |
 | Module packaging | build:module passed; generated runtime/declarations totaled 1.11 MB. |
@@ -28,17 +28,22 @@ temporary, version-matched official Docker browser runtime for missing native
 dependencies. Local mode does not require WebKit; full mode still requires all
 three engines. No failing tests were deleted to accommodate a missing library.
 
-The E2E server uses the playground's `e2e` environment with HMR disabled. A cold
+The E2E server uses the playground's `e2e` environment with HMR disabled and
+`NUXI_DISABLE_VITE_HMR=1` so the Nuxt CLI cannot overwrite that configuration. A cold
 server's startup reload previously aborted Firefox module imports with
 `NS_BINDING_ABORTED`, even though the subsequent page restored the media. Error
 collection remains enabled; the reload test now also checks successful image decoding
 and the complete restored reference. Normal development retains HMR. Reusing a
-server on port 3010 requires starting it with the same `--envName e2e` option.
+server on port 3010 requires the same environment variable and `--envName e2e` option.
 
-The Firefox regression follow-up passed 10 consecutive repetitions and the
+The earlier Firefox regression follow-up passed 10 consecutive repetitions and the
 complete gate on Node 24.15.0: 65 unit tests, 569 E2E passes with the existing
 WebKit Blob skip, and 12 packed-consumer combinations across both Nuxt versions,
 SSR/SPA and all three browser engines. No retries or new skips were added.
+
+The final 0.2.1 CLI-guard follow-up passed ten more Firefox repetitions, 66 unit
+tests and two fresh local gates in 44.8 and 45.2 seconds. Each local gate passed
+all 12 smoke cases with JavaScript error assertions retained.
 
 The consumer matrix covers Node 22.22.3/24.15.0, Nuxt 4.5.1/4.6.1, SSR/SPA and
 Chromium/Firefox/WebKit. Tests install the tarball, import SDKs without browser
